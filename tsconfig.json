@@ -1,0 +1,16 @@
+{
+  "compilerOptions": {
+    "target": "ES6",
+    "lib": ["ES2019", "DOM"],
+    "module": "ES6",    "rootDir": "./src",    "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "allowJs": true,
+    "checkJs": true,
+    "sourceMap": true,    "inlineSourceMap": false,    "outDir": "./public/build",    "removeComments": true,    "noEmit": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "strict": true,
+  },
+  "include": ["src/**/*.js", "src/**/*.d.ts"],
+  "exclude": ["node_modules"]
+}
