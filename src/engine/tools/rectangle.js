@@ -42,11 +42,14 @@ export default (engine) => {
 
       const { model } = scene.currentInstance;
       
-      const edge1 = vec3.create(), edge2 = vec3.create(), edge3 = vec3.create();
+      const edge1 = vec3.create(), edge2 = vec3.create(), edge3 = vec3.create(), hovered = vec3.fromValues(1, 1, 1);
       
       const vertices = model.data.lineVertex.slice(-12);
       vec3.multiply(edge1, scene.axisNormal, vertices);
-      vec3.add(edge1, edge1, scene.hoveredGlobal);
+
+      vec3.subtract(hovered, hovered, scene.axisNormal);
+      vec3.multiply(hovered, hovered, scene.hoveredGlobal);
+      vec3.add(edge1, edge1, hovered);
 
       vec3.copy(edge2, edge1);
       vec3.copy(edge3, edge1);
