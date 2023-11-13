@@ -22,7 +22,6 @@ const threeFourthsPI = halfPI * 3;
  * @property {mat4} world
  * @property {mat4} mvp
  * @property {mat4} inverseMvp
- * @property {mat4} normalMvp
  * @property {vec3} screenResolution
  * @property {(dX: number, dY: number) => void} pan
  * @property {(dx: number, dy: number) => void} orbit
@@ -61,7 +60,6 @@ export default (engine) => {
     world: mat4.create(),
     mvp: mat4.create(),
     inverseMvp: mat4.create(),
-    normalMvp: mat4.create(),
     screenResolution: vec3.fromValues(canvas.width, canvas.height, 0),
     orbit(dX, dY) {
       const toEye = vec3.clone(engine.state.hovered);
@@ -142,7 +140,6 @@ export default (engine) => {
       mat4.multiply(this.world, this.rotation, this.translation);
       mat4.multiply(this.mvp, this.projection, this.world);
       mat4.invert(this.inverseMvp, this.mvp);
-      mat4.multiply(this.normalMvp, this.normalProjection, this.world);
 
       engine.emit('camerachange');
     },

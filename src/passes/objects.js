@@ -20,8 +20,9 @@ export default (engine) => {
         void main() {
           gl_Position = u_mvp * a_position;
 
-          vec3 normal = vec3(u_normalMvp * a_normal);
-          float lightIntensity = 0.5 + smoothstep(0.0, 1.0, abs(dot(normal, vec3(0, 0, 1)) * 0.5 + 0.5)) * 0.5;
+          vec3 normal = normalize(vec3(u_normalMvp * a_normal));
+          float lightAngle = abs(dot(normal, vec3(0, 0, 1)));
+          float lightIntensity = 0.4 + smoothstep(0.3, 0.8, lightAngle) * 0.6;
           
           v_color = vec4(a_color, 1.0);
           
@@ -182,7 +183,7 @@ export default (engine) => {
         ctx.uniform4fv(program.uLoc.u_instanceId, instance.id.vec4);
 
         if (step === 'objects') {
-          const normalMvp = mat4.clone(camera.normalMvp);        
+          const normalMvp = mat4.clone(camera.world);
           mat4.multiply(normalMvp, normalMvp, model_trs);
           mat4.transpose(normalMvp, normalMvp);
           mat4.invert(normalMvp, normalMvp);
