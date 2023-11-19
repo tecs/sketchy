@@ -31,10 +31,10 @@ const uuuuToInt = (uuuu) => uuuu[0] + (uuuu[1] << 8) + (uuuu[2] << 16) + (uuuu[3
  * @type {(engine: Engine) => Scene}
  */
 export default (engine) => {
-  const { math: { mat4, vec3, vec4 }, camera, driver: { ctx, UintIndexArray }} = engine;
+  const { math: { mat4, vec3, vec4 }, camera } = engine;
 
   const rootModel = new Model('', {}, engine);
-  const rootInstance = new Instance(rootModel, mat4.create(), null, 0);
+  const [rootInstance] = rootModel.instantiate({ model: rootModel, trs: mat4.create(), children: []}, null, 0);
 
   const instanceById = new Map([[0, rootInstance]]);
 
@@ -55,13 +55,18 @@ export default (engine) => {
         throw new Error('Cannot add model to itself');
       }
 
-      const instance = new Instance(model, trs, this.currentInstance);
-      this.currentInstance.model.adopt(instance);
       if (!this.models.includes(model)) {
         this.models.push(model);
       }
-      instanceById.set(instance.id.int, instance);
+      
+      const instances = this.currentInstance.model.adopt(model, trs);
 
+      let instance = this.currentInstance;
+      for (const newInstance of instances) {
+        instanceById.set(newInstance.id.int, newInstance);
+        if (newInstance.parent === this.currentInstance) instance = newInstance;
+      }
+      
       engine.emit('scenechange');
 
       return instance;

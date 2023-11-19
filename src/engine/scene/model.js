@@ -17,20 +17,33 @@
  * @property {GLBuffer} lineVertex
  * @property {GLBuffer} boundingBoxIndex
  * @property {GLBuffer} boundingBoxVertex
+ * 
+ * @typedef SubModel
+ * @property {Model} model
+ * @property {mat4} trs
+ * @property {Instance[]} children
  */
 
+import Instance from "./instance.js";
+
 export default class Model {
+  /** @type {Engine} */
+  #engine;
+
   /** @type {WebGLRenderingContext} */
   #ctx;
 
   /** @type {GLMatrix} */
   #math;
 
-  /** @type {string} */
-  name;
+  /** @type {SubModel[]} */
+  subModels = [];
 
   /** @type {Instance[]} */
   instances = [];
+
+  /** @type {string} */
+  name;
 
   /** @type {ModelBuffers} */
   buffer;
@@ -44,6 +57,7 @@ export default class Model {
    * @param {Engine} engine
    */
   constructor(name, data = {}, engine) {
+    this.#engine = engine;
     this.#ctx = engine.driver.ctx;
     this.#math = engine.math;
 
@@ -97,6 +111,9 @@ export default class Model {
     this.#regenerateBoundingBox();
   }
 
+  /**
+   * Based on the diagonal bounding box vertices (p0, p6), recalculates all remaining vertices (p1-p5, p7) and reuploads their buffer to the GPU
+   */
   #regenerateBoundingBox() {
     // p1
     this.data.boundingBoxVertex[ 3] = this.data.boundingBoxVertex[0];
@@ -152,17 +169,17 @@ export default class Model {
 
   }
 
-  #findBoundingBox() {
+  recalculateBoundingBox() {
     const { vec3 } = this.#math;
 
     this.data.boundingBoxVertex.set([Infinity, Infinity, Infinity]);
     this.data.boundingBoxVertex.set([-Infinity, -Infinity, -Infinity], 18);
 
-    for (const instance of this.instances) {
-      const newData = new Float32Array(instance.model.data.boundingBoxVertex);
+    for (const { model, trs } of this.subModels) {
+      const newData = new Float32Array(model.data.boundingBoxVertex);
       for (let i = 0; i < newData.length; i += 3) {
         const boundingCoord = newData.slice(i, i + 3);
-        vec3.transformMat4(boundingCoord, boundingCoord, instance.globalTrs);
+        vec3.transformMat4(boundingCoord, boundingCoord, trs);
         newData.set(boundingCoord, i);
       }
       this.#expandBoundingBox(newData);
@@ -206,7 +223,7 @@ export default class Model {
     this.#ctx.bindBuffer(BUFFER_TYPE, this.buffer[part]);
     this.#ctx.bufferData(BUFFER_TYPE, data, this.#ctx.STATIC_DRAW);
 
-    if (part === 'lineVertex' || part === 'vertex') this.#findBoundingBox();
+    if (part === 'lineVertex' || part === 'vertex') this.recalculateBoundingBox();
   }
 
   /**
@@ -222,7 +239,7 @@ export default class Model {
     this.#ctx.bindBuffer(BUFFER_TYPE, this.buffer[part]);
     this.#ctx.bufferData(BUFFER_TYPE, data, this.#ctx.STATIC_DRAW);
 
-    if (part === 'lineVertex' || part === 'vertex') this.#findBoundingBox();
+    if (part === 'lineVertex' || part === 'vertex') this.recalculateBoundingBox();
   }
 
   /**
@@ -236,21 +253,51 @@ export default class Model {
     this.#ctx.bindBuffer(this.#ctx.ARRAY_BUFFER, this.buffer[part]);
     this.#ctx.bufferSubData(this.#ctx.ARRAY_BUFFER, newData.BYTES_PER_ELEMENT * oldLength, newData.buffer);
 
-    if (part === 'lineVertex' || part === 'vertex') this.#findBoundingBox();
+    if (part === 'lineVertex' || part === 'vertex') this.recalculateBoundingBox();
   }
 
   /**
-   * @param {Instance} instance 
+   * @param {SubModel} subModel
+   * @param {Instance | null} parent
+   * @param {number} [id]
+   * @returns {Instance[]}
    */
-  adopt(instance) {
-     this.instances.push(instance);
-    this.#findBoundingBox();
+  instantiate(subModel, parent, id) {
+    const instance = new Instance(this, subModel, parent, this.#engine, id);
+    subModel.children.push(instance);
+    parent?.children.push(instance);
+    this.instances.push(instance);
+    const instances = [instance];
+    
+    for (const subModel of this.subModels) {
+      const subInstances = subModel.model.instantiate(subModel, instance);
+      instances.push(...subInstances);
+    }
+    
+    return instances;
+  }
+
+  /**
+   * @param {Model} model 
+   * @param {mat4} trs
+   * @returns {Instance[]}
+   */
+  adopt(model, trs) {
+    const subModel = { model, trs: this.#engine.math.mat4.clone(trs), children: [] };
+    this.subModels.push(subModel);
+    this.recalculateBoundingBox();
+
+    const instances = [];
+    for (const instance of this.instances) {
+      instances.push(...model.instantiate(subModel, instance));
+    }
+    return instances;
   }
 
   /**
    * @returns {Model[]}
    */
   getAllModels() {
-    return this.instances.flatMap(({ model }) => model.getAllModels()).concat(this);
+    return this.subModels.flatMap(({ model }) => model.getAllModels()).concat(this);
   }
 }

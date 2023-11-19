@@ -1,11 +1,11 @@
 /** @type {(engine: Engine) => Tool} */
 export default (engine) => {
-  const { scene, math: { mat4, vec3 } } = engine;
+  const { scene, math: { vec3 } } = engine;
 
   /** @type {Instance | null} */
   let instance = null;
-  const trs = mat4.create();
   const origin = vec3.create();
+  const translation = vec3.create();
 
   /** @type {Tool} */
   const move = {
@@ -17,36 +17,39 @@ export default (engine) => {
     start() {
       if (instance) return;
 
-      const { selectedInstance, hoveredInstance } = scene;
+      const { selectedInstance, hoveredInstance, currentInstance } = scene;
       
       if (!selectedInstance.id.int && !hoveredInstance.id.int) return;
+
+      const candidateInstance = selectedInstance.id.int ? selectedInstance : hoveredInstance;
+      if (!candidateInstance.belongsTo(currentInstance)) return;
       
       vec3.copy(origin, scene.hoveredGlobal);
+      vec3.zero(translation);
       
-      instance = selectedInstance.id.int ? selectedInstance : hoveredInstance;
-      mat4.copy(trs, instance.globalTrs);
+      instance = candidateInstance;
     },
     update() {
       if (!instance) return;
 
-      const delta = vec3.clone(origin);
-      vec3.subtract(delta, scene.hoveredGlobal, delta);
+      vec3.subtract(origin, scene.hoveredGlobal, origin);
+      vec3.subtract(translation, translation, origin);
 
-      const translate = mat4.create();
-      mat4.fromTranslation(translate, delta);
-      mat4.multiply(instance.globalTrs, translate, trs);
+      instance.translateGlobal(origin);
+      
+      vec3.copy(origin, scene.hoveredGlobal);
 
       engine.emit('scenechange');
     },
     end() {
-      if (!instance || vec3.distance(origin, scene.hoveredGlobal) < 0.1) return;
+      if (!instance || vec3.length(translation) < 0.1) return;
       
       instance = null;
     },
     abort() {
       if (engine.tools.selected.type === 'orbit' || !instance) return;
 
-      mat4.copy(instance.globalTrs, trs);
+      instance.translateGlobal(translation);
       instance = null;
       engine.emit('scenechange');
     },
