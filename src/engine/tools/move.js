@@ -2,7 +2,8 @@
 export default (engine) => {
   const { scene, math: { mat4, vec3 } } = engine;
 
-  let instance = scene.rootInstance;
+  /** @type {Instance | null} */
+  let instance = null;
   const trs = mat4.create();
   const origin = vec3.create();
 
@@ -14,7 +15,7 @@ export default (engine) => {
     icon: '🕀',
     cursor: 'move',
     start() {
-      if (instance.id.int) return;
+      if (instance) return;
 
       const { selectedInstance, hoveredInstance } = scene;
       
@@ -26,7 +27,7 @@ export default (engine) => {
       mat4.copy(trs, instance.globalTrs);
     },
     update() {
-      if (!instance.id.int) return;
+      if (!instance) return;
 
       const delta = vec3.clone(origin);
       vec3.subtract(delta, scene.hoveredGlobal, delta);
@@ -38,15 +39,15 @@ export default (engine) => {
       engine.emit('scenechange');
     },
     end() {
-      if (!instance.id.int || vec3.distance(origin, scene.hoveredGlobal) < 0.1) return;
+      if (!instance || vec3.distance(origin, scene.hoveredGlobal) < 0.1) return;
       
-      instance = scene.rootInstance;
+      instance = null;
     },
     abort() {
-      if (engine.tools.selected.type === 'orbit' || !instance.id.int) return;
+      if (engine.tools.selected.type === 'orbit' || !instance) return;
 
       mat4.copy(instance.globalTrs, trs);
-      instance = scene.rootInstance;
+      instance = null;
       engine.emit('scenechange');
     },
   };
