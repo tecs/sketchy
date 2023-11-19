@@ -162,7 +162,7 @@ export default class Model {
       const newData = new Float32Array(instance.model.data.boundingBoxVertex);
       for (let i = 0; i < newData.length; i += 3) {
         const boundingCoord = newData.slice(i, i + 3);
-        vec3.transformMat4(boundingCoord, boundingCoord, instance.trs);
+        vec3.transformMat4(boundingCoord, boundingCoord, instance.globalTrs);
         newData.set(boundingCoord, i);
       }
       this.#expandBoundingBox(newData);

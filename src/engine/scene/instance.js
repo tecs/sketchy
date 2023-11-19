@@ -14,7 +14,7 @@ export default class Instance {
   model;
 
   /** @type {mat4} */
-  trs;
+  globalTrs;
 
   /** @type {Instance | null} */
   parent;
@@ -27,7 +27,7 @@ export default class Instance {
    */
   constructor(model, trs, parent, id) {
     this.model = model;
-    this.trs = new Float32Array(trs);
+    this.globalTrs = new Float32Array(trs);
     this.parent = parent;
 
     id ??= ++Instance.#lastId;

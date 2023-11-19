@@ -106,7 +106,7 @@ export default (engine) => {
 
       ctx.bindBuffer(ctx.ARRAY_BUFFER, scene.hoveredInstance.model.buffer.vertex);
 
-      const model_trs = mat4.clone(scene.hoveredInstance.trs);
+      const model_trs = mat4.clone(scene.hoveredInstance.globalTrs);
       const mvp = mat4.clone(camera.mvp);
       mat4.multiply(mvp, mvp, model_trs);
 

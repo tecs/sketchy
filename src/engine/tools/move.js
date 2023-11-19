@@ -23,7 +23,7 @@ export default (engine) => {
       vec3.copy(origin, scene.hoveredGlobal);
       
       instance = selectedInstance.id.int ? selectedInstance : hoveredInstance;
-      mat4.copy(trs, instance.trs);
+      mat4.copy(trs, instance.globalTrs);
     },
     update() {
       if (!instance.id.int) return;
@@ -33,7 +33,7 @@ export default (engine) => {
 
       const translate = mat4.create();
       mat4.fromTranslation(translate, delta);
-      mat4.multiply(instance.trs, translate, trs);
+      mat4.multiply(instance.globalTrs, translate, trs);
 
       engine.emit('scenechange');
     },
@@ -45,7 +45,7 @@ export default (engine) => {
     abort() {
       if (engine.tools.selected.type === 'orbit' || !instance.id.int) return;
 
-      mat4.copy(instance.trs, trs);
+      mat4.copy(instance.globalTrs, trs);
       instance = scene.rootInstance;
       engine.emit('scenechange');
     },

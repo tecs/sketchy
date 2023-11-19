@@ -175,7 +175,7 @@ export default (engine) => {
       for (const instance of scene.instancesByModel.get(model) ?? []) {
         const isInShadow = !instance.belongsTo(scene.currentInstance) ? 1 : 0;
 
-        const model_trs = mat4.clone(instance.trs);
+        const model_trs = mat4.clone(instance.globalTrs);
         const mvp = mat4.clone(camera.mvp);
         mat4.multiply(mvp, mvp, model_trs);
         ctx.uniformMatrix4fv(program.uLoc.u_mvp, false, mvp);

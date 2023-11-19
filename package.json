@@ -4,7 +4,6 @@
   "description": "",
   "main": "",
   "scripts": {
-    "build": "tsc",
     "dev": "concurrently --kill-others 'tsc -w' 'http-server . -c-1 -s'",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
