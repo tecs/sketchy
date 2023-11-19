@@ -30,7 +30,7 @@ export default class Model {
   name;
 
   /** @type {Instance[]} */
-  #children = [];
+  instances = [];
 
   /** @type {ModelBuffers} */
   buffer;
@@ -158,7 +158,7 @@ export default class Model {
     this.data.boundingBoxVertex.set([Infinity, Infinity, Infinity]);
     this.data.boundingBoxVertex.set([-Infinity, -Infinity, -Infinity], 18);
 
-    for (const instance of this.#children) {
+    for (const instance of this.instances) {
       const newData = new Float32Array(instance.model.data.boundingBoxVertex);
       for (let i = 0; i < newData.length; i += 3) {
         const boundingCoord = newData.slice(i, i + 3);
@@ -243,7 +243,7 @@ export default class Model {
    * @param {Instance} instance 
    */
   adopt(instance) {
-    this.#children.push(instance);
+     this.instances.push(instance);
     this.#findBoundingBox();
   }
 
@@ -251,6 +251,6 @@ export default class Model {
    * @returns {Model[]}
    */
   getAllModels() {
-    return this.#children.flatMap(({ model }) => model.getAllModels()).concat(this);
+    return this.instances.flatMap(({ model }) => model.getAllModels()).concat(this);
   }
 }

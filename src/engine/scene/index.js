@@ -8,12 +8,10 @@ import Instance from './instance.js';
  * @property {Instance} currentInstance
  * @property {Instance} selectedInstance
  * @property {Instance} hoveredInstance
+ * @property {Model[]} models
  * @property {vec3} axisNormal
  * @property {vec3} hovered
  * @property {vec3} hoveredGlobal
- * @property {Model[]} models
- * @property {Map<Model, Instance[]>} instancesByModel
- * @property {Map<number, Instance>} instanceById
  * @property {(model: Model, trs: Readonly<mat4>) => Instance} instanceModel
  * @property {(id: number) => void} setSelectedInstance
  * @property {(id: number) => void} setCurrentInstance
@@ -38,6 +36,8 @@ export default (engine) => {
   const rootModel = new Model('', {}, engine);
   const rootInstance = new Instance(rootModel, mat4.create(), null, 0);
 
+  const instanceById = new Map([[0, rootInstance]]);
+
   /** @type {Scene} */
   const scene = {
     rootModel,
@@ -45,12 +45,10 @@ export default (engine) => {
     currentInstance: rootInstance,
     selectedInstance: rootInstance,
     hoveredInstance: rootInstance,
+    models: [rootModel],
     axisNormal: vec3.fromValues(0, 1, 0),
     hovered: vec3.create(),
     hoveredGlobal: vec3.create(),
-    models: [rootModel],
-    instancesByModel: new Map([[rootModel, [rootInstance]]]),
-    instanceById: new Map([[0, rootInstance]]),
     instanceModel(model, trs) {
       if (model.getAllModels().includes(this.currentInstance.model)) {
         alert('Cannot add model to itself');
@@ -59,21 +57,17 @@ export default (engine) => {
 
       const instance = new Instance(model, trs, this.currentInstance);
       this.currentInstance.model.adopt(instance);
-
-      const modelInstances = this.instancesByModel.get(model);
-      if (modelInstances) modelInstances.push(instance);
-      else {
+      if (!this.models.includes(model)) {
         this.models.push(model);
-        this.instancesByModel.set(model, [instance]);
       }
-      this.instanceById.set(instance.id.int, instance);
+      instanceById.set(instance.id.int, instance);
 
       engine.emit('scenechange');
 
       return instance;
     },
     setSelectedInstance(id) {
-      const newInstance = this.instanceById.get(id);
+      const newInstance = instanceById.get(id);
       if (newInstance && newInstance !== this.selectedInstance) {
         const previous = this.selectedInstance;
         this.selectedInstance = newInstance;
@@ -81,7 +75,7 @@ export default (engine) => {
       }
     },
     setCurrentInstance(id) {
-      const newInstance = this.instanceById.get(id);
+      const newInstance = instanceById.get(id);
       if (newInstance && newInstance !== this.currentInstance) {
         const previous = this.currentInstance;
         this.currentInstance = newInstance;
@@ -92,7 +86,7 @@ export default (engine) => {
       const id = uuuuToInt(id4u);
       if (id === this.hoveredInstance.id.int) return;
 
-      this.hoveredInstance = this.instanceById.get(id) ?? rootInstance;
+      this.hoveredInstance = instanceById.get(id) ?? rootInstance;
       
       if (!id) {
         this.hovered[0] = 0;

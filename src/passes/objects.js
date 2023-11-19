@@ -172,7 +172,7 @@ export default (engine) => {
         ctx.vertexAttribPointer(program.aLoc.a_color, 3, ctx.UNSIGNED_BYTE, true, 0, 0);
       }
 
-      for (const instance of scene.instancesByModel.get(model) ?? []) {
+      for (const instance of model.instances) {
         const isInShadow = !instance.belongsTo(scene.currentInstance) ? 1 : 0;
 
         const model_trs = mat4.clone(instance.globalTrs);
