@@ -31,13 +31,7 @@ export default class Camera {
   translation;
 
   /** @type {mat4} */
-  inverseTranslation;
-
-  /** @type {mat4} */
   rotation;
-
-  /** @type {mat4} */
-  inverseRotation;
 
   /** @type {mat4} */
   projection;
@@ -76,9 +70,7 @@ export default class Camera {
     const startingPointMat = mat4.fromTranslation(mat4.create(), this.#startingPointVec);
 
     this.translation = mat4.clone(startingPointMat);
-    this.inverseTranslation = mat4.invert(mat4.create(), startingPointMat);
     this.rotation = mat4.create();
-    this.inverseRotation = mat4.create();
     this.projection = mat4.create();
     this.normalProjection = mat4.create();
     this.world = mat4.create();
@@ -148,7 +140,6 @@ export default class Camera {
     mat4.translate(transform, transform, toEye);
 
     mat4.multiply(this.rotation, transform, this.rotation);
-    mat4.invert(this.inverseRotation, this.rotation);
 
     this.recalculateMVP();
   }
@@ -177,7 +168,6 @@ export default class Camera {
     vec3.rotateY(diff, diff, zero, -this.yaw);
 
     mat4.translate(this.translation, this.translation, diff);
-    mat4.invert(this.inverseTranslation, this.translation);
 
     this.recalculateMVP();
   }
@@ -210,7 +200,6 @@ export default class Camera {
     vec3.rotateY(origin, origin, zero, -this.yaw);
 
     mat4.translate(this.translation, this.translation, origin);
-    mat4.invert(this.inverseTranslation, this.translation);
 
     this.recalculateMVP();
   }
