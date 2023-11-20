@@ -1,10 +1,10 @@
-import makeCamera from './camera.js';
-import makeScene from './scene/index.js';
-import makeRenderer from './renderer.js';
-import makeDriver from './driver.js';
-import makeInput from './input.js';
-import makeState from './state.js';
-import makeTools from './tools/index.js';
+import Driver from './driver.js';
+import State from './state.js';
+import Input from './input.js';
+import Camera from './camera.js';
+import Renderer from './renderer.js';
+import Scene from './scene/index.js';
+import Tools from './tools/index.js';
 
 import Events from './events.js';
 
@@ -17,25 +17,25 @@ export default class Engine extends Events {
   /** @type {Readonly<GLMatrix>} */
   math = glMatrix;
 
-  /** @type {Readonly<import('./driver.js').Driver>} */
+  /** @type {Readonly<Driver>} */
   driver;
 
-  /** @type {Readonly<import('./state.js').State>} */
-
+  /** @type {Readonly<State>} */
   state;
-  /** @type {Readonly<import('./input.js').InputState>} */
+
+  /** @type {Readonly<Input>} */
   input;
 
-  /** @type {Readonly<import('./camera.js').Camera>} */
+  /** @type {Readonly<Camera>} */
   camera;
 
-  /** @type {Readonly<import('./renderer.js').Renderer>} */
+  /** @type {Readonly<Renderer>} */
   renderer;
 
-  /** @type {Readonly<import('./scene').Scene>} */
+  /** @type {Readonly<Scene>} */
   scene;
 
-  /** @type {Readonly<import('./tools').Tools>} */
+  /** @type {Readonly<Tools>} */
   tools;
 
   /**
@@ -44,13 +44,13 @@ export default class Engine extends Events {
   constructor(canvas) {
     super();
 
-    this.driver = makeDriver(canvas);
-    this.state = makeState(this);
-    this.input = makeInput(this);
-    this.camera = makeCamera(this);
-    this.renderer = makeRenderer(this);
-    this.scene = makeScene(this);
-    this.tools = makeTools(this);
+    this.driver = new Driver(canvas);
+    this.state = new State(this);
+    this.input = new Input(this);
+    this.camera = new Camera(this);
+    this.renderer = new Renderer(this);
+    this.scene = new Scene(this);
+    this.tools = new Tools(this);
 
     this.renderer.addToPipeline(renderSkybox);
     this.renderer.addToPipeline(renderObjects);

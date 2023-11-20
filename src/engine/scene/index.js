@@ -1,141 +1,182 @@
 import Model from './model.js';
 
 /**
- * @typedef Scene
- * @property {Model} rootModel
- * @property {Instance} rootInstance
- * @property {Instance} currentInstance
- * @property {Instance} selectedInstance
- * @property {Instance} hoveredInstance
- * @property {Model[]} models
- * @property {vec3} axisNormal
- * @property {vec3} hovered
- * @property {vec3} hoveredGlobal
- * @property {(model: Model, trs: Readonly<mat4>) => Instance} instanceModel
- * @property {(id: number) => void} setSelectedInstance
- * @property {(id: number) => void} setCurrentInstance
- * @property {(id: Readonly<Uint8Array>) => void} hoverOver
- * @property {(position: Readonly<vec4>) => void} hover
- * @property {(position: Readonly<vec4>) => void} hoverGlobal
- * @property {(normal: Readonly<vec3>) => void} setAxis
- */
-
-/**
  * @param {Uint8Array} uuuu
  * @returns {number}
  */
 const uuuuToInt = (uuuu) => uuuu[0] + (uuuu[1] << 8) + (uuuu[2] << 16) + (uuuu[3] << 24);
 
-/**
- * @type {(engine: Engine) => Scene}
- */
-export default (engine) => {
-  const { math: { mat4, vec3, vec4 }, camera } = engine;
+export default class Scene {
+  /** @type {Engine} */
+  #engine;
 
-  const rootModel = new Model('', {}, engine);
-  const [rootInstance] = rootModel.instantiate({ model: rootModel, trs: mat4.create(), children: [] }, null, 0);
+  /** @type {Map<number, Instance>} */
+  #instanceById;
 
-  const instanceById = new Map([[0, rootInstance]]);
+  /** @type {Model[]} */
+  models = [];
 
-  /** @type {Scene} */
-  const scene = {
-    rootModel,
-    rootInstance,
-    currentInstance: rootInstance,
-    selectedInstance: rootInstance,
-    hoveredInstance: rootInstance,
-    models: [rootModel],
-    axisNormal: vec3.fromValues(0, 1, 0),
-    hovered: vec3.create(),
-    hoveredGlobal: vec3.create(),
-    instanceModel(model, trs) {
-      if (model.getAllModels().includes(this.currentInstance.model)) {
-        alert('Cannot add model to itself');
-        throw new Error('Cannot add model to itself');
-      }
+  /** @type {Model} */
+  rootModel;
 
-      if (!this.models.includes(model)) {
-        this.models.push(model);
-      }
+  /** @type {Instance} */
+  rootInstance;
 
-      const instances = this.currentInstance.model.adopt(model, trs);
+  /** @type {Instance} */
+  currentInstance;
 
-      let instance = this.currentInstance;
-      for (const newInstance of instances) {
-        instanceById.set(newInstance.id.int, newInstance);
-        if (newInstance.parent === this.currentInstance) instance = newInstance;
-      }
+  /** @type {Instance} */
+  selectedInstance;
 
-      engine.emit('scenechange');
+  /** @type {Instance} */
+  hoveredInstance;
 
-      return instance;
-    },
-    setSelectedInstance(id) {
-      const newInstance = instanceById.get(id);
-      if (newInstance && newInstance !== this.selectedInstance) {
-        const previous = this.selectedInstance;
-        this.selectedInstance = newInstance;
-        engine.emit('selectionchange', this.selectedInstance, previous);
-      }
-    },
-    setCurrentInstance(id) {
-      const newInstance = instanceById.get(id);
-      if (newInstance && newInstance !== this.currentInstance) {
-        const previous = this.currentInstance;
-        this.currentInstance = newInstance;
-        engine.emit('currentchange', this.selectedInstance, previous);
-      }
-    },
-    hoverOver(id4u) {
-      const id = uuuuToInt(id4u);
-      if (id === this.hoveredInstance.id.int) return;
+  /** @type {vec3} */
+  axisNormal;
 
-      this.hoveredInstance = instanceById.get(id) ?? rootInstance;
+  /** @type {vec3} */
+  hovered;
 
-      if (!id) {
-        this.hovered[0] = 0;
-        this.hovered[1] = 0;
-        this.hovered[2] = 0;
-      }
-    },
-    hover(position) {
-      vec4.transformMat4(this.hoveredGlobal, position, camera.inverseMvp);
+  /** @type {vec3} */
+  hoveredGlobal;
 
-      this.hovered[0] = position[0];
-      this.hovered[1] = position[1];
-      this.hovered[2] = position[3];
-    },
-    hoverGlobal(position) {
-      this.hoveredGlobal[0] = position[0];
-      this.hoveredGlobal[1] = position[1];
-      this.hoveredGlobal[2] = position[2];
+  /**
+   * @param {Engine} engine
+   */
+  constructor(engine) {
+    this.#engine = engine;
 
-      vec4.transformMat4(this.hovered, position, camera.mvp);
-      this.hovered[2] += camera.nearPlane * 2;
-    },
-    setAxis(normal) {
-      this.axisNormal[0] = Math.abs(normal[0]);
-      this.axisNormal[1] = Math.abs(normal[1]);
-      this.axisNormal[2] = Math.abs(normal[2]);
-    },
-  };
+    this.rootModel = new Model('', {}, engine);
+    const subModel = { model: this.rootModel, trs: engine.math.mat4.create(), children: [] };
+    this.models.push(this.rootModel);
 
-  engine.on('mousedown', (button) => {
-    if (button === 'left') engine.tools.selected.start();
-  });
+    this.rootInstance = this.rootModel.instantiate(subModel, null, 0)[0];
+    this.currentInstance = this.rootInstance;
+    this.selectedInstance = this.rootInstance;
+    this.hoveredInstance = this.rootInstance;
 
-  engine.on('mouseup', (button) => {
-    if (button === 'left') engine.tools.selected.end();
-  });
+    this.axisNormal = engine.math.vec3.fromValues(0, 1, 0);
+    this.hovered = engine.math.vec3.create();
+    this.hoveredGlobal = engine.math.vec3.create();
 
-  engine.on('mousemove', (_, delta) => {
-    engine.tools.selected.update(delta);
-  });
+    this.#instanceById = new Map([[0, this.rootInstance]]);
 
-  engine.on('toolchange', (_, tool) => tool.abort());
-  engine.on('keyup', (key) => {
-    if (key === 'Escape') engine.tools.selected.abort();
-  });
+    engine.on('mousedown', (button) => {
+      if (button === 'left') engine.tools.selected.start();
+    });
 
-  return scene;
-};
+    engine.on('mouseup', (button) => {
+      if (button === 'left') engine.tools.selected.end();
+    });
+
+    engine.on('mousemove', (_, delta) => {
+      engine.tools.selected.update(delta);
+    });
+
+    engine.on('toolchange', (_, tool) => tool.abort());
+    engine.on('keyup', (key) => {
+      if (key === 'Escape') engine.tools.selected.abort();
+    });
+  }
+
+  /**
+   *
+   * @param {Model} model
+   * @param {Readonly<mat4>} trs
+   * @returns
+   */
+  instanceModel(model, trs) {
+    if (model.getAllModels().includes(this.currentInstance.model)) {
+      alert('Cannot add model to itself');
+      throw new Error('Cannot add model to itself');
+    }
+
+    if (!this.models.includes(model)) {
+      this.models.push(model);
+    }
+
+    const instances = this.currentInstance.model.adopt(model, trs);
+
+    let instance = this.currentInstance;
+    for (const newInstance of instances) {
+      this.#instanceById.set(newInstance.id.int, newInstance);
+      if (newInstance.parent === this.currentInstance) instance = newInstance;
+    }
+
+    this.#engine.emit('scenechange');
+
+    return instance;
+  }
+
+  /**
+   * @param {number} id
+   */
+  setSelectedInstance(id) {
+    const newInstance = this.#instanceById.get(id);
+    if (newInstance && newInstance !== this.selectedInstance) {
+      const previous = this.selectedInstance;
+      this.selectedInstance = newInstance;
+      this.#engine.emit('selectionchange', this.selectedInstance, previous);
+    }
+  }
+
+  /**
+   * @param {number} id
+   */
+  setCurrentInstance(id) {
+    const newInstance = this.#instanceById.get(id);
+    if (newInstance && newInstance !== this.currentInstance) {
+      const previous = this.currentInstance;
+      this.currentInstance = newInstance;
+      this.#engine.emit('currentchange', this.selectedInstance, previous);
+    }
+  }
+
+  /**
+   * @param {Readonly<Uint8Array>} id4u
+   */
+  hoverOver(id4u) {
+    const id = uuuuToInt(id4u);
+    if (id === this.hoveredInstance.id.int) return;
+
+    this.hoveredInstance = this.#instanceById.get(id) ?? this.rootInstance;
+
+    if (!id) {
+      this.hovered[0] = 0;
+      this.hovered[1] = 0;
+      this.hovered[2] = 0;
+    }
+  }
+
+  /**
+   * @param {Readonly<vec4>} position
+   */
+  hover(position) {
+    this.#engine.math.vec4.transformMat4(this.hoveredGlobal, position, this.#engine.camera.inverseMvp);
+
+    this.hovered[0] = position[0];
+    this.hovered[1] = position[1];
+    this.hovered[2] = position[3];
+  }
+
+  /**
+   * @param {Readonly<vec4>} position
+   */
+  hoverGlobal(position) {
+    this.hoveredGlobal[0] = position[0];
+    this.hoveredGlobal[1] = position[1];
+    this.hoveredGlobal[2] = position[2];
+
+    this.#engine.math.vec4.transformMat4(this.hovered, position, this.#engine.camera.mvp);
+    this.hovered[2] += this.#engine.camera.nearPlane * 2;
+  }
+
+  /**
+   * @param {Readonly<vec3>} normal
+   */
+  setAxis(normal) {
+    this.axisNormal[0] = Math.abs(normal[0]);
+    this.axisNormal[1] = Math.abs(normal[1]);
+    this.axisNormal[2] = Math.abs(normal[2]);
+  }
+}

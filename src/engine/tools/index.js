@@ -17,46 +17,48 @@ import OrbitTool from './orbit.js';
  * @property {(delta: Readonly<vec3>) => void} update
  * @property {() => void} end
  * @property {() => void} abort
- *
- * @typedef Tools
- * @property {Tool} selected
- * @property {Tool[]} tools
- * @property {(tool: Readonly<Tool>) => void} setTool
  */
 
-/** @type {(engine: Engine) => Tools} */
-export default (engine) => {
-  const defaultTool = SelectTool(engine);
+export default class Tools {
+  /** @type {Engine} */
+  #engine;
 
-  /** @type {Tools} */
-  const tools = {
-    selected: defaultTool,
-    tools: [
-      defaultTool,
-      LineTool(engine),
-      RectangleTool(engine),
-      MoveTool(engine),
-      OrbitTool(engine),
-    ],
-    setTool(tool) {
-      const previous = this.selected;
-      if (previous === tool) return;
+  /** @type {Tool} */
+  selected;
 
-      tools.selected = tool;
-      engine.driver.canvas.style.cursor = tool.cursor ?? 'default';
+  /** @type {Tool[]} */
+  tools = [];
 
-      engine.emit('toolchange', tool, previous);
-    },
-  };
+  /**
+   * @param {Engine} engine
+   */
+  constructor(engine) {
+    this.#engine = engine;
 
-  engine.on('keyup', () => {
-    for (const tool of tools.tools) {
-      if (tool.shortcut === engine.input.key) {
-        tools.setTool(tool);
-        break;
-      }
-    }
-  });
+    this.tools.push(SelectTool(engine));
+    this.tools.push(LineTool(engine));
+    this.tools.push(RectangleTool(engine));
+    this.tools.push(MoveTool(engine));
+    this.tools.push(OrbitTool(engine));
 
-  return tools;
-};
+    this.selected = this.tools[0];
+
+    engine.on('keyup', (key) => {
+      const tool = this.tools.find(({ shortcut }) => shortcut === key);
+      if (tool) this.setTool(tool);
+    });
+  }
+
+  /**
+   * @param {Tool} tool
+   */
+  setTool(tool) {
+    const previous = this.selected;
+    if (previous === tool) return;
+
+    this.selected = tool;
+    this.#engine.driver.canvas.style.cursor = tool.cursor ?? 'default';
+
+    this.#engine.emit('toolchange', tool, previous);
+  }
+}

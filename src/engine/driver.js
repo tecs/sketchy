@@ -1,3 +1,5 @@
+import Destructurable from './destructurable.js';
+
 /**
  * @typedef {[TemplateStringsArray, any[]?]} TaggedTemplateParams
  *
@@ -15,39 +17,53 @@
  * @property {AttributeLocationMap} aLoc
  * @property {UniformLocationMap} uLoc
  * @property {() => void} use
- *
- * @typedef Driver
- * @property {WebGLRenderingContext} ctx
- * @property {HTMLCanvasElement} canvas
- * @property {boolean} supportsUIntIndexes
- * @property {Uint16ArrayConstructor|Uint32ArrayConstructor} UintIndexArray
- * @property {5125 | 5123} UNSIGNED_INDEX_TYPE
- * @property {() => vec3} getCanvasSize
- * @property {(...shaders: Shader[]) => Program} makeProgram
- * @property {(...args: TaggedTemplateParams) => Shader} vert
- * @property {(...args: TaggedTemplateParams) => Shader} frag
  */
 
-/** @type {(canvas: HTMLCanvasElement) => Driver} */
-export default (canvas) => {
-  const ctx = canvas.getContext('webgl');
-  if (!ctx) {
-    throw new Error('WebGL not supported');
-  }
+export default class Driver extends Destructurable {
+  /** @type {WebGLRenderingContext} */
+  ctx;
 
-  if (!ctx.getExtension('OES_texture_float')) {
-    throw new Error('Floating point extension "OES_texture_float" is not supported');
-  }
+  /** @type {HTMLCanvasElement} */
+  canvas;
 
-  const supportsUIntIndexes = !!ctx.getExtension('OES_element_index_uint');
+  /** @type {boolean} */
+  supportsUIntIndexes;
+
+  /** @type {Uint16ArrayConstructor|Uint32ArrayConstructor} */
+  UintIndexArray;
+
+  /** @type {5125 | 5123} */
+  UNSIGNED_INDEX_TYPE;
+
+  /**
+   * @param {HTMLCanvasElement} canvas
+   */
+  constructor(canvas) {
+    super();
+
+    this.canvas = canvas;
+
+    const ctx = canvas.getContext('webgl');
+    if (!ctx) {
+      throw new Error('WebGL not supported');
+    }
+    this.ctx = ctx;
+
+    if (!ctx.getExtension('OES_texture_float')) {
+      throw new Error('Floating point extension "OES_texture_float" is not supported');
+    }
+    this.supportsUIntIndexes = !!ctx.getExtension('OES_element_index_uint');
+    this.UintIndexArray = this.supportsUIntIndexes ? Uint32Array : Uint16Array;
+    this.UNSIGNED_INDEX_TYPE = this.supportsUIntIndexes ? ctx.UNSIGNED_INT : ctx.UNSIGNED_SHORT;
+  }
 
   /**
    * @param {string} source
    * @param {number} type
    * @returns {Shader}
    */
-  const compileShader = (source, type) => {
-    const shader = ctx.createShader(type);
+  #compileShader(source, type) {
+    const shader = this.ctx.createShader(type);
     if (!shader) {
       throw new Error('Cannot create a new shader.');
     }
@@ -81,33 +97,33 @@ export default (canvas) => {
       .map(row => row.split(' '))
       .filter(row => row.length === 3 && ['attribute', 'uniform'].includes(row[0]));
 
-    ctx.shaderSource(shader, source.trim());
-    ctx.compileShader(shader);
-    if (ctx.getShaderParameter(shader, ctx.COMPILE_STATUS)) {
+    this.ctx.shaderSource(shader, source.trim());
+    this.ctx.compileShader(shader);
+    if (this.ctx.getShaderParameter(shader, this.ctx.COMPILE_STATUS)) {
       return { shader, vars };
     }
 
-    const error = `Cannot compile shader - ${ctx.getShaderInfoLog(shader)}`;
-    ctx.deleteShader(shader);
+    const error = `Cannot compile shader - ${this.ctx.getShaderInfoLog(shader)}`;
+    this.ctx.deleteShader(shader);
     throw new Error(error);
-  };
+  }
 
   /**
    * @param  {...Shader} shaders
    * @returns {Program}
    */
-  const makeProgram = (...shaders) => {
-    const program = ctx.createProgram();
+  makeProgram(...shaders) {
+    const program = this.ctx.createProgram();
     if (!program) {
       throw new Error('Cannot create a new program');
     }
     /** @type {string[][]} */
     const locs = [];
     for (const { shader, vars } of shaders) {
-      ctx.attachShader(program, shader);
+      this.ctx.attachShader(program, shader);
       vars.filter(v => !locs.find(l => l[2] === v[2])).forEach(v => locs.push(v));
     }
-    ctx.linkProgram(program);
+    this.ctx.linkProgram(program);
 
     const aLoc = /** @type {AttributeLocationMap} */ ({});
     const uLoc = /** @type {UniformLocationMap} */ ({});
@@ -115,32 +131,43 @@ export default (canvas) => {
     for (const [type,, name] of locs) {
       switch (type) {
         case 'attribute':
-          aLoc[name] = ctx.getAttribLocation(program, name);
+          aLoc[name] = this.ctx.getAttribLocation(program, name);
           break;
         case 'uniform':
-          uLoc[name] = ctx.getUniformLocation(program, name);
+          uLoc[name] = this.ctx.getUniformLocation(program, name);
           break;
       }
     }
 
-    if (ctx.getProgramParameter(program, ctx.LINK_STATUS)) {
-      return { program, use: () => ctx.useProgram(program), aLoc, uLoc };
+    if (this.ctx.getProgramParameter(program, this.ctx.LINK_STATUS)) {
+      return { program, use: () => this.ctx.useProgram(program), aLoc, uLoc };
     }
 
-    const error = `Cannot initialize shader program - ${ctx.getProgramInfoLog(program)}`;
-    ctx.deleteProgram(program);
+    const error = `Cannot initialize shader program - ${this.ctx.getProgramInfoLog(program)}`;
+    this.ctx.deleteProgram(program);
     throw error;
-  };
+  }
 
-  return {
-    ctx,
-    canvas,
-    supportsUIntIndexes,
-    UintIndexArray: supportsUIntIndexes ? Uint32Array : Uint16Array,
-    UNSIGNED_INDEX_TYPE: supportsUIntIndexes ? ctx.UNSIGNED_INT : ctx.UNSIGNED_SHORT,
-    getCanvasSize: () => new Float32Array([canvas.clientWidth, canvas.clientHeight, 0]),
-    makeProgram,
-    vert: (...args) => compileShader(String.raw(...args), ctx.VERTEX_SHADER),
-    frag: (...args) => compileShader(String.raw(...args), ctx.FRAGMENT_SHADER),
-  };
-};
+  /**
+   * @returns {vec3}
+   */
+  getCanvasSize() {
+    return new Float32Array([this.canvas.clientWidth, this.canvas.clientHeight, 0]);
+  }
+
+  /**
+   * @param  {TaggedTemplateParams} args
+   * @returns {Shader}
+   */
+  vert(...args) {
+    return this.#compileShader(String.raw(...args), this.ctx.VERTEX_SHADER);
+  }
+
+  /**
+   * @param  {TaggedTemplateParams} args
+   * @returns {Shader}
+   */
+  frag(...args) {
+    return this.#compileShader(String.raw(...args), this.ctx.FRAGMENT_SHADER);
+  }
+}

@@ -4,61 +4,63 @@
  * @typedef RenderingPassRenderer
  * @property {Readonly<Program>} program
  * @property {() => void} render
- *
- * @typedef Renderer
- * @property {RenderingPassRenderer[]} pipeline
- * @property {(makePass: RenderingPass) => void} addToPipeline
- * @property {() => void} render
  */
 
-/**
- * @param {Engine} engine
- * @returns {Renderer}
- */
-export default (engine) => {
-  const { ctx } = engine.driver;
+export default class Renderer {
+  /** @type {Engine} */
+  #engine;
 
-  let pendingRenders = 0;
+  /** @type {RenderingPassRenderer[]} */
+  pipeline = [];
 
-  /** @type {Renderer} */
-  const renderer = {
-    pipeline: [],
-    addToPipeline(makePass) {
-      this.pipeline.push(makePass(engine));
-    },
-    render() {
-      if (pendingRenders++) return;
+  #pendingRenders = 0;
 
-      requestAnimationFrame(() => {
-        ctx.clearColor(0, 0, 0, 0);
-        ctx.clearDepth(1);
-        ctx.enable(ctx.DEPTH_TEST);
-        ctx.depthFunc(ctx.LEQUAL);
-        ctx.blendFunc(ctx.SRC_ALPHA, ctx.ONE_MINUS_SRC_ALPHA);
-        ctx.clear(ctx.COLOR_BUFFER_BIT | ctx.DEPTH_BUFFER_BIT);
-        for (const renderingPass of this.pipeline) {
-          renderingPass.program.use();
-          ctx.bindFramebuffer(ctx.FRAMEBUFFER, null);
-          try {
-            renderingPass.render();
-          } catch (e) {
-            console.error('Caught during render pass:', e);
-          }
+  /**
+   * @param {Engine} engine
+   */
+  constructor(engine) {
+    this.#engine = engine;
+
+    engine.on('mousemove', () => this.render());
+    engine.on('camerachange', () => this.render());
+    engine.on('selectionchange', () => this.render());
+    engine.on('currentchange', () => this.render());
+    engine.on('scenechange', () => this.render());
+  }
+
+  /**
+   * @param {RenderingPass} makePass
+   */
+  addToPipeline(makePass) {
+    this.pipeline.push(makePass(this.#engine));
+  }
+
+  render() {
+    if (this.#pendingRenders++) return;
+
+    requestAnimationFrame(() => {
+      const { ctx } = this.#engine.driver;
+
+      ctx.clearColor(0, 0, 0, 0);
+      ctx.clearDepth(1);
+      ctx.enable(ctx.DEPTH_TEST);
+      ctx.depthFunc(ctx.LEQUAL);
+      ctx.blendFunc(ctx.SRC_ALPHA, ctx.ONE_MINUS_SRC_ALPHA);
+      ctx.clear(ctx.COLOR_BUFFER_BIT | ctx.DEPTH_BUFFER_BIT);
+      for (const renderingPass of this.pipeline) {
+        renderingPass.program.use();
+        ctx.bindFramebuffer(ctx.FRAMEBUFFER, null);
+        try {
+          renderingPass.render();
+        } catch (e) {
+          console.error('Caught during render pass:', e);
         }
+      }
 
-        if (--pendingRenders) {
-          pendingRenders = 0;
-          renderer.render();
-        }
-      });
-    },
-  };
-
-  engine.on('mousemove', () => renderer.render());
-  engine.on('camerachange', () => renderer.render());
-  engine.on('selectionchange', () => renderer.render());
-  engine.on('currentchange', () => renderer.render());
-  engine.on('scenechange', () => renderer.render());
-
-  return renderer;
-};
+      if (--this.#pendingRenders) {
+        this.#pendingRenders = 0;
+        this.render();
+      }
+    });
+  }
+}
