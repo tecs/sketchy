@@ -2,6 +2,12 @@
 export default (engine) => {
   const { driver: { UintIndexArray }, math: { vec3 }, state, scene } = engine;
 
+  // cached structures
+  const edge1 = vec3.create();
+  const edge2 = vec3.create();
+  const edge3 = vec3.create();
+  const hovered = vec3.create();
+
   /** @type {Tool} */
   const rectangle = {
     type: 'rectangle',
@@ -42,10 +48,9 @@ export default (engine) => {
 
       const { model } = scene.currentInstance ?? scene.rootInstance;
 
-      const edge1 = vec3.create();
-      const edge2 = vec3.create();
-      const edge3 = vec3.create();
-      const hovered = vec3.fromValues(1, 1, 1);
+      hovered[0] = 1;
+      hovered[1] = 1;
+      hovered[2] = 1;
 
       const vertices = model.data.lineVertex.slice(-12);
       vec3.multiply(edge1, scene.axisNormal, vertices);

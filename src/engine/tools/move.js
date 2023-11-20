@@ -4,6 +4,8 @@ export default (engine) => {
 
   /** @type {Instance | null} */
   let instance = null;
+
+  // cached structures
   const origin = vec3.create();
   const translation = vec3.create();
 

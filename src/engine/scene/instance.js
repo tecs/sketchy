@@ -4,6 +4,11 @@
  * @property {vec4} vec4
  */
 
+// cached structures
+const origin = new Float32Array(3);
+const relative = new Float32Array(3);
+const translate = new Float32Array(16);
+
 export default class Instance {
   static #lastId = 0;
 
@@ -107,7 +112,6 @@ export default class Instance {
 
     vec3.transformMat4(out, globalRelativeCoords, this.inverseGlobalTrs);
 
-    const origin = vec3.create();
     mat4.getTranslation(origin, this.inverseGlobalTrs);
     return vec3.subtract(out, out, origin);
   }
@@ -116,10 +120,10 @@ export default class Instance {
    * @param {vec3} translation
    */
   translateGlobal(translation) {
-    const { mat4, vec3 } = this.#engine.math;
+    const { mat4 } = this.#engine.math;
 
-    const relative = this.toLocalRelativeCoords(vec3.create(), translation);
-    const translate = mat4.fromTranslation(mat4.create(), relative);
+    this.toLocalRelativeCoords(relative, translation);
+    mat4.fromTranslation(translate, relative);
 
     mat4.multiply(this.subModel.trs, this.subModel.trs, translate);
     for (const sibling of this.subModel.children) sibling.recalculateGlobalTrs();

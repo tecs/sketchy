@@ -26,6 +26,11 @@
 
 import Instance from './instance.js';
 
+// cached structures
+const boundingCoord = new Float32Array(3);
+const min = new Float32Array(3);
+const max = new Float32Array(3);
+
 export default class Model {
   /** @type {Engine} */
   #engine;
@@ -167,10 +172,13 @@ export default class Model {
   #expandBoundingBox(newData) {
     const { vec3 } = this.#math;
 
-    const min = this.data.boundingBoxVertex.slice(0, 3);
-    const max = this.data.boundingBoxVertex.slice(18, 21);
+    min[0] = this.data.boundingBoxVertex[0];
+    min[1] = this.data.boundingBoxVertex[1];
+    min[2] = this.data.boundingBoxVertex[2];
+    max[0] = this.data.boundingBoxVertex[18];
+    max[1] = this.data.boundingBoxVertex[19];
+    max[2] = this.data.boundingBoxVertex[20];
 
-    const boundingCoord = vec3.create();
     for (let i = 0; i < newData.length; i += 3) {
       boundingCoord[0] = newData[i];
       boundingCoord[1] = newData[i + 1];
@@ -193,7 +201,9 @@ export default class Model {
     for (const { model, trs } of this.subModels) {
       const newData = new Float32Array(model.data.boundingBoxVertex);
       for (let i = 0; i < newData.length; i += 3) {
-        const boundingCoord = newData.slice(i, i + 3);
+        boundingCoord[0] = newData[i];
+        boundingCoord[1] = newData[i + 1];
+        boundingCoord[2] = newData[i + 2];
         vec3.transformMat4(boundingCoord, boundingCoord, trs);
         newData.set(boundingCoord, i);
       }

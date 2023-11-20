@@ -57,6 +57,7 @@ export default (engine) => {
 
   engine.on('viewportresize', setupFramebufferTexture);
 
+  // cached structures
   const coords = new Float32Array(4);
   const planes = [
     vec3.fromValues(1, 0, 0),
@@ -71,8 +72,8 @@ export default (engine) => {
   const eye = vec3.create();
   const negativeEye = vec3.create();
   const eyeNormal = vec3.create();
-
   const v3zero = vec3.create();
+  const mvp = mat4.create();
 
   return {
     program,
@@ -115,8 +116,7 @@ export default (engine) => {
 
       ctx.bindBuffer(ctx.ARRAY_BUFFER, scene.hoveredInstance.model.buffer.vertex);
 
-      const mvp = mat4.clone(camera.mvp);
-      mat4.multiply(mvp, mvp, scene.hoveredInstance.globalTrs);
+      mat4.multiply(mvp, camera.mvp, scene.hoveredInstance.globalTrs);
 
       ctx.enableVertexAttribArray(program.aLoc.a_position);
       ctx.vertexAttribPointer(program.aLoc.a_position, 3, ctx.FLOAT, false, 0, 0);

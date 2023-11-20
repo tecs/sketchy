@@ -78,6 +78,7 @@ export default ({ math: { mat4 }, driver: { ctx, makeProgram, vert, frag }, came
   ctx.bindBuffer(ctx.ARRAY_BUFFER, colorBuffer);
   ctx.bufferData(ctx.ARRAY_BUFFER, colors, ctx.STATIC_DRAW);
 
+  // cached structures
   const mvp = mat4.create();
 
   return {

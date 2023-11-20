@@ -2,6 +2,9 @@
 export default (engine) => {
   const { driver: { UintIndexArray }, math: { vec3 }, state, scene } = engine;
 
+  // cached structures
+  const coord = vec3.create();
+
   /** @type {Tool} */
   const line = {
     type: 'line',
@@ -28,11 +31,10 @@ export default (engine) => {
 
       const { model } = scene.currentInstance ?? scene.rootInstance;
 
-      const temp = vec3.create();
-      vec3.multiply(temp, scene.axisNormal, model.data.lineVertex);
-      vec3.add(temp, temp, scene.hoveredGlobal);
+      vec3.multiply(coord, scene.axisNormal, model.data.lineVertex);
+      vec3.add(coord, coord, scene.hoveredGlobal);
 
-      model.updateBufferEnd(temp, 'lineVertex');
+      model.updateBufferEnd(coord, 'lineVertex');
     },
     end() {
       if (!state.drawing || vec3.distance(state.hoveredGlobal, scene.hoveredGlobal) < 0.1) return;

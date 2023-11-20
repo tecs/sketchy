@@ -156,6 +156,9 @@ export default (engine) => {
 
   engine.on('viewportresize', setupFramebufferTexture);
 
+  // cached structures
+  const mvp = mat4.create();
+
   /**
    * @param {"objects"|"lines"|"hover"} step
   */
@@ -191,18 +194,16 @@ export default (engine) => {
       for (const instance of model.instances) {
         const isInShadow = scene.currentInstance && !instance.belongsTo(scene.currentInstance) ? 1 : 0;
 
-        const mvp = mat4.clone(camera.mvp);
-        mat4.multiply(mvp, mvp, instance.globalTrs);
+        mat4.multiply(mvp, camera.mvp, instance.globalTrs);
         ctx.uniformMatrix4fv(program.uLoc.u_mvp, false, mvp);
 
         ctx.uniform4fv(program.uLoc.u_instanceId, instance.id.vec4);
 
         if (step === 'objects') {
-          const normalMvp = mat4.clone(camera.world);
-          mat4.multiply(normalMvp, normalMvp, instance.globalTrs);
-          mat4.transpose(normalMvp, normalMvp);
-          mat4.invert(normalMvp, normalMvp);
-          ctx.uniformMatrix4fv(program.uLoc.u_normalMvp, false, normalMvp);
+          mat4.multiply(mvp, camera.world, instance.globalTrs);
+          mat4.transpose(mvp, mvp);
+          mat4.invert(mvp, mvp);
+          ctx.uniformMatrix4fv(program.uLoc.u_normalMvp, false, mvp);
 
           ctx.uniform1f(program.uLoc.u_isInShadow, isInShadow);
         }

@@ -3,6 +3,14 @@ const twoPI = PI * 2;
 const halfPI = PI / 2;
 const threeFourthsPI = halfPI * 3;
 
+// cached structures
+const diff = new Float32Array(3);
+const origin = new Float32Array(3);
+const toEye = new Float32Array(3);
+const toPivot = new Float32Array(3);
+const zero = new Float32Array(3);
+const transform = new Float32Array(16);
+
 export default class Camera {
   /** @type {Engine} */
   #engine;
@@ -102,19 +110,21 @@ export default class Camera {
    * @param {number} dY
    */
   orbit(dX, dY) {
-    const { mat4, vec3 } = this.#engine.math;
+    const { mat4 } = this.#engine.math;
 
-    const toEye = vec3.create();
+    toEye[0] = 0;
+    toEye[1] = 0;
     toEye[2] = this.#engine.state.hovered[2];
     if (!this.#engine.state.hoveredInstance?.id.int) {
       toEye[2] = Math.abs(this.#startingPointVec[2]);
     }
 
-    const toPivot = vec3.fromValues(-toEye[0], -toEye[1], -toEye[2]);
-    const transform = mat4.create();
+    toPivot[0] = -toEye[0];
+    toPivot[1] = -toEye[1];
+    toPivot[2] = -toEye[2];
 
     // unpitch
-    mat4.translate(transform, transform, toPivot);
+    mat4.fromTranslation(transform, toPivot);
     mat4.rotateX(transform, transform, -this.pitch);
     mat4.translate(transform, transform, toEye);
 
@@ -150,9 +160,15 @@ export default class Camera {
   pan(dX, dY) {
     const { mat4, vec3 } = this.#engine.math;
 
-    const zero = vec3.create();
+    zero[0] = 0;
+    zero[1] = 0;
+    zero[2] = 0;
+
+    diff[0] = dX;
+    diff[1] = -dY;
+    diff[2] = 0;
+
     const scale = Math.abs(this.#engine.state.hovered[2]) * 2;
-    const diff = vec3.fromValues(dX, -dY, 0);
 
     vec3.multiply(diff, diff, this.inverseFovScaling);
     vec3.scale(diff, diff, scale);
@@ -172,14 +188,21 @@ export default class Camera {
   zoom(direction) {
     const { mat4, vec3 } = this.#engine.math;
 
-    const zero = vec3.create();
-    const origin = vec3.clone(this.#engine.scene.hovered);
+    vec3.copy(origin, this.#engine.scene.hovered);
 
     if (origin[2] < 0) vec3.scale(origin, origin, -1);
 
     if (direction > 0 && origin[2] < this.nearPlane * 2) return;
 
-    vec3.multiply(origin, origin, vec3.fromValues(-direction, -direction, direction));
+    zero[0] = 0;
+    zero[1] = 0;
+    zero[2] = 0;
+
+    diff[0] = -direction;
+    diff[1] = -direction;
+    diff[2] = -direction;
+
+    vec3.multiply(origin, origin, diff);
     vec3.multiply(origin, origin, this.inverseFovScaling);
     vec3.scale(origin, origin, 0.1);
 

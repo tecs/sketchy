@@ -68,14 +68,14 @@ export default (engine) => {
   ctx.bindBuffer(ctx.ARRAY_BUFFER, colorBuffer);
   ctx.bufferData(ctx.ARRAY_BUFFER, colors, ctx.STATIC_DRAW);
 
+  // cached structures
   const mvp = mat4.create();
   const origin = vec3.create();
   const vec3zero = vec3.create();
-
   const halfRes = vec3.create();
-  engine.on('viewportresize', (current) => vec3.scale(halfRes, current, 0.5));
-
   const farPlaneV3 = vec3.fromValues(camera.farPlane, camera.farPlane, camera.farPlane);
+
+  engine.on('viewportresize', (current) => vec3.scale(halfRes, current, 0.5));
 
   return {
     program,
