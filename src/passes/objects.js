@@ -29,9 +29,9 @@ export default (engine) => {
           vec3 normal = normalize(vec3(u_normalMvp * a_normal));
           float lightAngle = abs(dot(normal, vec3(0, 0, 1)));
           float lightIntensity = 0.4 + smoothstep(0.3, 0.8, lightAngle) * 0.6;
-          
+
           v_color = vec4(a_color, 1.0);
-          
+
           if (u_isInShadow == 1.0) {
             v_color.rgb = v_color.rgb * 0.2 + 0.4;
           }
@@ -59,14 +59,14 @@ export default (engine) => {
     lines: makeProgram(
       vert`
         attribute vec4 a_position;
-    
+
         uniform mat4 u_mvp;
         uniform vec4 u_instanceId;
         uniform vec4 u_selectedInstanceId;
         uniform float u_isInShadow;
 
         varying vec4 v_color;
-        
+
         void main() {
           gl_Position = u_mvp * a_position;
           v_color = vec4(0.0, 0.0, 0.0, 1.0);
@@ -86,7 +86,7 @@ export default (engine) => {
       `,
       frag`
         precision mediump float;
-        
+
         varying vec4 v_color;
 
         void main() {
@@ -100,18 +100,18 @@ export default (engine) => {
     hover: makeProgram(
       vert`
         attribute vec4 a_position;
-    
+
         uniform mat4 u_mvp;
-        
+
         void main() {
           gl_Position = u_mvp * a_position;
         }
       `,
       frag`
         precision mediump float;
-        
+
         uniform vec4 u_instanceId;
-        
+
         void main() {
           gl_FragColor = u_instanceId;
         }
@@ -170,7 +170,7 @@ export default (engine) => {
 
     for (const model of scene.models) {
       // Prevent self-picking when editing
-      if (engine.state.drawing && step === 'hover' && scene.currentInstance.model === model) continue;
+      if (engine.state.drawing && step === 'hover' && scene.currentInstance?.model === model) continue;
 
       if (step !== 'lines') {
         ctx.bindBuffer(ctx.ARRAY_BUFFER, model.buffer.vertex);
@@ -189,7 +189,7 @@ export default (engine) => {
       }
 
       for (const instance of model.instances) {
-        const isInShadow = !instance.belongsTo(scene.currentInstance) ? 1 : 0;
+        const isInShadow = scene.currentInstance && !instance.belongsTo(scene.currentInstance) ? 1 : 0;
 
         const mvp = mat4.clone(camera.mvp);
         mat4.multiply(mvp, mvp, instance.globalTrs);
@@ -207,7 +207,10 @@ export default (engine) => {
           ctx.uniform1f(program.uLoc.u_isInShadow, isInShadow);
         }
         if (step !== 'hover') {
-          ctx.uniform4fv(program.uLoc.u_selectedInstanceId, scene.selectedInstance.id.vec4);
+          ctx.uniform4fv(
+            program.uLoc.u_selectedInstanceId,
+            scene.selectedInstance?.id.vec4 ?? scene.rootInstance.id.vec4,
+          );
         }
 
         if (step !== 'lines') {

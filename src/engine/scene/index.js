@@ -22,13 +22,13 @@ export default class Scene {
   /** @type {Instance} */
   rootInstance;
 
-  /** @type {Instance} */
+  /** @type {Instance | null} */
   currentInstance;
 
-  /** @type {Instance} */
+  /** @type {Instance | null} */
   selectedInstance;
 
-  /** @type {Instance} */
+  /** @type {Instance | null} */
   hoveredInstance;
 
   /** @type {vec3} */
@@ -86,7 +86,8 @@ export default class Scene {
    * @returns
    */
   instanceModel(model, trs) {
-    if (model.getAllModels().includes(this.currentInstance.model)) {
+    const currentInstance = this.currentInstance ?? this.rootInstance;
+    if (model.getAllModels().includes(currentInstance.model)) {
       alert('Cannot add model to itself');
       throw new Error('Cannot add model to itself');
     }
@@ -95,12 +96,12 @@ export default class Scene {
       this.models.push(model);
     }
 
-    const instances = this.currentInstance.model.adopt(model, trs);
+    const instances = currentInstance.model.adopt(model, trs);
 
-    let instance = this.currentInstance;
+    let instance = currentInstance;
     for (const newInstance of instances) {
       this.#instanceById.set(newInstance.id.int, newInstance);
-      if (newInstance.parent === this.currentInstance) instance = newInstance;
+      if (newInstance.parent === currentInstance) instance = newInstance;
     }
 
     this.#engine.emit('scenechange');
@@ -109,26 +110,24 @@ export default class Scene {
   }
 
   /**
-   * @param {number} id
+   * @param {Instance | null} newInstance
    */
-  setSelectedInstance(id) {
-    const newInstance = this.#instanceById.get(id);
-    if (newInstance && newInstance !== this.selectedInstance) {
+  setSelectedInstance(newInstance) {
+    if (newInstance !== this.selectedInstance) {
       const previous = this.selectedInstance;
       this.selectedInstance = newInstance;
-      this.#engine.emit('selectionchange', this.selectedInstance, previous);
+      this.#engine.emit('selectionchange', newInstance, previous);
     }
   }
 
   /**
-   * @param {number} id
+   * @param {Instance | null} newInstance
    */
-  setCurrentInstance(id) {
-    const newInstance = this.#instanceById.get(id);
-    if (newInstance && newInstance !== this.currentInstance) {
+  setCurrentInstance(newInstance) {
+    if (newInstance !== this.currentInstance) {
       const previous = this.currentInstance;
       this.currentInstance = newInstance;
-      this.#engine.emit('currentchange', this.selectedInstance, previous);
+      this.#engine.emit('currentchange', newInstance, previous);
     }
   }
 
@@ -137,11 +136,11 @@ export default class Scene {
    */
   hoverOver(id4u) {
     const id = uuuuToInt(id4u);
-    if (id === this.hoveredInstance.id.int) return;
+    if ((!id && !this.hoveredInstance) || id === this.hoveredInstance?.id.int) return;
 
-    this.hoveredInstance = this.#instanceById.get(id) ?? this.rootInstance;
+    this.hoveredInstance = id ? this.#instanceById.get(id) ?? null : null;
 
-    if (!id) {
+    if (!this.hoveredInstance) {
       this.hovered[0] = 0;
       this.hovered[1] = 0;
       this.hovered[2] = 0;

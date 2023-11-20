@@ -23,7 +23,7 @@
  *
  * @typedef {(event: ViewportResizeEvent, current: Readonly<vec3>, previous: Readonly<vec3>) => void} ViewportResizeEventEmitter
  * @typedef {(event: ToolChangeEvent, current: Readonly<Tool>, previous: Readonly<Tool>) => void} ToolChangeEventEmitter
- * @typedef {(event: InstanceChangeEvent, current: Readonly<Instance>, previous: Readonly<Instance>) => void} InstanceChangeEventEmitter
+ * @typedef {(event: InstanceChangeEvent, current: Readonly<Instance> | null, previous: Readonly<Instance> | null) => void} InstanceChangeEventEmitter
  * @typedef {(event: KeyEvent, key: string) => void} KeyEventEmitter
  * @typedef {(event: MouseButtonEvent, button: MouseButton) => void} MouseButtonEventEmitter
  * @typedef {(event: MouseMoveEvent, current: Readonly<vec3>, delta: Readonly<vec3>, previous: Readonly<vec3>) => void} MouseMoveEventEmitter
@@ -33,7 +33,7 @@
  *
  * @typedef {(event: ViewportResizeEvent, handler: (current: Readonly<vec3>, previous: Readonly<vec3>) => void, once?: boolean) => void} ViewportResizeEventHandler
  * @typedef {(event: ToolChangeEvent, handler: (current: Readonly<Tool>, previous: Readonly<Tool>) => void, once?: boolean) => void} ToolChangeEventHandler
- * @typedef {(event: InstanceChangeEvent, handler: (current: Readonly<Instance>, previous: Readonly<Instance>) => void, once?: boolean) => void} InstanceChangeEventHandler
+ * @typedef {(event: InstanceChangeEvent, handler: (current: Readonly<Instance> | null, previous: Readonly<Instance> | null) => void, once?: boolean) => void} InstanceChangeEventHandler
  * @typedef {(event: KeyEvent, handler: (key: string) => void, once?: boolean) => void} KeyEventHandler
  * @typedef {(event: MouseButtonEvent, handler: (button: MouseButton) => void, once?: boolean) => void} MouseButtonEventHandler
  * @typedef {(event: MouseMoveEvent, handler: (current: Readonly<vec3>, delta: Readonly<vec3>, previous: Readonly<vec3>) => void, once?: boolean) => void} MouseMoveEventHandler

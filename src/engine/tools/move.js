@@ -17,12 +17,12 @@ export default (engine) => {
     start() {
       if (instance) return;
 
-      const { selectedInstance, hoveredInstance, currentInstance } = scene;
+      const { selectedInstance, hoveredInstance, currentInstance, rootInstance } = scene;
 
-      if (!selectedInstance.id.int && !hoveredInstance.id.int) return;
+      const candidateInstance = selectedInstance ?? hoveredInstance;
+      if (!candidateInstance) return;
 
-      const candidateInstance = selectedInstance.id.int ? selectedInstance : hoveredInstance;
-      if (!candidateInstance.belongsTo(currentInstance)) return;
+      if (!candidateInstance.belongsTo(currentInstance ?? rootInstance)) return;
 
       vec3.copy(origin, scene.hoveredGlobal);
       vec3.zero(translation);

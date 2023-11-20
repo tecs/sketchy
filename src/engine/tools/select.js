@@ -20,26 +20,25 @@ export default (engine) => {
       lastClick = now;
 
       if (doubleClicked) {
-        scene.setSelectedInstance(0);
-        scene.setCurrentInstance(scene.hoveredInstance.id.int);
+        scene.setSelectedInstance(null);
+        scene.setCurrentInstance(scene.hoveredInstance);
         return;
       }
-      if (scene.selectedInstance.id.int && scene.hoveredInstance === scene.selectedInstance) return;
+      if (scene.selectedInstance && scene.hoveredInstance === scene.selectedInstance) return;
+      const clickedOwn = scene.hoveredInstance?.belongsTo(scene.currentInstance ?? scene.rootInstance);
 
-      const clickedOwn = scene.hoveredInstance.belongsTo(scene.currentInstance);
-
-      if (scene.hoveredInstance === scene.currentInstance) scene.setSelectedInstance(0);
-      else if (clickedOwn) scene.setSelectedInstance(scene.hoveredInstance.id.int);
-      else if (scene.selectedInstance.id.int) scene.setSelectedInstance(0);
-      else scene.setCurrentInstance(scene.currentInstance.parent?.id.int ?? 0);
+      if (scene.hoveredInstance === scene.currentInstance) scene.setSelectedInstance(null);
+      else if (clickedOwn) scene.setSelectedInstance(scene.hoveredInstance);
+      else if (scene.selectedInstance) scene.setSelectedInstance(null);
+      else scene.setCurrentInstance(scene.currentInstance?.parent ?? null);
     },
     abort() {
       if (engine.tools.selected !== this) return;
 
-      if (scene.selectedInstance.id.int) {
-        scene.setSelectedInstance(0);
-      } else if (scene.currentInstance.id.int) {
-        scene.setCurrentInstance(scene.currentInstance.parent?.id.int ?? 0);
+      if (scene.selectedInstance) {
+        scene.setSelectedInstance(null);
+      } else if (scene.currentInstance) {
+        scene.setCurrentInstance(scene.currentInstance.parent ?? null);
       }
     },
   };

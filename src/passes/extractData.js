@@ -11,11 +11,11 @@ export default (engine) => {
   const program = makeProgram(
     vert`
       attribute vec4 a_position;
-  
+
       uniform mat4 u_mvp;
-      
+
       varying vec4 v_coord;
-      
+
       void main() {
         v_coord = gl_Position = u_mvp * a_position;
       }
@@ -24,7 +24,7 @@ export default (engine) => {
       precision mediump float;
 
       varying vec4 v_coord;
-      
+
       void main() {
         gl_FragColor = v_coord;
       }
@@ -77,7 +77,7 @@ export default (engine) => {
   return {
     program,
     render() {
-      if (!scene.hoveredInstance.id.int) {
+      if (!scene.hoveredInstance) {
         mat4.getTranslation(translation, engine.camera.world);
         vec3.rotateX(negativeEye, translation, v3zero, -engine.camera.pitch);
         vec3.rotateY(negativeEye, negativeEye, v3zero, -engine.camera.yaw);

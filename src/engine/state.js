@@ -52,7 +52,7 @@ export default class State {
   }
 
   /**
-   * @param {Instance} hoveredInstance
+   * @param {Instance | null} hoveredInstance
    */
   setHoveredInstance(hoveredInstance) {
     this.hoveredInstance = hoveredInstance;

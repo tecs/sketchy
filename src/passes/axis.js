@@ -90,11 +90,13 @@ export default (engine) => {
       ctx.enableVertexAttribArray(program.aLoc.a_color);
       ctx.vertexAttribPointer(program.aLoc.a_color, 3, ctx.FLOAT, false, 0, 0);
 
-      mat4.getScaling(origin, scene.currentInstance.globalTrs);
-      vec3.inverse(origin, origin);
-      mat4.scale(mvp, scene.currentInstance.globalTrs, origin);
+      const currentInstance = scene.currentInstance ?? scene.rootInstance;
 
-      vec3.transformMat4(origin, vec3zero, scene.currentInstance.globalTrs);
+      mat4.getScaling(origin, currentInstance.globalTrs);
+      vec3.inverse(origin, origin);
+      mat4.scale(mvp, currentInstance.globalTrs, origin);
+
+      vec3.transformMat4(origin, vec3zero, currentInstance.globalTrs);
       vec3.transformMat4(origin, origin, camera.mvp);
       vec3.multiply(origin, origin, halfRes);
       vec3.add(origin, origin, halfRes);
