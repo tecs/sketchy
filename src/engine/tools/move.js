@@ -18,15 +18,15 @@ export default (engine) => {
       if (instance) return;
 
       const { selectedInstance, hoveredInstance, currentInstance } = scene;
-      
+
       if (!selectedInstance.id.int && !hoveredInstance.id.int) return;
 
       const candidateInstance = selectedInstance.id.int ? selectedInstance : hoveredInstance;
       if (!candidateInstance.belongsTo(currentInstance)) return;
-      
+
       vec3.copy(origin, scene.hoveredGlobal);
       vec3.zero(translation);
-      
+
       instance = candidateInstance;
     },
     update() {
@@ -36,14 +36,14 @@ export default (engine) => {
       vec3.subtract(translation, translation, origin);
 
       instance.translateGlobal(origin);
-      
+
       vec3.copy(origin, scene.hoveredGlobal);
 
       engine.emit('scenechange');
     },
     end() {
       if (!instance || vec3.length(translation) < 0.1) return;
-      
+
       instance = null;
     },
     abort() {
@@ -54,6 +54,6 @@ export default (engine) => {
       engine.emit('scenechange');
     },
   };
-  
+
   return move;
 };

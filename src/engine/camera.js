@@ -62,8 +62,8 @@ export default (engine) => {
     inverseMvp: mat4.create(),
     screenResolution: vec3.fromValues(canvas.width, canvas.height, 0),
     orbit(dX, dY) {
-      const toEye = vec3.clone(engine.state.hovered);
-      toEye[0] = toEye[1] = 0;
+      const toEye = vec3.create();
+      toEye[2] = engine.state.hovered[2];
       if (!engine.state.hoveredInstance?.id.int) {
         toEye[2] = Math.abs(startingPointVec[2]);
       }
@@ -113,13 +113,13 @@ export default (engine) => {
 
       mat4.translate(this.translation, this.translation, diff);
       mat4.invert(this.inverseTranslation, this.translation);
-      
+
       this.recalculateMVP();
     },
     zoom(direction) {
       const zero = vec3.create();
       const origin = vec3.clone(engine.scene.hovered);
-      
+
       if (origin[2] < 0) vec3.scale(origin, origin, -1);
 
       if (direction > 0 && origin[2] < this.nearPlane * 2) return;
@@ -127,7 +127,7 @@ export default (engine) => {
       vec3.multiply(origin, origin, vec3.fromValues(-direction, -direction, direction));
       vec3.multiply(origin, origin, this.inverseFovScaling);
       vec3.scale(origin, origin, 0.1);
-      
+
       vec3.rotateX(origin, origin, zero, -this.pitch);
       vec3.rotateY(origin, origin, zero, -this.yaw);
 
@@ -148,8 +148,11 @@ export default (engine) => {
   engine.on('viewportresize', (current, previous) => {
     if (current[0] === previous[0] && current[1] === previous[1]) return;
 
-    camera.screenResolution[0] = canvas.width = current[0];
-    camera.screenResolution[1] = canvas.height = current[1];
+    canvas.width = current[0];
+    canvas.height = current[1];
+    camera.screenResolution[0] = current[0];
+    camera.screenResolution[1] = current[1];
+
     engine.driver.ctx.viewport(0, 0, canvas.width, canvas.height);
 
     camera.aspect = canvas.width / canvas.height;

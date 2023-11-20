@@ -1,6 +1,6 @@
 /**
  * @typedef {"left"|"middle"|"right"} MouseButton
- * 
+ *
  * @typedef InputState
  * @property {vec3} position
  * @property {boolean} leftButton
@@ -39,15 +39,15 @@ export default (engine) => {
       switch (button) {
         case 0:
           this.leftButton = down;
-          this.button = "left";
+          this.button = 'left';
           break;
         case 1:
           this.middleButton = down;
-          this.button = "middle";
+          this.button = 'middle';
           break;
         case 2:
           this.rightButton = down;
-          this.button = "right";
+          this.button = 'right';
           break;
       }
       if (this.button) {
@@ -57,8 +57,8 @@ export default (engine) => {
     setKey(key, down) {
       switch (key) {
         case 'Alt': this.alt = down; break;
-        case 'Shift': this.shift = down; break
-        case 'Control': this.ctrl = down; break
+        case 'Shift': this.shift = down; break;
+        case 'Control': this.ctrl = down; break;
       }
       this.key = key;
       engine.emit(down ? 'keydown' : 'keyup', key);

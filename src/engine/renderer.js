@@ -1,6 +1,6 @@
 /**
  * @typedef {(engine: Engine) => RenderingPassRenderer} RenderingPass
- * 
+ *
  * @typedef RenderingPassRenderer
  * @property {Readonly<Program>} program
  * @property {() => void} render
@@ -42,7 +42,7 @@ export default (engine) => {
           try {
             renderingPass.render();
           } catch (e) {
-            console.error("Caught during render pass:", e);
+            console.error('Caught during render pass:', e);
           }
         }
 

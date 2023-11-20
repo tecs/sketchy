@@ -1,6 +1,12 @@
 /** @type {RenderingPass} */
 export default (engine) => {
-  const {math: {mat4}, driver: { ctx, makeProgram, vert, frag, UNSIGNED_INDEX_TYPE }, camera, input, scene} = engine;
+  const {
+    math: { mat4 },
+    driver: { ctx, makeProgram, vert, frag, UNSIGNED_INDEX_TYPE },
+    camera,
+    input,
+    scene,
+  } = engine;
 
   const programs = {
     objects: makeProgram(
@@ -121,7 +127,7 @@ export default (engine) => {
 
   const renderbuffer = ctx.createRenderbuffer();
   ctx.bindRenderbuffer(ctx.RENDERBUFFER, renderbuffer);
-  
+
   const framebuffer = ctx.createFramebuffer();
   ctx.bindFramebuffer(ctx.FRAMEBUFFER, framebuffer);
 
@@ -132,7 +138,17 @@ export default (engine) => {
 
   const setupFramebufferTexture = () => {
     ctx.bindTexture(ctx.TEXTURE_2D, texture);
-    ctx.texImage2D(ctx.TEXTURE_2D, 0, ctx.RGBA, ctx.canvas.width, ctx.canvas.height, 0, ctx.RGBA, ctx.UNSIGNED_BYTE, null);
+    ctx.texImage2D(
+      ctx.TEXTURE_2D,
+      0,
+      ctx.RGBA,
+      ctx.canvas.width,
+      ctx.canvas.height,
+      0,
+      ctx.RGBA,
+      ctx.UNSIGNED_BYTE,
+      null,
+    );
     ctx.bindRenderbuffer(ctx.RENDERBUFFER, renderbuffer);
     ctx.renderbufferStorage(ctx.RENDERBUFFER, ctx.DEPTH_COMPONENT16, ctx.canvas.width, ctx.canvas.height);
   };
@@ -141,9 +157,9 @@ export default (engine) => {
   engine.on('viewportresize', setupFramebufferTexture);
 
   /**
-   * @param {"objects"|"lines"|"hover"} step 
+   * @param {"objects"|"lines"|"hover"} step
   */
- const render = (step = 'objects') => {
+  const render = (step = 'objects') => {
     const program = programs[step];
     program.use();
 
@@ -155,7 +171,7 @@ export default (engine) => {
     for (const model of scene.models) {
       // Prevent self-picking when editing
       if (engine.state.drawing && step === 'hover' && scene.currentInstance.model === model) continue;
-      
+
       if (step !== 'lines') {
         ctx.bindBuffer(ctx.ARRAY_BUFFER, model.buffer.vertex);
         ctx.enableVertexAttribArray(program.aLoc.a_position);
@@ -175,16 +191,15 @@ export default (engine) => {
       for (const instance of model.instances) {
         const isInShadow = !instance.belongsTo(scene.currentInstance) ? 1 : 0;
 
-        const model_trs = mat4.clone(instance.globalTrs);
         const mvp = mat4.clone(camera.mvp);
-        mat4.multiply(mvp, mvp, model_trs);
+        mat4.multiply(mvp, mvp, instance.globalTrs);
         ctx.uniformMatrix4fv(program.uLoc.u_mvp, false, mvp);
 
         ctx.uniform4fv(program.uLoc.u_instanceId, instance.id.vec4);
 
         if (step === 'objects') {
           const normalMvp = mat4.clone(camera.world);
-          mat4.multiply(normalMvp, normalMvp, model_trs);
+          mat4.multiply(normalMvp, normalMvp, instance.globalTrs);
           mat4.transpose(normalMvp, normalMvp);
           mat4.invert(normalMvp, normalMvp);
           ctx.uniformMatrix4fv(program.uLoc.u_normalMvp, false, normalMvp);
@@ -205,7 +220,7 @@ export default (engine) => {
             ctx.bindBuffer(ctx.ARRAY_BUFFER, model.buffer.boundingBoxVertex);
             ctx.enableVertexAttribArray(program.aLoc.a_position);
             ctx.vertexAttribPointer(program.aLoc.a_position, 3, ctx.FLOAT, false, 0, 0);
-  
+
             ctx.bindBuffer(ctx.ELEMENT_ARRAY_BUFFER, model.buffer.boundingBoxIndex);
             ctx.drawElements(ctx.LINES, 24, UNSIGNED_INDEX_TYPE, 0);
           }
@@ -216,7 +231,7 @@ export default (engine) => {
           ctx.bindBuffer(ctx.ARRAY_BUFFER, model.buffer.lineVertex);
           ctx.enableVertexAttribArray(program.aLoc.a_position);
           ctx.vertexAttribPointer(program.aLoc.a_position, 3, ctx.FLOAT, false, 0, 0);
-          
+
           ctx.bindBuffer(ctx.ELEMENT_ARRAY_BUFFER, model.buffer.lineIndex);
           ctx.drawElements(ctx.LINES, model.data.lineIndex.length, UNSIGNED_INDEX_TYPE, 0);
 
@@ -235,7 +250,15 @@ export default (engine) => {
         break;
 
       case 'hover':
-        ctx.readPixels(input.position[0], ctx.canvas.height - input.position[1] - 1, 1, 1, ctx.RGBA, ctx.UNSIGNED_BYTE, readData);
+        ctx.readPixels(
+          input.position[0],
+          ctx.canvas.height - input.position[1] - 1,
+          1,
+          1,
+          ctx.RGBA,
+          ctx.UNSIGNED_BYTE,
+          readData,
+        );
         scene.hoverOver(readData);
         break;
     }

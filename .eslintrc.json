@@ -1,0 +1,37 @@
+{
+  "env": {
+    "browser": true,
+    "es2021": true
+  },
+  "extends": "airbnb-base",
+  "globals": {"glMatrix": true},
+  "parserOptions": {
+    "ecmaVersion": "latest",
+    "sourceType": "module"
+  },
+  "rules": {
+    "arrow-parens": "off",
+    "default-case": "off",
+    "indent": ["error", 2, {"SwitchCase": 1}],
+    "import/extensions": ["error", "always"],
+    "lines-between-class-members": "off",
+    "max-len": ["error", {"code": 120}],
+    "no-bitwise": "off",
+    "no-continue": "off",
+    "no-multi-spaces": ["error", { "exceptions": {"VariableDeclarator": true}}],
+    "no-param-reassign": "off",
+    "no-plusplus": "off",
+    "no-restricted-syntax": ["error",
+      {
+        "selector": "ForInStatement",
+        "message": "for..in loops iterate over the entire prototype chain, which is virtually never what you want. Use Object.{keys,values,entries}, and iterate over the resulting array."
+      },
+      {
+        "selector": "WithStatement",
+        "message": "`with` is disallowed in strict mode because it makes code impossible to predict and optimize."
+      }
+    ],
+    "object-curly-newline": "off",
+    "prefer-destructuring": "off"
+  }
+}

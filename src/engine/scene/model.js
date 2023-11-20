@@ -7,7 +7,7 @@
  * @property {Float32Array} lineVertex
  * @property {Uint16Array|Uint32Array} lineIndex
  * @property {Float32Array} boundingBoxVertex
- * 
+ *
  * @typedef ModelBuffers
  * @property {GLBuffer} index
  * @property {GLBuffer} vertex
@@ -17,14 +17,14 @@
  * @property {GLBuffer} lineVertex
  * @property {GLBuffer} boundingBoxIndex
  * @property {GLBuffer} boundingBoxVertex
- * 
+ *
  * @typedef SubModel
  * @property {Model} model
  * @property {mat4} trs
  * @property {Instance[]} children
  */
 
-import Instance from "./instance.js";
+import Instance from './instance.js';
 
 export default class Model {
   /** @type {Engine} */
@@ -52,11 +52,11 @@ export default class Model {
   data;
 
   /**
-   * @param {string} name 
-   * @param {Readonly<Partial<ModelData>> | undefined} data 
+   * @param {string} name
+   * @param {Readonly<Partial<ModelData>> | undefined} data
    * @param {Engine} engine
    */
-  constructor(name, data = {}, engine) {
+  constructor(name, data, engine) {
     this.#engine = engine;
     this.#ctx = engine.driver.ctx;
     this.#math = engine.math;
@@ -74,16 +74,32 @@ export default class Model {
     };
 
     this.data = {
-      vertex: data.vertex ?? new Float32Array(0),
-      normal: data.normal ?? new Float32Array(0),
-      color: data.color ?? new Uint8Array(0),
-      index: data.index ?? new engine.driver.UintIndexArray(0),
-      lineVertex: data.lineVertex ?? new Float32Array(0),
-      lineIndex: data.lineIndex ?? new engine.driver.UintIndexArray(0),
-      boundingBoxVertex: data.boundingBoxVertex ?? new Float32Array(24),
+      vertex: data?.vertex ?? new Float32Array(0),
+      normal: data?.normal ?? new Float32Array(0),
+      color: data?.color ?? new Uint8Array(0),
+      index: data?.index ?? new engine.driver.UintIndexArray(0),
+      lineVertex: data?.lineVertex ?? new Float32Array(0),
+      lineIndex: data?.lineIndex ?? new engine.driver.UintIndexArray(0),
+      boundingBoxVertex: data?.boundingBoxVertex ?? new Float32Array(24),
     };
 
-    let boundingBoxIndex = new engine.driver.UintIndexArray([0, 1, 1, 2, 2, 3, 3, 0, 4, 5, 5, 6, 6, 7, 7, 4, 0, 4, 1, 5, 2, 6, 3, 7]);
+    const boundingBoxIndex = new engine.driver.UintIndexArray([
+      // Bottom
+      0, 1, // BFL - BRL
+      1, 2, // BRL - BRR
+      2, 3, // BRR - BBL
+      3, 0, // BFR - BFL
+      // Top
+      4, 5, // TFL - TRL
+      5, 6, // TRL - TRR
+      6, 7, // TRR - TFR
+      7, 4, // TFR - TFL
+      // Side
+      0, 4, // BFL - TFL
+      1, 5, // BRL - TRL
+      2, 6, // BRR - TRR
+      3, 7, // BFR - TFR
+    ]);
     this.#ctx.bindBuffer(this.#ctx.ELEMENT_ARRAY_BUFFER, this.buffer.boundingBoxIndex);
     this.#ctx.bufferData(this.#ctx.ELEMENT_ARRAY_BUFFER, boundingBoxIndex, this.#ctx.STATIC_DRAW);
 
@@ -112,30 +128,31 @@ export default class Model {
   }
 
   /**
-   * Based on the diagonal bounding box vertices (p0, p6), recalculates all remaining vertices (p1-p5, p7) and reuploads their buffer to the GPU
+   * Based on the diagonal bounding box vertices (p0 BFL, p6 TRR),
+   * recalculates all remaining vertices (p1-p5, p7) and reuploads their buffer to the GPU
    */
   #regenerateBoundingBox() {
-    // p1
-    this.data.boundingBoxVertex[ 3] = this.data.boundingBoxVertex[0];
-    this.data.boundingBoxVertex[ 4] = this.data.boundingBoxVertex[1];
-    this.data.boundingBoxVertex[ 5] = this.data.boundingBoxVertex[20];
-    // p2
-    this.data.boundingBoxVertex[ 6] = this.data.boundingBoxVertex[18];
-    this.data.boundingBoxVertex[ 7] = this.data.boundingBoxVertex[1];
-    this.data.boundingBoxVertex[ 8] = this.data.boundingBoxVertex[20];
-    // p3
-    this.data.boundingBoxVertex[ 9] = this.data.boundingBoxVertex[18];
+    // p1 BRL
+    this.data.boundingBoxVertex[3] = this.data.boundingBoxVertex[0];
+    this.data.boundingBoxVertex[4] = this.data.boundingBoxVertex[1];
+    this.data.boundingBoxVertex[5] = this.data.boundingBoxVertex[20];
+    // p2 BRR
+    this.data.boundingBoxVertex[6] = this.data.boundingBoxVertex[18];
+    this.data.boundingBoxVertex[7] = this.data.boundingBoxVertex[1];
+    this.data.boundingBoxVertex[8] = this.data.boundingBoxVertex[20];
+    // p3 BFR
+    this.data.boundingBoxVertex[9] = this.data.boundingBoxVertex[18];
     this.data.boundingBoxVertex[10] = this.data.boundingBoxVertex[1];
     this.data.boundingBoxVertex[11] = this.data.boundingBoxVertex[2];
-    // p4
+    // p4 TFL
     this.data.boundingBoxVertex[12] = this.data.boundingBoxVertex[0];
     this.data.boundingBoxVertex[13] = this.data.boundingBoxVertex[19];
     this.data.boundingBoxVertex[14] = this.data.boundingBoxVertex[2];
-    // p5
+    // p5 TRL
     this.data.boundingBoxVertex[15] = this.data.boundingBoxVertex[0];
     this.data.boundingBoxVertex[16] = this.data.boundingBoxVertex[19];
     this.data.boundingBoxVertex[17] = this.data.boundingBoxVertex[20];
-    // p7
+    // p7 TFR
     this.data.boundingBoxVertex[21] = this.data.boundingBoxVertex[18];
     this.data.boundingBoxVertex[22] = this.data.boundingBoxVertex[19];
     this.data.boundingBoxVertex[23] = this.data.boundingBoxVertex[2];
@@ -144,9 +161,8 @@ export default class Model {
     this.#ctx.bufferData(this.#ctx.ARRAY_BUFFER, this.data.boundingBoxVertex, this.#ctx.STATIC_DRAW);
   }
 
-
   /**
-   * @param {Float32Array} newData 
+   * @param {Float32Array} newData
    */
   #expandBoundingBox(newData) {
     const { vec3 } = this.#math;
@@ -166,7 +182,6 @@ export default class Model {
 
     this.data.boundingBoxVertex.set(min);
     this.data.boundingBoxVertex.set(max, 18);
-
   }
 
   recalculateBoundingBox() {
@@ -188,37 +203,36 @@ export default class Model {
     this.#expandBoundingBox(this.data.lineVertex);
     this.#expandBoundingBox(this.data.vertex);
 
-
     this.#regenerateBoundingBox();
   }
 
   /**
-   * @param {Readonly<Float32Array|Uint16Array|Uint32Array|Uint8Array>} newData 
-   * @param {keyof Omit<ModelData, "boundingBoxIndex" | "boundingBoxVertex">} part 
-   * @param {boolean} [normalizeIndices] 
+   * @param {Readonly<Float32Array|Uint16Array|Uint32Array|Uint8Array>} newData
+   * @param {keyof Omit<ModelData, "boundingBoxIndex" | "boundingBoxVertex">} part
+   * @param {boolean} [normalizeIndices]
    */
   appendBufferData(newData, part, normalizeIndices = true) {
     const oldData = this.data[part];
     const oldLength = oldData.length;
-  
+
     const ArrayType = /** @type {new(param: number) => typeof oldData} */ (oldData.constructor);
-  
+
     const isIndex = oldData instanceof Uint16Array || oldData instanceof Uint32Array;
-  
+
     if (normalizeIndices && isIndex) {
       let lastIndex = -1;
       for (const i of oldData) {
-          if (i > lastIndex) lastIndex = i;
+        if (i > lastIndex) lastIndex = i;
       }
       newData = newData.map(i => i + lastIndex + 1);
     }
-  
+
     const data = new ArrayType(oldLength + newData.length);
     Object.assign(this.data, { [part]: data });
-  
+
     data.set(oldData);
     data.set(newData, oldLength);
-  
+
     const BUFFER_TYPE = isIndex ? this.#ctx.ELEMENT_ARRAY_BUFFER : this.#ctx.ARRAY_BUFFER;
     this.#ctx.bindBuffer(BUFFER_TYPE, this.buffer[part]);
     this.#ctx.bufferData(BUFFER_TYPE, data, this.#ctx.STATIC_DRAW);
@@ -227,13 +241,13 @@ export default class Model {
   }
 
   /**
-   * @param {keyof Omit<ModelData, "boundingBoxIndex" | "boundingBoxVertex">} part 
-   * @param {number} length 
+   * @param {keyof Omit<ModelData, "boundingBoxIndex" | "boundingBoxVertex">} part
+   * @param {number} length
    */
   truncateBuffer(part, length) {
     const data = this.data[part].slice(0, -length);
     Object.assign(this.data, { [part]: data });
-    
+
     const isIndex = data instanceof Uint16Array || data instanceof Uint32Array;
     const BUFFER_TYPE = isIndex ? this.#ctx.ELEMENT_ARRAY_BUFFER : this.#ctx.ARRAY_BUFFER;
     this.#ctx.bindBuffer(BUFFER_TYPE, this.buffer[part]);
@@ -243,9 +257,9 @@ export default class Model {
   }
 
   /**
-   * 
-   * @param {Readonly<Float32Array|Uint8Array>} newData 
-   * @param {keyof Omit<ModelData, "index" | "lineIndex" | "boundingBoxIndex" | "boundingBoxVertex">} part 
+   *
+   * @param {Readonly<Float32Array|Uint8Array>} newData
+   * @param {keyof Omit<ModelData, "index" | "lineIndex" | "boundingBoxIndex" | "boundingBoxVertex">} part
    */
   updateBufferEnd(newData, part) {
     const oldLength = this.data[part].length - newData.length;
@@ -268,17 +282,17 @@ export default class Model {
     parent?.children.push(instance);
     this.instances.push(instance);
     const instances = [instance];
-    
-    for (const subModel of this.subModels) {
-      const subInstances = subModel.model.instantiate(subModel, instance);
+
+    for (const subSubModel of this.subModels) {
+      const subInstances = subSubModel.model.instantiate(subSubModel, instance);
       instances.push(...subInstances);
     }
-    
+
     return instances;
   }
 
   /**
-   * @param {Model} model 
+   * @param {Model} model
    * @param {mat4} trs
    * @returns {Instance[]}
    */

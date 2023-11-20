@@ -18,7 +18,7 @@ export default (engine) => {
       const { model } = scene.currentInstance;
 
       const vertices = new Float32Array(6);
-      vertices.set(scene.hoveredGlobal)
+      vertices.set(scene.hoveredGlobal);
       vertices.set(scene.hoveredGlobal, 3);
       model.appendBufferData(vertices, 'lineVertex');
       model.appendBufferData(new UintIndexArray([0, 1]), 'lineIndex');
@@ -27,7 +27,7 @@ export default (engine) => {
       if (!state.drawing) return;
 
       const { model } = scene.currentInstance;
-      
+
       const temp = vec3.create();
       vec3.multiply(temp, scene.axisNormal, model.data.lineVertex);
       vec3.add(temp, temp, scene.hoveredGlobal);
@@ -38,7 +38,7 @@ export default (engine) => {
       if (!state.drawing || vec3.distance(state.hoveredGlobal, scene.hoveredGlobal) < 0.1) return;
 
       const { model } = scene.currentInstance;
-      
+
       const vertices = new Float32Array(6);
       vertices.set(model.data.lineVertex.slice(-3));
       vertices.set(scene.hoveredGlobal, 3);

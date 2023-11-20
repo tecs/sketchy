@@ -1,6 +1,11 @@
 /** @type {RenderingPass} */
 export default (engine) => {
-  const { math: {mat4, vec3, vec4}, driver: {ctx, makeProgram, vert, frag}, camera, scene } = engine;
+  const {
+    math: { mat4, vec3 },
+    driver: { ctx, makeProgram, vert, frag },
+    camera,
+    scene,
+  } = engine;
 
   const program = makeProgram(
     vert`
@@ -91,7 +96,7 @@ export default (engine) => {
 
       vec3.transformMat4(origin, vec3zero, scene.currentInstance.globalTrs);
       vec3.transformMat4(origin, origin, camera.mvp);
-      vec3.multiply(origin, origin, halfRes)
+      vec3.multiply(origin, origin, halfRes);
       vec3.add(origin, origin, halfRes);
       ctx.uniform3fv(program.uLoc.u_origin, origin);
 

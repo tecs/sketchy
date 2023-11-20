@@ -1,5 +1,5 @@
 /** @type {RenderingPass} */
-export default ({math: {mat4}, driver: {ctx, makeProgram, vert, frag}, camera}) => {
+export default ({ math: { mat4 }, driver: { ctx, makeProgram, vert, frag }, camera }) => {
   const program = makeProgram(
     vert`
       attribute vec4 a_position;
@@ -26,6 +26,7 @@ export default ({math: {mat4}, driver: {ctx, makeProgram, vert, frag}, camera}) 
   );
 
   const positions = new Float32Array([
+    /* eslint-disable no-multi-spaces,indent */
     -1,  0, -1, //  0 FL
     -1, -1,  0, //  1 BL
      1,  0, -1, //  2 FR
@@ -38,6 +39,7 @@ export default ({math: {mat4}, driver: {ctx, makeProgram, vert, frag}, camera}) 
      1,  1,  0, //  9 TR
     -1,  0,  1, // 10 RL
      1,  0,  1, // 11 RR
+    /* eslint-enable no-multi-spaces,indent */
   ]);
   const colors = new Uint8Array([
     178, 178, 178,
@@ -52,7 +54,6 @@ export default ({math: {mat4}, driver: {ctx, makeProgram, vert, frag}, camera}) 
     216, 230, 255,
     216, 230, 255,
     216, 230, 255,
-    0,0,0,
   ]);
   const indices = new Uint16Array([
     0, 1, 2,
@@ -93,7 +94,7 @@ export default ({math: {mat4}, driver: {ctx, makeProgram, vert, frag}, camera}) 
       ctx.vertexAttribPointer(program.aLoc.a_color, 3, ctx.UNSIGNED_BYTE, true, 0, 0);
 
       mat4.rotateX(mvp, camera.projection, camera.pitch);
-      mat4.scale(mvp, mvp, camera.inverseFovScaling)
+      mat4.scale(mvp, mvp, camera.inverseFovScaling);
 
       ctx.uniformMatrix4fv(program.uLoc.u_mvp, false, mvp);
 
@@ -101,5 +102,5 @@ export default ({math: {mat4}, driver: {ctx, makeProgram, vert, frag}, camera}) 
       ctx.drawElements(ctx.TRIANGLES, indices.length, ctx.UNSIGNED_SHORT, 0);
       ctx.enable(ctx.DEPTH_TEST);
     },
-  }
+  };
 };

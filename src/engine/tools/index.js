@@ -1,12 +1,12 @@
-import LineTool from "./line.js";
-import RectangleTool from "./rectangle.js";
-import SelectTool from "./select.js";
+import LineTool from './line.js';
+import RectangleTool from './rectangle.js';
+import SelectTool from './select.js';
 import MoveTool from './move.js';
-import OrbitTool from "./orbit.js";
+import OrbitTool from './orbit.js';
 
 /**
  * @typedef {"select"|"line"|"rectangle"|"orbit"|"move"} ToolType
- * 
+ *
  * @typedef Tool
  * @property {ToolType} type
  * @property {string} name
@@ -17,7 +17,7 @@ import OrbitTool from "./orbit.js";
  * @property {(delta: Readonly<vec3>) => void} update
  * @property {() => void} end
  * @property {() => void} abort
- * 
+ *
  * @typedef Tools
  * @property {Tool} selected
  * @property {Tool[]} tools
@@ -44,7 +44,7 @@ export default (engine) => {
 
       tools.selected = tool;
       engine.driver.canvas.style.cursor = tool.cursor ?? 'default';
-  
+
       engine.emit('toolchange', tool, previous);
     },
   };

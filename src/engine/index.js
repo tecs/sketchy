@@ -13,50 +13,52 @@ import renderSkybox from '../passes/skybox.js';
 import renderObjects from '../passes/objects.js';
 import extractData from '../passes/extractData.js';
 
-/**
- * @typedef {import("./events.js").EngineEvent} EngineEvent
- * 
- * @typedef Engine
- * @property {Readonly<GLMatrix>} math
- * @property {Readonly<import('./driver.js').Driver>} driver
- * @property {Readonly<import('./input.js').InputState>} input
- * @property {Readonly<import('./camera.js').Camera>} camera
- * @property {Readonly<import('./renderer.js').Renderer>} renderer
- * @property {Readonly<import('./scene').Scene>} scene
- * @property {Readonly<import('./state.js').State>} state
- * @property {Readonly<import('./tools').Tools>} tools
- * @property {import('./events.js').EventHandler} on
- * @property {(event: EngineEvent, handler: Function) => void} off
- * @property {import('./events.js').EventEmitter} emit
- * @property {(event: EngineEvent) => Function[]} list
- */
+export default class Engine extends Events {
+  /** @type {Readonly<GLMatrix>} */
+  math = glMatrix;
 
-/**
- * @param {HTMLCanvasElement} canvas 
- * @returns {Engine}
- */
-const Engine = (canvas) => {
-  /** @type {Engine} */
-  const engine = new class Engine extends Events {
-    math = glMatrix;
-    driver = makeDriver(canvas);
-    state = makeState(this);
-    input = makeInput(this);
-    camera = makeCamera(this);
-    renderer = makeRenderer(this);
-    scene = makeScene(this);
-    tools = makeTools(this);
-  };
+  /** @type {Readonly<import('./driver.js').Driver>} */
+  driver;
 
-  engine.renderer.addToPipeline(renderSkybox);
-  engine.renderer.addToPipeline(renderObjects);
-  engine.renderer.addToPipeline(extractData);
-  engine.renderer.addToPipeline(renderAxis);
+  /** @type {Readonly<import('./state.js').State>} */
 
-  engine.emit('viewportresize', engine.math.vec3.fromValues(canvas.clientWidth, canvas.clientHeight, 0), engine.math.vec3.create());
-  window.addEventListener('resize', () => engine.emit('viewportresize', engine.math.vec3.fromValues(canvas.clientWidth, canvas.clientHeight, 0), engine.camera.screenResolution));
+  state;
+  /** @type {Readonly<import('./input.js').InputState>} */
+  input;
 
-  return engine;
-};
+  /** @type {Readonly<import('./camera.js').Camera>} */
+  camera;
 
-export default Engine;
+  /** @type {Readonly<import('./renderer.js').Renderer>} */
+  renderer;
+
+  /** @type {Readonly<import('./scene').Scene>} */
+  scene;
+
+  /** @type {Readonly<import('./tools').Tools>} */
+  tools;
+
+  /**
+   * @param {HTMLCanvasElement} canvas
+   */
+  constructor(canvas) {
+    super();
+
+    this.driver = makeDriver(canvas);
+    this.state = makeState(this);
+    this.input = makeInput(this);
+    this.camera = makeCamera(this);
+    this.renderer = makeRenderer(this);
+    this.scene = makeScene(this);
+    this.tools = makeTools(this);
+
+    this.renderer.addToPipeline(renderSkybox);
+    this.renderer.addToPipeline(renderObjects);
+    this.renderer.addToPipeline(extractData);
+    this.renderer.addToPipeline(renderAxis);
+
+    const onResize = () => this.emit('viewportresize', this.driver.getCanvasSize(), this.camera.screenResolution);
+    onResize();
+    window.addEventListener('resize', onResize);
+  }
+}

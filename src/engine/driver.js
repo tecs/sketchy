@@ -1,34 +1,35 @@
 /**
  * @typedef {[TemplateStringsArray, any[]?]} TaggedTemplateParams
- * 
+ *
  * @typedef {{[key: string]: number}} AttributeLocationMap
  * @typedef {{[key: string]: WebGLUniformLocation | null}} UniformLocationMap
- * 
+ *
  * @typedef {WebGLBuffer | null} GLBuffer
- * 
+ *
  * @typedef Shader
  * @property {WebGLShader} shader
  * @property {string[][]} vars
- * 
+ *
  * @typedef Program
  * @property {WebGLProgram} program
  * @property {AttributeLocationMap} aLoc
  * @property {UniformLocationMap} uLoc
  * @property {() => void} use
- * 
+ *
  * @typedef Driver
  * @property {WebGLRenderingContext} ctx
  * @property {HTMLCanvasElement} canvas
  * @property {boolean} supportsUIntIndexes
  * @property {Uint16ArrayConstructor|Uint32ArrayConstructor} UintIndexArray
  * @property {5125 | 5123} UNSIGNED_INDEX_TYPE
+ * @property {() => vec3} getCanvasSize
  * @property {(...shaders: Shader[]) => Program} makeProgram
  * @property {(...args: TaggedTemplateParams) => Shader} vert
  * @property {(...args: TaggedTemplateParams) => Shader} frag
  */
 
 /** @type {(canvas: HTMLCanvasElement) => Driver} */
-export default (canvas,) => {
+export default (canvas) => {
   const ctx = canvas.getContext('webgl');
   if (!ctx) {
     throw new Error('WebGL not supported');
@@ -41,8 +42,8 @@ export default (canvas,) => {
   const supportsUIntIndexes = !!ctx.getExtension('OES_element_index_uint');
 
   /**
-   * @param {string} source 
-   * @param {number} type 
+   * @param {string} source
+   * @param {number} type
    * @returns {Shader}
    */
   const compileShader = (source, type) => {
@@ -50,7 +51,7 @@ export default (canvas,) => {
     if (!shader) {
       throw new Error('Cannot create a new shader.');
     }
-    
+
     let cleanSource = '';
     let comment = 0;
     for (let c = 1; c <= source.length; ++c) {
@@ -92,8 +93,7 @@ export default (canvas,) => {
   };
 
   /**
-   * 
-   * @param  {...Shader} shaders 
+   * @param  {...Shader} shaders
    * @returns {Program}
    */
   const makeProgram = (...shaders) => {
@@ -108,13 +108,13 @@ export default (canvas,) => {
       vars.filter(v => !locs.find(l => l[2] === v[2])).forEach(v => locs.push(v));
     }
     ctx.linkProgram(program);
-    
+
     const aLoc = /** @type {AttributeLocationMap} */ ({});
     const uLoc = /** @type {UniformLocationMap} */ ({});
 
     for (const [type,, name] of locs) {
       switch (type) {
-        case 'attribute': 
+        case 'attribute':
           aLoc[name] = ctx.getAttribLocation(program, name);
           break;
         case 'uniform':
@@ -138,8 +138,9 @@ export default (canvas,) => {
     supportsUIntIndexes,
     UintIndexArray: supportsUIntIndexes ? Uint32Array : Uint16Array,
     UNSIGNED_INDEX_TYPE: supportsUIntIndexes ? ctx.UNSIGNED_INT : ctx.UNSIGNED_SHORT,
+    getCanvasSize: () => new Float32Array([canvas.clientWidth, canvas.clientHeight, 0]),
     makeProgram,
     vert: (...args) => compileShader(String.raw(...args), ctx.VERTEX_SHADER),
     frag: (...args) => compileShader(String.raw(...args), ctx.FRAGMENT_SHADER),
   };
-}
+};

@@ -1,5 +1,4 @@
 import Model from './model.js';
-import Instance from './instance.js';
 
 /**
  * @typedef Scene
@@ -22,7 +21,7 @@ import Instance from './instance.js';
  */
 
 /**
- * @param {Uint8Array} uuuu 
+ * @param {Uint8Array} uuuu
  * @returns {number}
  */
 const uuuuToInt = (uuuu) => uuuu[0] + (uuuu[1] << 8) + (uuuu[2] << 16) + (uuuu[3] << 24);
@@ -34,7 +33,7 @@ export default (engine) => {
   const { math: { mat4, vec3, vec4 }, camera } = engine;
 
   const rootModel = new Model('', {}, engine);
-  const [rootInstance] = rootModel.instantiate({ model: rootModel, trs: mat4.create(), children: []}, null, 0);
+  const [rootInstance] = rootModel.instantiate({ model: rootModel, trs: mat4.create(), children: [] }, null, 0);
 
   const instanceById = new Map([[0, rootInstance]]);
 
@@ -58,7 +57,7 @@ export default (engine) => {
       if (!this.models.includes(model)) {
         this.models.push(model);
       }
-      
+
       const instances = this.currentInstance.model.adopt(model, trs);
 
       let instance = this.currentInstance;
@@ -66,7 +65,7 @@ export default (engine) => {
         instanceById.set(newInstance.id.int, newInstance);
         if (newInstance.parent === this.currentInstance) instance = newInstance;
       }
-      
+
       engine.emit('scenechange');
 
       return instance;
@@ -92,7 +91,7 @@ export default (engine) => {
       if (id === this.hoveredInstance.id.int) return;
 
       this.hoveredInstance = instanceById.get(id) ?? rootInstance;
-      
+
       if (!id) {
         this.hovered[0] = 0;
         this.hovered[1] = 0;
@@ -118,7 +117,7 @@ export default (engine) => {
       this.axisNormal[0] = Math.abs(normal[0]);
       this.axisNormal[1] = Math.abs(normal[1]);
       this.axisNormal[2] = Math.abs(normal[2]);
-    }
+    },
   };
 
   engine.on('mousedown', (button) => {

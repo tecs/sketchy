@@ -32,11 +32,11 @@ export default class Instance {
   children = [];
 
   /**
-   * @param {Model} model 
-   * @param {import("./model").SubModel} subModel 
+   * @param {Model} model
+   * @param {import("./model").SubModel} subModel
    * @param {Instance | null} parent
    * @param {Engine} engine
-   * @param {number} [id] 
+   * @param {number} [id]
    */
   constructor(model, subModel, parent, engine, id) {
     this.#engine = engine;
@@ -50,10 +50,12 @@ export default class Instance {
     this.id = {
       int: id,
       vec4: engine.math.vec4.fromValues(
+        /* eslint-disable no-multi-spaces,space-in-parens */
         ( id        & 255) / 255,
         ((id >>  8) & 255) / 255,
         ((id >> 16) & 255) / 255,
         ((id >> 24) & 255) / 255,
+        /* eslint-enable no-multi-spaces,space-in-parens */
       ),
     };
 
@@ -71,13 +73,13 @@ export default class Instance {
   }
 
   /**
-   * @param {Instance} instance 
+   * @param {Instance} instance
    * @returns {boolean}
    */
   belongsTo(instance) {
     /** @type {Instance | null} */
     let potentialChild = this;
-    
+
     while (potentialChild) {
       if (instance === potentialChild) return true;
       potentialChild = potentialChild.parent;
@@ -121,7 +123,7 @@ export default class Instance {
 
     mat4.multiply(this.subModel.trs, this.subModel.trs, translate);
     for (const sibling of this.subModel.children) sibling.recalculateGlobalTrs();
-    
+
     this.parent?.model.recalculateBoundingBox();
   }
 }

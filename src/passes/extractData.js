@@ -1,6 +1,12 @@
 /** @type {RenderingPass} */
 export default (engine) => {
-  const {math: {mat4, vec3, vec4, quat}, driver: { ctx, makeProgram, vert, frag, UNSIGNED_INDEX_TYPE }, camera, input, scene} = engine;
+  const {
+    math: { mat4, vec3 },
+    driver: { ctx, makeProgram, vert, frag, UNSIGNED_INDEX_TYPE },
+    camera,
+    input,
+    scene,
+  } = engine;
 
   const program = makeProgram(
     vert`
@@ -33,7 +39,7 @@ export default (engine) => {
 
   const renderbuffer = ctx.createRenderbuffer();
   ctx.bindRenderbuffer(ctx.RENDERBUFFER, renderbuffer);
-  
+
   const framebuffer = ctx.createFramebuffer();
   ctx.bindFramebuffer(ctx.FRAMEBUFFER, framebuffer);
 
@@ -78,13 +84,16 @@ export default (engine) => {
 
         vec3.scale(eye, negativeEye, -1);
 
-        vec3.set(eyeNormal, 2 * input.position[0] / ctx.canvas.width - 1, 1 - 2 * input.position[1] / ctx.canvas.height, -1);
+        const x = (2 * input.position[0]) / ctx.canvas.width - 1;
+        const y = 1 - (2 * input.position[1]) / ctx.canvas.height;
+        vec3.set(eyeNormal, x, y, -1);
         vec3.multiply(eyeNormal, eyeNormal, camera.inverseFovScaling);
         vec3.rotateX(eyeNormal, eyeNormal, v3zero, -engine.camera.pitch);
         vec3.rotateY(eyeNormal, eyeNormal, v3zero, -engine.camera.yaw);
         vec3.normalize(eyeNormal, eyeNormal);
-        
-        let dot = 0, normal = scene.axisNormal;
+
+        let dot = 0;
+        let normal = scene.axisNormal;
         for (const plane of planes) {
           const planeDot = vec3.dot(eyeNormal, plane);
           if (dot >= planeDot) continue;
@@ -106,9 +115,8 @@ export default (engine) => {
 
       ctx.bindBuffer(ctx.ARRAY_BUFFER, scene.hoveredInstance.model.buffer.vertex);
 
-      const model_trs = mat4.clone(scene.hoveredInstance.globalTrs);
       const mvp = mat4.clone(camera.mvp);
-      mat4.multiply(mvp, mvp, model_trs);
+      mat4.multiply(mvp, mvp, scene.hoveredInstance.globalTrs);
 
       ctx.enableVertexAttribArray(program.aLoc.a_position);
       ctx.vertexAttribPointer(program.aLoc.a_position, 3, ctx.FLOAT, false, 0, 0);

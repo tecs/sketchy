@@ -41,9 +41,12 @@ export default (engine) => {
       if (!state.drawing) return;
 
       const { model } = scene.currentInstance;
-      
-      const edge1 = vec3.create(), edge2 = vec3.create(), edge3 = vec3.create(), hovered = vec3.fromValues(1, 1, 1);
-      
+
+      const edge1 = vec3.create();
+      const edge2 = vec3.create();
+      const edge3 = vec3.create();
+      const hovered = vec3.fromValues(1, 1, 1);
+
       const vertices = model.data.lineVertex.slice(-12);
       vec3.multiply(edge1, scene.axisNormal, vertices);
 
@@ -53,17 +56,17 @@ export default (engine) => {
 
       vec3.copy(edge2, edge1);
       vec3.copy(edge3, edge1);
-      
+
       const i1 = scene.axisNormal[0] ? 1 : 0;
       const i2 = i1 ? 2 : scene.axisNormal[1] + 1;
-      
+
       edge2[i2] = vertices[i2];
       edge3[i1] = vertices[i1];
-      
+
       vertices.set(edge1, 6);
       vertices.set(edge2, 3);
       vertices.set(edge3, 9);
-      
+
       model.updateBufferEnd(vertices, 'lineVertex');
       model.updateBufferEnd(vertices, 'vertex');
 

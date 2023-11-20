@@ -3,7 +3,7 @@ export default (engine) => {
   const { driver, state, scene, camera, input } = engine;
 
   /** @type {Tool} */
-  const orbit = {
+  let lastTool = {
     type: 'orbit',
     name: 'Orbit',
     shortcut: 'o',
@@ -15,7 +15,7 @@ export default (engine) => {
       state.setHovered(scene.hovered);
       state.setHoveredGlobal(scene.hoveredGlobal);
       state.setHoveredInstance(scene.hoveredInstance);
-      lastTool = orbit;
+      lastTool = this;
     },
     update(delta) {
       if (!state.orbiting) return;
@@ -43,7 +43,7 @@ export default (engine) => {
     },
   };
 
-  let lastTool = orbit;
+  const orbit = lastTool;
 
   engine.on('mousedown', (button) => {
     if (button !== 'middle' || state.orbiting) return;
