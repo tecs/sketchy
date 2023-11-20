@@ -107,7 +107,7 @@ export default class Camera {
     toEye[0] = 0;
     toEye[1] = 0;
     toEye[2] = this.#engine.state.hovered[2];
-    if (!this.#engine.state.hoveredInstance?.id.int) {
+    if (!this.#engine.state.hoveredInstance) {
       toEye[2] = Math.abs(this.#startingPointVec[2]);
     }
 
