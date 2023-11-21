@@ -17,8 +17,7 @@ export default (engine) => {
 
         uniform mat4 u_mvp;
         uniform mat4 u_normalMvp;
-        uniform vec4 u_instanceId;
-        uniform vec4 u_selectedInstanceId;
+        uniform float u_isSelected;
         uniform float u_isInShadow;
 
         varying vec4 v_color;
@@ -39,7 +38,7 @@ export default (engine) => {
           v_color.rgb *= lightIntensity;
 
           // Highlight selected instance
-          if (u_instanceId == u_selectedInstanceId && u_instanceId != vec4(0.0)) {
+          if (u_isSelected == 1.0) {
             v_color.rgb += vec3(0.1);
           }
         }
@@ -61,8 +60,7 @@ export default (engine) => {
         attribute vec4 a_position;
 
         uniform mat4 u_mvp;
-        uniform vec4 u_instanceId;
-        uniform vec4 u_selectedInstanceId;
+        uniform float u_isSelected;
         uniform float u_isInShadow;
 
         varying vec4 v_color;
@@ -70,7 +68,7 @@ export default (engine) => {
         void main() {
           gl_Position = u_mvp * a_position;
           v_color = vec4(0.0, 0.0, 0.0, 1.0);
-          if (u_instanceId == u_selectedInstanceId && u_instanceId != vec4(0.0)) {
+          if (u_isSelected == 1.0) {
             v_color.b = 1.0;
           }
 
@@ -192,44 +190,41 @@ export default (engine) => {
       }
 
       for (const instance of model.instances) {
-        const isInShadow = scene.currentInstance && !instance.belongsTo(scene.currentInstance) ? 1 : 0;
+        const isSelected = scene.selectedInstance && instance.belongsTo(scene.selectedInstance) ? 1 : 0;
+        const isInShadow = scene.currentInstance && !isSelected && !instance.belongsTo(scene.currentInstance) ? 1 : 0;
 
         mat4.multiply(mvp, camera.mvp, instance.globalTrs);
         ctx.uniformMatrix4fv(program.uLoc.u_mvp, false, mvp);
-
-        ctx.uniform4fv(program.uLoc.u_instanceId, instance.id.vec4);
 
         if (step === 'objects') {
           mat4.multiply(mvp, camera.world, instance.globalTrs);
           mat4.transpose(mvp, mvp);
           mat4.invert(mvp, mvp);
           ctx.uniformMatrix4fv(program.uLoc.u_normalMvp, false, mvp);
-
-          ctx.uniform1f(program.uLoc.u_isInShadow, isInShadow);
         }
-        if (step !== 'hover') {
-          ctx.uniform4fv(
-            program.uLoc.u_selectedInstanceId,
-            scene.selectedInstance?.id.vec4 ?? scene.rootInstance.id.vec4,
-          );
+        if (step === 'hover') {
+          ctx.uniform4fv(program.uLoc.u_instanceId, instance.id.vec4);
+        } else {
+          ctx.uniform1f(program.uLoc.u_isSelected, isSelected);
+          ctx.uniform1f(program.uLoc.u_isInShadow, isInShadow);
         }
 
         if (step !== 'lines') {
           ctx.bindBuffer(ctx.ELEMENT_ARRAY_BUFFER, model.buffer.index);
           ctx.drawElements(ctx.TRIANGLES, model.data.index.length, UNSIGNED_INDEX_TYPE, 0);
         } else {
-          if (instance !== scene.rootInstance && instance === scene.selectedInstance) {
+          if (instance !== scene.rootInstance && isSelected) {
             ctx.lineWidth(2);
             // Bounding box
-            ctx.bindBuffer(ctx.ARRAY_BUFFER, model.buffer.boundingBoxVertex);
-            ctx.enableVertexAttribArray(program.aLoc.a_position);
-            ctx.vertexAttribPointer(program.aLoc.a_position, 3, ctx.FLOAT, false, 0, 0);
+            if (instance === scene.selectedInstance) {
+              ctx.bindBuffer(ctx.ARRAY_BUFFER, model.buffer.boundingBoxVertex);
+              ctx.enableVertexAttribArray(program.aLoc.a_position);
+              ctx.vertexAttribPointer(program.aLoc.a_position, 3, ctx.FLOAT, false, 0, 0);
 
-            ctx.bindBuffer(ctx.ELEMENT_ARRAY_BUFFER, model.buffer.boundingBoxIndex);
-            ctx.drawElements(ctx.LINES, 24, UNSIGNED_INDEX_TYPE, 0);
+              ctx.bindBuffer(ctx.ELEMENT_ARRAY_BUFFER, model.buffer.boundingBoxIndex);
+              ctx.drawElements(ctx.LINES, 24, UNSIGNED_INDEX_TYPE, 0);
+            }
           }
-
-          ctx.uniform1f(program.uLoc.u_isInShadow, isInShadow);
 
           // Object lines
           ctx.bindBuffer(ctx.ARRAY_BUFFER, model.buffer.lineVertex);
