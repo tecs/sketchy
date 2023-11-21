@@ -22,15 +22,6 @@ export default class Scene {
   /** @type {Instance} */
   rootInstance;
 
-  /** @type {Instance | null} */
-  currentInstance;
-
-  /** @type {Instance | null} */
-  selectedInstance;
-
-  /** @type {Instance | null} */
-  hoveredInstance;
-
   /** @type {vec3} */
   axisNormal;
 
@@ -39,6 +30,15 @@ export default class Scene {
 
   /** @type {vec3} */
   hoveredGlobal;
+
+  /** @type {Instance | null} */
+  currentInstance = null;
+
+  /** @type {Instance | null} */
+  selectedInstance = null;
+
+  /** @type {Instance | null} */
+  hoveredInstance = null;
 
   /**
    * @param {Engine} engine
@@ -51,9 +51,6 @@ export default class Scene {
     this.models.push(this.rootModel);
 
     this.rootInstance = this.rootModel.instantiate(subModel, null, 0)[0];
-    this.currentInstance = this.rootInstance;
-    this.selectedInstance = this.rootInstance;
-    this.hoveredInstance = this.rootInstance;
 
     this.axisNormal = engine.math.vec3.fromValues(0, 1, 0);
     this.hovered = engine.math.vec3.create();
