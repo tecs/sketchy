@@ -19,7 +19,7 @@ export default (engine) => {
       const doubleClicked = now - lastClick < 200;
       lastClick = now;
 
-      if (doubleClicked) {
+      if (doubleClicked && scene.hoveredInstance === scene.selectedInstance) {
         scene.setSelectedInstance(null);
         scene.setCurrentInstance(scene.hoveredInstance);
         return;
