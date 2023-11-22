@@ -11,7 +11,7 @@ export default class Scene {
   #engine;
 
   /** @type {Map<number, Instance>} */
-  #instanceById;
+  #instanceById = new Map();
 
   /** @type {Model[]} */
   models = [];
@@ -23,13 +23,16 @@ export default class Scene {
   rootInstance;
 
   /** @type {vec3} */
-  axisNormal;
+  axisNormal = new Float32Array(3);
 
   /** @type {vec3} */
-  hovered;
+  hovered = new Float32Array(3);
 
   /** @type {vec3} */
-  hoveredGlobal;
+  hoveredGlobal = new Float32Array(3);
+
+  /** @type {Model | null} */
+  currentModel = null;
 
   /** @type {Instance | null} */
   currentInstance = null;
@@ -40,23 +43,27 @@ export default class Scene {
   /** @type {Instance | null} */
   hoveredInstance = null;
 
+  get currentModelWithRoot() {
+    return this.currentInstanceWithRoot.model;
+  }
+
+  get currentInstanceWithRoot() {
+    return this.currentInstance ?? this.rootInstance;
+  }
+
   /**
    * @param {Engine} engine
    */
   constructor(engine) {
     this.#engine = engine;
+    this.#reset();
 
     this.rootModel = new Model('', {}, engine);
     const subModel = { model: this.rootModel, trs: engine.math.mat4.create(), children: [] };
     this.models.push(this.rootModel);
 
     this.rootInstance = this.rootModel.instantiate(subModel, null, 0)[0];
-
-    this.axisNormal = engine.math.vec3.fromValues(0, 1, 0);
-    this.hovered = engine.math.vec3.create();
-    this.hoveredGlobal = engine.math.vec3.create();
-
-    this.#instanceById = new Map([[0, this.rootInstance]]);
+    this.#instanceById.set(this.rootInstance.id.int, this.rootInstance);
 
     engine.on('mousedown', (button) => {
       if (button === 'left') engine.tools.selected.start();
@@ -76,6 +83,22 @@ export default class Scene {
     });
   }
 
+  #reset() {
+    this.#instanceById.clear();
+    this.models.splice(0);
+
+    const { vec3 } = this.#engine.math;
+
+    vec3.set(this.axisNormal, 0, 1, 0);
+    vec3.zero(this.hovered);
+    vec3.zero(this.hoveredGlobal);
+
+    this.currentModel = null;
+    this.currentInstance = null;
+    this.selectedInstance = null;
+    this.hoveredInstance = null;
+  }
+
   /**
    *
    * @param {Model} model
@@ -83,7 +106,7 @@ export default class Scene {
    * @returns {Instance}
    */
   instanceModel(model, trs) {
-    const currentInstance = this.currentInstance ?? this.rootInstance;
+    const currentInstance = this.currentInstanceWithRoot;
     if (model.getAllModels().includes(currentInstance.model)) {
       const message = 'Cannot add model to itself';
       this.#engine.emit('usererror', message);
@@ -122,9 +145,11 @@ export default class Scene {
    * @param {Instance | null} newInstance
    */
   setCurrentInstance(newInstance) {
+    if (newInstance === this.rootInstance) newInstance = null;
     if (newInstance !== this.currentInstance) {
       const previous = this.currentInstance;
       this.currentInstance = newInstance;
+      this.currentModel = newInstance?.model ?? null;
       this.#engine.emit('currentchange', newInstance, previous);
     }
   }

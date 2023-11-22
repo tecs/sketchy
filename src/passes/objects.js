@@ -171,7 +171,7 @@ export default (engine) => {
 
     for (const model of scene.models) {
       // Prevent self-picking when editing
-      if (engine.state.drawing && step === 'hover' && scene.currentInstance?.model === model) continue;
+      if (engine.state.drawing && step === 'hover' && scene.currentModelWithRoot === model) continue;
 
       if (step !== 'lines') {
         ctx.bindBuffer(ctx.ARRAY_BUFFER, model.buffer.vertex);
@@ -191,7 +191,7 @@ export default (engine) => {
 
       for (const instance of model.instances) {
         const isSelected = scene.selectedInstance && instance.belongsTo(scene.selectedInstance) ? 1 : 0;
-        const isInShadow = scene.currentInstance && !isSelected && !instance.belongsTo(scene.currentInstance) ? 1 : 0;
+        const isInShadow = !isSelected && !instance.belongsTo(scene.currentInstance) ? 1 : 0;
 
         mat4.multiply(mvp, camera.mvp, instance.globalTrs);
         ctx.uniformMatrix4fv(program.uLoc.u_mvp, false, mvp);

@@ -21,7 +21,7 @@ export default (engine) => {
       state.setHoveredGlobal(scene.hoveredGlobal);
       state.setDrawing(true);
 
-      const { model } = scene.currentInstance ?? scene.rootInstance;
+      const model = scene.currentModelWithRoot;
 
       const vertices = new Float32Array(12);
       vertices.set(scene.hoveredGlobal);
@@ -46,7 +46,7 @@ export default (engine) => {
     update() {
       if (!state.drawing) return;
 
-      const { model } = scene.currentInstance ?? scene.rootInstance;
+      const model = scene.currentModelWithRoot;
 
       hovered[0] = 1;
       hovered[1] = 1;
@@ -89,7 +89,7 @@ export default (engine) => {
     abort() {
       if (!state.drawing || engine.tools.selected.type === 'orbit') return;
 
-      const { model } = scene.currentInstance ?? scene.rootInstance;
+      const model = scene.currentModelWithRoot;
 
       model.truncateBuffer('lineVertex', 12);
       model.truncateBuffer('lineIndex', 8);

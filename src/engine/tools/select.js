@@ -19,7 +19,7 @@ export default (engine) => {
       const doubleClicked = now - lastClick < 200;
       lastClick = now;
 
-      const currentInstance = scene.currentInstance ?? scene.rootInstance;
+      const currentInstance = scene.currentInstanceWithRoot;
       let clickedInstance = scene.hoveredInstance;
       while (clickedInstance && clickedInstance !== currentInstance && clickedInstance.parent !== currentInstance) {
         clickedInstance = clickedInstance.parent;

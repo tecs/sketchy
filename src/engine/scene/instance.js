@@ -78,10 +78,12 @@ export default class Instance {
   }
 
   /**
-   * @param {Instance} instance
+   * @param {Instance | null} instance
    * @returns {boolean}
    */
   belongsTo(instance) {
+    if (!instance) return true;
+
     /** @type {Instance | null} */
     let potentialChild = this;
 
