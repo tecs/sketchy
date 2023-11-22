@@ -4,7 +4,7 @@
   "description": "",
   "main": "",
   "scripts": {
-    "dev": "concurrently --kill-others 'tsc -w' 'http-server . -c-1 -s'",
+    "dev": "concurrently --kill-others 'tsc -w' 'esw -w .' 'http-server . -c-1 -s'",
     "lint": "eslint .",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -15,6 +15,7 @@
     "eslint": "^8.54.0",
     "eslint-config-airbnb-base": "^15.0.0",
     "eslint-plugin-import": "^2.29.0",
+    "eslint-watch": "^8.0.0",
     "http-server": "^14.1.1",
     "typescript": "^5.0.4"
   }
