@@ -1,5 +1,20 @@
+:root, ::backdrop {
+  --textColor: #080808;
+  --backgroundColor: #EEEEEE;
+  --lightenColor: #FFFFFF99;
+  --darkenColor: #00000033;
+  --darkOverlayColor: #00000099;
+  --borderColor: #AAAAAA;
+  --borderHighlightColor: #FFFFFF;
+  --borderShadowColor: #DDDDDD;
+  --iconSize: 32px;
+}
+
+/* Global */
+
 * {
   box-sizing: border-box;
+  color: var(--textColor);
 }
 
 html, body, canvas {
@@ -9,46 +24,110 @@ html, body, canvas {
   height: 100%;
   position: relative;
   overflow: hidden;
+  color: var(--textColor);
 }
 
-#menu {
+.button {
+  cursor: pointer;
+  border: 1px solid var(--borderColor);
+  border-radius: 3px;
+  position: relative;
+  background: transparent;
+}
+
+.button::before, .button::after {
+  z-index: -1;
+  position: absolute;
+  content: '';
+  display: block;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.button::before {
+  background-color: var(--backgroundColor);
+}
+
+.button:hover::after {
+  background-color: var(--lightenColor);
+}
+
+.button:active::after {
+  background-color: var(--darkenColor);
+}
+
+/* Menu */
+
+.menu {
   position: absolute;
   left: 5px;
   top: 50%;
   transform: translateY(-50%);
-  background: #EEE;
+  background: var(--backgroundColor);
   border: 1px solid;
-  border-top-color: white;
-  border-left-color: #DDD;
-  border-right-color: white;
-  border-bottom-color: #DDD;
+  border-top-color: var(--borderHighlightColor);
+  border-left-color: var(--borderShadowColor);
+  border-right-color: var(--borderHighlightColor);
+  border-bottom-color: var(--borderShadowColor);
   -webkit-user-select: none;
   -moz-user-select: none;
   -ms-user-select: none;
   user-select: none;
 }
 
-.menu-item {
-  width: 32px;
-  height: 32px;
+.menuItem {
+  width: var(--iconSize);
+  height: var(--iconSize);
   cursor: pointer;
-  line-height: 32px;
+  line-height: var(--iconSize);
   text-align: center;
 }
 
-.menu-item.selected {
-  background: #FFFFFF99;
+.menuItem.selected {
+  background: var(--lightenColor);
   border: 1px solid;
-  border-top-color: #DDD;
-  border-left-color: white;
-  border-right-color: #DDD;
-  border-bottom-color: white;
+  border-top-color: var(--borderShadowColor);
+  border-left-color: var(--borderHighlightColor);
+  border-right-color: var(--borderShadowColor);
+  border-bottom-color: var(--borderHighlightColor);
 
 }
 
-table {
-  background-color: white;
-  border: 2px solid black;
+/* Dialogs */
+
+dialog {
+  position: relative;
+  background: var(--backgroundColor);
+  border: none;
+}
+
+dialog::backdrop {
+  background: var(--darkOverlayColor);
+}
+
+.dialogClose {
+  position: absolute;
+  top: 0;
+  right: 0;
+  border: none;
+  outline: none;
+  background-color: transparent;
+}
+
+.dialogButtonWrapper {
+  text-align: right;
+}
+
+.error .dialogCancel {
+  display: none;
+}
+
+/* Debug */
+
+.debug {
+  background-color: var(--backgroundColor);
   position: absolute;
   bottom: 0;
   right: 0;
@@ -60,15 +139,15 @@ table {
   user-select: none;
 }
 
-table, td, th {
-  border: 1px solid black;
+.debug, .debug td, .debug th {
+  border: 1px solid var(--borderColor);
 }
 
-thead, td:first-child {
+.debug thead, .debug td:first-child {
   font-weight: bold;
-  background: #666;
+  background: var(--darkOverlayColor);
 }
 
-td, th {
-  padding: 5px;
+.debug td, .debug th {
+  padding: 0.25rem;
 }
