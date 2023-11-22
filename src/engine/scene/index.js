@@ -80,13 +80,14 @@ export default class Scene {
    *
    * @param {Model} model
    * @param {Readonly<mat4>} trs
-   * @returns
+   * @returns {Instance}
    */
   instanceModel(model, trs) {
     const currentInstance = this.currentInstance ?? this.rootInstance;
     if (model.getAllModels().includes(currentInstance.model)) {
-      alert('Cannot add model to itself');
-      throw new Error('Cannot add model to itself');
+      const message = 'Cannot add model to itself';
+      this.#engine.emit('usererror', message);
+      throw new Error(message);
     }
 
     if (!this.models.includes(model)) {

@@ -13,13 +13,15 @@
  * @typedef {"selectionchange"} SelectionChangeEvent
  * @typedef {"currentchange"} CurrentChangeEvent
  * @typedef {"mousemove"} MouseMoveEvent
+ * @typedef {"usererror"} UserError
  *
  * @typedef {KeyUpEvent|KeyDownEvent} KeyEvent
  * @typedef {MouseUpEvent|MouseDownEvent} MouseButtonEvent
  * @typedef {CameraChangeEvent|SceneChangeEvent} ParamlessEvent
  * @typedef {SelectionChangeEvent|CurrentChangeEvent} InstanceChangeEvent
+ * @typedef {UserError} UserMessageEvent
  *
- * @typedef {MouseMoveEvent|InstanceChangeEvent|MouseButtonEvent|KeyEvent|ViewportResizeEvent|ToolChangeEvent|ParamlessEvent} EngineEvent
+ * @typedef {MouseMoveEvent|InstanceChangeEvent|MouseButtonEvent|KeyEvent|ViewportResizeEvent|ToolChangeEvent|ParamlessEvent|UserMessageEvent} EngineEvent
  *
  * @typedef {(event: ViewportResizeEvent, current: Readonly<vec3>, previous: Readonly<vec3>) => void} ViewportResizeEventEmitter
  * @typedef {(event: ToolChangeEvent, current: Readonly<Tool>, previous: Readonly<Tool>) => void} ToolChangeEventEmitter
@@ -27,9 +29,10 @@
  * @typedef {(event: KeyEvent, key: string) => void} KeyEventEmitter
  * @typedef {(event: MouseButtonEvent, button: MouseButton) => void} MouseButtonEventEmitter
  * @typedef {(event: MouseMoveEvent, current: Readonly<vec3>, delta: Readonly<vec3>, previous: Readonly<vec3>) => void} MouseMoveEventEmitter
+ * @typedef {(event: UserMessageEvent, message: string) => void} UserMessageEventEmitter
  * @typedef {(event: ParamlessEvent) => void} ParamlessEventEmitter
  *
- * @typedef {ViewportResizeEventEmitter&ToolChangeEventEmitter&InstanceChangeEventEmitter&KeyEventEmitter&MouseButtonEventEmitter&MouseMoveEventEmitter&ParamlessEventEmitter} EventEmitter
+ * @typedef {ViewportResizeEventEmitter&ToolChangeEventEmitter&InstanceChangeEventEmitter&KeyEventEmitter&MouseButtonEventEmitter&MouseMoveEventEmitter&ParamlessEventEmitter&UserMessageEventEmitter} EventEmitter
  *
  * @typedef {(event: ViewportResizeEvent, handler: (current: Readonly<vec3>, previous: Readonly<vec3>) => void, once?: boolean) => void} ViewportResizeEventHandler
  * @typedef {(event: ToolChangeEvent, handler: (current: Readonly<Tool>, previous: Readonly<Tool>) => void, once?: boolean) => void} ToolChangeEventHandler
@@ -37,9 +40,10 @@
  * @typedef {(event: KeyEvent, handler: (key: string) => void, once?: boolean) => void} KeyEventHandler
  * @typedef {(event: MouseButtonEvent, handler: (button: MouseButton) => void, once?: boolean) => void} MouseButtonEventHandler
  * @typedef {(event: MouseMoveEvent, handler: (current: Readonly<vec3>, delta: Readonly<vec3>, previous: Readonly<vec3>) => void, once?: boolean) => void} MouseMoveEventHandler
+ * @typedef {(event: UserMessageEvent, handler: (message: string) => void, once?: boolean) => void} UserMessageEventHandler
  * @typedef {(event: ParamlessEvent, handler: () => void, once?: boolean) => void} ParamlessEventHandler
  *
- * @typedef {ViewportResizeEventHandler&ToolChangeEventHandler&InstanceChangeEventHandler&KeyEventHandler&MouseButtonEventHandler&MouseMoveEventHandler&ParamlessEventHandler} EventHandler
+ * @typedef {ViewportResizeEventHandler&ToolChangeEventHandler&InstanceChangeEventHandler&KeyEventHandler&MouseButtonEventHandler&MouseMoveEventHandler&ParamlessEventHandler&UserMessageEventHandler} EventHandler
  */
 /* eslint-enable max-len */
 
