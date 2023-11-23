@@ -1,3 +1,8 @@
+/**
+ * @typedef Options
+ * @property {"top"|"left"|"right"|"bottom"} position
+ */
+
 export default class Menu {
   element = document.createElement('div');
 
@@ -9,9 +14,11 @@ export default class Menu {
 
   /**
    * @param {HTMLElement} parent
+   * @param {Partial<Options>} options
    */
-  constructor(parent) {
+  constructor(parent, options = {}) {
     this.element.className = 'menu';
+    this.element.classList.add(options.position ?? 'left');
 
     parent.appendChild(this.element);
   }

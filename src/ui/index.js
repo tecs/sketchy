@@ -6,7 +6,10 @@ export default class Ui {
   appContainer;
 
   /** @type {Menu} */
-  menu;
+  topMenu;
+
+  /** @type {Menu} */
+  sideMenu;
 
   /** @type {Dialog} */
   dialog;
@@ -17,6 +20,7 @@ export default class Ui {
   constructor(appContainer) {
     this.appContainer = appContainer;
     this.dialog = new Dialog(appContainer);
-    this.menu = new Menu(appContainer);
+    this.topMenu = new Menu(appContainer, { position: 'top' });
+    this.sideMenu = new Menu(appContainer, { position: 'left' });
   }
 }

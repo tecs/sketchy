@@ -62,9 +62,6 @@ html, body, canvas {
 
 .menu {
   position: absolute;
-  left: 5px;
-  top: 50%;
-  transform: translateY(-50%);
   background: var(--backgroundColor);
   border: 1px solid;
   border-top-color: var(--borderHighlightColor);
@@ -75,6 +72,30 @@ html, body, canvas {
   -moz-user-select: none;
   -ms-user-select: none;
   user-select: none;
+}
+
+
+.menu.left, .menu.right {
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.menu.left {
+  left: 5px;
+}
+
+.menu.right {
+  right: 5px;
+}
+
+.menu.top {
+  left: 0;
+  top: 0;
+}
+
+.menu.bottom {
+  left: 0;
+  bottom: 0;
 }
 
 .menuItem {
@@ -92,7 +113,10 @@ html, body, canvas {
   border-left-color: var(--borderHighlightColor);
   border-right-color: var(--borderShadowColor);
   border-bottom-color: var(--borderHighlightColor);
+}
 
+.top .menuItem, .bottom .menuItem {
+  display: inline-block;
 }
 
 /* Dialogs */
