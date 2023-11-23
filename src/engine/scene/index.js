@@ -6,6 +6,20 @@ import Model from './model.js';
  */
 const uuuuToInt = (uuuu) => uuuu[0] + (uuuu[1] << 8) + (uuuu[2] << 16) + (uuuu[3] << 24);
 
+/**
+ * @typedef SubModelState
+ * @property {string} name
+ * @property {number[]} trs
+ *
+ * @typedef ModelState
+ * @property {string} name
+ * @property {import('./model.js').PlainModelData} data
+ * @property {SubModelState[]} children
+ *
+ * @typedef SceneState
+ * @property {ModelState[]} models
+ */
+
 export default class Scene {
   /** @type {Engine} */
   #engine;
@@ -56,14 +70,10 @@ export default class Scene {
    */
   constructor(engine) {
     this.#engine = engine;
-    this.#reset();
 
-    this.rootModel = new Model('', {}, engine);
-    const subModel = { model: this.rootModel, trs: engine.math.mat4.create(), children: [] };
-    this.models.push(this.rootModel);
-
-    this.rootInstance = this.rootModel.instantiate(subModel, null, 0)[0];
-    this.#instanceById.set(this.rootInstance.id.int, this.rootInstance);
+    this.#reset({ boundingBoxVertex: Array.from(new Array(24), () => 0) });
+    [this.rootModel] = this.models;
+    [this.rootInstance] = this.rootModel.instances;
 
     engine.on('mousedown', (button) => {
       if (button === 'left') engine.tools.selected.start();
@@ -83,11 +93,21 @@ export default class Scene {
     });
   }
 
-  #reset() {
+  /**
+   * @param {Partial<ModelState["data"]>} rootData
+   */
+  #reset(rootData) {
+    const { vec3, mat4 } = this.#engine.math;
+
     this.#instanceById.clear();
     this.models.splice(0);
 
-    const { vec3 } = this.#engine.math;
+    this.rootModel = new Model('', rootData, this.#engine);
+    this.models.push(this.rootModel);
+
+    const subModel = { model: this.rootModel, trs: mat4.create(), children: [] };
+    [this.rootInstance] = this.rootModel.instantiate(subModel, null, 0);
+    this.#instanceById.set(this.rootInstance.id.int, this.rootInstance);
 
     vec3.set(this.axisNormal, 0, 1, 0);
     vec3.zero(this.hovered);
@@ -200,5 +220,64 @@ export default class Scene {
     this.axisNormal[0] = Math.abs(normal[0]);
     this.axisNormal[1] = Math.abs(normal[1]);
     this.axisNormal[2] = Math.abs(normal[2]);
+  }
+
+  /**
+   * @returns {string}
+   */
+  export() {
+    /** @type {SceneState} */
+    const state = {
+      models: this.models.map(model => ({
+        name: model.name,
+        data: {
+          vertex: [...model.data.vertex],
+          lineVertex: [...model.data.lineVertex],
+          normal: [...model.data.normal],
+          color: [...model.data.color],
+          index: [...model.data.index],
+          lineIndex: [...model.data.lineIndex],
+          boundingBoxVertex: [...model.data.boundingBoxVertex],
+        },
+        children: model.subModels.map(subModel => ({
+          name: subModel.model.name,
+          trs: [...subModel.trs],
+        })),
+      })),
+    };
+
+    return JSON.stringify(state);
+  }
+
+  /**
+   * @param {string} sceneData
+   */
+  import(sceneData) {
+    /** @type {SceneState} */
+    const state = JSON.parse(sceneData);
+    const rootModelData = state?.models?.find?.(({ name }) => name === '');
+
+    if (!rootModelData?.data) {
+      this.#engine.emit('usererror', 'Invalid data');
+      return;
+    }
+
+    this.#reset(rootModelData.data);
+
+    /** @type {Record<string, Model>} */
+    const models = {};
+
+    for (const { name, data } of state.models) {
+      models[name] = new Model(name, data, this.#engine);
+    }
+
+    for (const modelState of state.models) {
+      this.setCurrentInstance(models[modelState.name].instances[0]);
+      for (const child of modelState.children) {
+        this.instanceModel(models[child.name], new Float32Array(child.trs));
+      }
+    }
+
+    this.setCurrentInstance(null);
   }
 }

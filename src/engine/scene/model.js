@@ -8,15 +8,8 @@
  * @property {Uint16Array|Uint32Array} lineIndex
  * @property {Float32Array} boundingBoxVertex
  *
- * @typedef ModelBuffers
- * @property {GLBuffer} index
- * @property {GLBuffer} vertex
- * @property {GLBuffer} normal
- * @property {GLBuffer} color
- * @property {GLBuffer} lineIndex
- * @property {GLBuffer} lineVertex
- * @property {GLBuffer} boundingBoxIndex
- * @property {GLBuffer} boundingBoxVertex
+ * @typedef {Record<keyof ModelData, number[]>} PlainModelData
+ * @typedef {Record<keyof ModelData | "boundingBoxIndex", GLBuffer>} ModelBuffers
  *
  * @typedef SubModel
  * @property {Model} model
@@ -58,7 +51,7 @@ export default class Model {
 
   /**
    * @param {string} name
-   * @param {Readonly<Partial<ModelData>> | undefined} data
+   * @param {Readonly<Partial<PlainModelData>> | undefined} data
    * @param {Engine} engine
    */
   constructor(name, data, engine) {
@@ -79,13 +72,13 @@ export default class Model {
     };
 
     this.data = {
-      vertex: data?.vertex ?? new Float32Array(0),
-      normal: data?.normal ?? new Float32Array(0),
-      color: data?.color ?? new Uint8Array(0),
-      index: data?.index ?? new engine.driver.UintIndexArray(0),
-      lineVertex: data?.lineVertex ?? new Float32Array(0),
-      lineIndex: data?.lineIndex ?? new engine.driver.UintIndexArray(0),
-      boundingBoxVertex: data?.boundingBoxVertex ?? new Float32Array(24),
+      vertex: new Float32Array(data?.vertex ?? []),
+      normal: new Float32Array(data?.normal ?? []),
+      color: new Uint8Array(data?.color ?? []),
+      index: new engine.driver.UintIndexArray(data?.index ?? []),
+      lineVertex: new Float32Array(data?.lineVertex ?? []),
+      lineIndex: new engine.driver.UintIndexArray(data?.lineIndex ?? []),
+      boundingBoxVertex: data?.boundingBoxVertex ? new Float32Array(data.boundingBoxVertex) : new Float32Array(24),
     };
 
     const boundingBoxIndex = new engine.driver.UintIndexArray([
