@@ -39,7 +39,7 @@ window.addEventListener('load', () => {
 
   canvas.addEventListener('wheel', ({ deltaY }) => {
     if (engine.state.orbiting) return;
-    engine.camera.zoom(-Math.sign(deltaY));
+    engine.camera.zoom(Math.sign(deltaY));
   });
 
   engine.on('usererror', (message) => ui.dialog.error(message));
