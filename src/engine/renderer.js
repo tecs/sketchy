@@ -53,7 +53,7 @@ export default class Renderer {
         try {
           renderingPass.render();
         } catch (e) {
-          console.error('Caught during render pass:', e);
+          this.#engine.emit('error', 'Caught during render pass:', e);
         }
       }
 

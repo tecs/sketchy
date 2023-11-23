@@ -43,6 +43,8 @@ window.addEventListener('load', () => {
   });
 
   engine.on('usererror', (message) => ui.dialog.error(message));
+  // eslint-disable-next-line no-console
+  engine.on('error', console.error);
 
   canvas.addEventListener('mousedown', ({ button }) => engine.input.setButton(button, true));
   canvas.addEventListener('mouseup', ({ button }) => engine.input.setButton(button, false));

@@ -13,6 +13,7 @@
  * @typedef {"selectionchange"} SelectionChangeEvent
  * @typedef {"currentchange"} CurrentChangeEvent
  * @typedef {"mousemove"} MouseMoveEvent
+ * @typedef {"error"} SystemError
  * @typedef {"usererror"} UserError
  *
  * @typedef {KeyUpEvent|KeyDownEvent} KeyEvent
@@ -20,8 +21,9 @@
  * @typedef {CameraChangeEvent|SceneChangeEvent} ParamlessEvent
  * @typedef {SelectionChangeEvent|CurrentChangeEvent} InstanceChangeEvent
  * @typedef {UserError} UserMessageEvent
+ * @typedef {SystemError} ErrorEvent
  *
- * @typedef {MouseMoveEvent|InstanceChangeEvent|MouseButtonEvent|KeyEvent|ViewportResizeEvent|ToolChangeEvent|ParamlessEvent|UserMessageEvent} EngineEvent
+ * @typedef {MouseMoveEvent|InstanceChangeEvent|MouseButtonEvent|KeyEvent|ViewportResizeEvent|ToolChangeEvent|ParamlessEvent|UserMessageEvent|SystemError} EngineEvent
  *
  * @typedef {(event: ViewportResizeEvent, current: Readonly<vec3>, previous: Readonly<vec3>) => void} ViewportResizeEventEmitter
  * @typedef {(event: ToolChangeEvent, current: Readonly<Tool>, previous: Readonly<Tool>) => void} ToolChangeEventEmitter
@@ -30,9 +32,10 @@
  * @typedef {(event: MouseButtonEvent, button: MouseButton) => void} MouseButtonEventEmitter
  * @typedef {(event: MouseMoveEvent, current: Readonly<vec3>, delta: Readonly<vec3>, previous: Readonly<vec3>) => void} MouseMoveEventEmitter
  * @typedef {(event: UserMessageEvent, message: string) => void} UserMessageEventEmitter
+ * @typedef {(event: ErrorEvent, message: string, detals: any) => void} ErrorEventEmitter
  * @typedef {(event: ParamlessEvent) => void} ParamlessEventEmitter
  *
- * @typedef {ViewportResizeEventEmitter&ToolChangeEventEmitter&InstanceChangeEventEmitter&KeyEventEmitter&MouseButtonEventEmitter&MouseMoveEventEmitter&ParamlessEventEmitter&UserMessageEventEmitter} EventEmitter
+ * @typedef {ViewportResizeEventEmitter&ToolChangeEventEmitter&InstanceChangeEventEmitter&KeyEventEmitter&MouseButtonEventEmitter&MouseMoveEventEmitter&ParamlessEventEmitter&UserMessageEventEmitter&ErrorEventEmitter} EventEmitter
  *
  * @typedef {(event: ViewportResizeEvent, handler: (current: Readonly<vec3>, previous: Readonly<vec3>) => void, once?: boolean) => void} ViewportResizeEventHandler
  * @typedef {(event: ToolChangeEvent, handler: (current: Readonly<Tool>, previous: Readonly<Tool>) => void, once?: boolean) => void} ToolChangeEventHandler
@@ -41,9 +44,10 @@
  * @typedef {(event: MouseButtonEvent, handler: (button: MouseButton) => void, once?: boolean) => void} MouseButtonEventHandler
  * @typedef {(event: MouseMoveEvent, handler: (current: Readonly<vec3>, delta: Readonly<vec3>, previous: Readonly<vec3>) => void, once?: boolean) => void} MouseMoveEventHandler
  * @typedef {(event: UserMessageEvent, handler: (message: string) => void, once?: boolean) => void} UserMessageEventHandler
+ * @typedef {(event: ErrorEvent, handler: (message: string, detals: any) => void, once?: boolean) => void} ErrorEventHandler
  * @typedef {(event: ParamlessEvent, handler: () => void, once?: boolean) => void} ParamlessEventHandler
  *
- * @typedef {ViewportResizeEventHandler&ToolChangeEventHandler&InstanceChangeEventHandler&KeyEventHandler&MouseButtonEventHandler&MouseMoveEventHandler&ParamlessEventHandler&UserMessageEventHandler} EventHandler
+ * @typedef {ViewportResizeEventHandler&ToolChangeEventHandler&InstanceChangeEventHandler&KeyEventHandler&MouseButtonEventHandler&MouseMoveEventHandler&ParamlessEventHandler&UserMessageEventHandler&ErrorEventHandler} EventHandler
  */
 /* eslint-enable max-len */
 
@@ -76,7 +80,18 @@ export default class Events {
       try {
         handler.handler(arg1, arg2, arg3, arg4);
       } catch (e) {
-        console.error(`Caught inside handler for "${event}":`, e);
+        // avoid infinite recursion
+        if (event === 'error') {
+          const error = new Error('fatal error');
+          error.stack = [
+            'fatal error',
+            `Original Error: ${arg1} ${arg2?.stack ?? arg2}`,
+            `Caused error inside error handler: ${/** @type {Error} */ (e)?.stack ?? e}`,
+            `Caused ${error.stack}`,
+          ].join('\n\n');
+          throw error;
+        }
+        this.emit('error', `Caught inside handler for "${event}":`, e);
       }
       if (handler.once) handlersToRemove.push(handler);
     }
