@@ -14,11 +14,14 @@ export default (engine) => {
 
       uniform mat4 u_trs;
       uniform mat4 u_viewProjection;
+      uniform mat4 u_frustum;
 
       varying vec4 v_coord;
 
       void main() {
-        gl_Position = u_viewProjection * u_trs * a_position;
+        vec4 worldPosition = u_trs * a_position;
+        gl_Position = u_frustum * worldPosition;
+        v_coord = u_viewProjection * worldPosition;
       }
     `,
     frag`
@@ -47,16 +50,10 @@ export default (engine) => {
   ctx.framebufferTexture2D(ctx.FRAMEBUFFER, ctx.COLOR_ATTACHMENT0, ctx.TEXTURE_2D, texture, 0);
   ctx.framebufferRenderbuffer(ctx.FRAMEBUFFER, ctx.DEPTH_ATTACHMENT, ctx.RENDERBUFFER, renderbuffer);
 
-  const setupFramebufferTexture = () => {
-    ctx.bindTexture(ctx.TEXTURE_2D, texture);
-    // requires OES_texture_float
-    ctx.texImage2D(ctx.TEXTURE_2D, 0, ctx.RGBA, ctx.canvas.width, ctx.canvas.height, 0, ctx.RGBA, ctx.FLOAT, null);
-    ctx.bindRenderbuffer(ctx.RENDERBUFFER, renderbuffer);
-    ctx.renderbufferStorage(ctx.RENDERBUFFER, ctx.DEPTH_COMPONENT16, ctx.canvas.width, ctx.canvas.height);
-  };
-  setupFramebufferTexture();
-
-  engine.on('viewportresize', setupFramebufferTexture);
+  ctx.bindTexture(ctx.TEXTURE_2D, texture);
+  ctx.texImage2D(ctx.TEXTURE_2D, 0, ctx.RGBA, 1, 1, 0, ctx.RGBA, ctx.FLOAT, null);
+  ctx.bindRenderbuffer(ctx.RENDERBUFFER, renderbuffer);
+  ctx.renderbufferStorage(ctx.RENDERBUFFER, ctx.DEPTH_COMPONENT16, 1, 1);
 
   // cached structures
   const coords = new Float32Array(4);
@@ -120,11 +117,13 @@ export default (engine) => {
       ctx.vertexAttribPointer(program.aLoc.a_position, 3, ctx.FLOAT, false, 0, 0);
       ctx.uniformMatrix4fv(program.uLoc.u_trs, false, scene.hoveredInstance.globalTrs);
       ctx.uniformMatrix4fv(program.uLoc.u_viewProjection, false, camera.viewProjection);
+      ctx.uniformMatrix4fv(program.uLoc.u_frustum, false, camera.frustum);
 
       ctx.bindBuffer(ctx.ELEMENT_ARRAY_BUFFER, scene.hoveredInstance.model.buffer.index);
       ctx.drawElements(ctx.TRIANGLES, scene.hoveredInstance.model.data.index.length, UNSIGNED_INDEX_TYPE, 0);
+
       // requires OES_texture_float
-      ctx.readPixels(input.position[0], ctx.canvas.height - input.position[1] - 1, 1, 1, ctx.RGBA, ctx.FLOAT, coords);
+      ctx.readPixels(0, 0, 1, 1, ctx.RGBA, ctx.FLOAT, coords);
 
       scene.hover(coords);
     },

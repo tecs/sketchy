@@ -4,7 +4,6 @@ export default (engine) => {
     math: { mat4 },
     driver: { ctx, makeProgram, vert, frag, UNSIGNED_INDEX_TYPE },
     camera,
-    input,
     scene,
   } = engine;
 
@@ -137,25 +136,10 @@ export default (engine) => {
 
   const readData = new Uint8Array(4);
 
-  const setupFramebufferTexture = () => {
-    ctx.bindTexture(ctx.TEXTURE_2D, texture);
-    ctx.texImage2D(
-      ctx.TEXTURE_2D,
-      0,
-      ctx.RGBA,
-      ctx.canvas.width,
-      ctx.canvas.height,
-      0,
-      ctx.RGBA,
-      ctx.UNSIGNED_BYTE,
-      null,
-    );
-    ctx.bindRenderbuffer(ctx.RENDERBUFFER, renderbuffer);
-    ctx.renderbufferStorage(ctx.RENDERBUFFER, ctx.DEPTH_COMPONENT16, ctx.canvas.width, ctx.canvas.height);
-  };
-  setupFramebufferTexture();
-
-  engine.on('viewportresize', setupFramebufferTexture);
+  ctx.bindTexture(ctx.TEXTURE_2D, texture);
+  ctx.texImage2D(ctx.TEXTURE_2D, 0, ctx.RGBA, 1, 1, 0, ctx.RGBA, ctx.UNSIGNED_BYTE, null);
+  ctx.bindRenderbuffer(ctx.RENDERBUFFER, renderbuffer);
+  ctx.renderbufferStorage(ctx.RENDERBUFFER, ctx.DEPTH_COMPONENT16, 1, 1);
 
   // cached structures
   const normalMvp = mat4.create();
@@ -192,12 +176,17 @@ export default (engine) => {
         ctx.vertexAttribPointer(program.aLoc.a_color, 3, ctx.UNSIGNED_BYTE, true, 0, 0);
       }
 
+      if (step === 'hover') {
+        ctx.uniformMatrix4fv(program.uLoc.u_viewProjection, false, camera.frustum);
+      } else {
+        ctx.uniformMatrix4fv(program.uLoc.u_viewProjection, false, camera.viewProjection);
+      }
+
       for (const instance of model.instances) {
         const isSelected = scene.selectedInstance && instance.belongsTo(scene.selectedInstance) ? 1 : 0;
         const isInShadow = !isSelected && !instance.belongsTo(scene.currentInstance) ? 1 : 0;
 
         ctx.uniformMatrix4fv(program.uLoc.u_trs, false, instance.globalTrs);
-        ctx.uniformMatrix4fv(program.uLoc.u_viewProjection, false, camera.viewProjection);
 
         if (step === 'objects') {
           mat4.multiply(normalMvp, camera.world, instance.globalTrs);
@@ -252,15 +241,7 @@ export default (engine) => {
         break;
 
       case 'hover':
-        ctx.readPixels(
-          input.position[0],
-          ctx.canvas.height - input.position[1] - 1,
-          1,
-          1,
-          ctx.RGBA,
-          ctx.UNSIGNED_BYTE,
-          readData,
-        );
+        ctx.readPixels(0, 0, 1, 1, ctx.RGBA, ctx.UNSIGNED_BYTE, readData);
         scene.hoverOver(readData);
         break;
     }

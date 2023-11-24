@@ -10,10 +10,10 @@ export default class Renderer {
   /** @type {Engine} */
   #engine;
 
+  #pendingRenders = 0;
+
   /** @type {RenderingPassRenderer[]} */
   pipeline = [];
-
-  #pendingRenders = 0;
 
   /**
    * @param {Engine} engine

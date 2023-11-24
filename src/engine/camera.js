@@ -48,6 +48,9 @@ export default class Camera {
   /** @type {mat4} */
   inverseViewProjection;
 
+  /** @type {mat4} */
+  frustum;
+
   fovy = 1;
   aspect = 1;
   nearPlane = 0.01;
@@ -76,6 +79,7 @@ export default class Camera {
     this.world = mat4.create();
     this.viewProjection = mat4.create();
     this.inverseViewProjection = mat4.create();
+    this.frustum = mat4.create();
 
     engine.on('viewportresize', (current, previous) => {
       if (current[0] === previous[0] && current[1] === previous[1]) return;
@@ -95,6 +99,8 @@ export default class Camera {
 
       this.recalculateMVP();
     });
+
+    engine.on('mousemove', () => this.recalculateFrustum());
   }
 
   /**
@@ -211,6 +217,22 @@ export default class Camera {
     mat4.multiply(this.viewProjection, this.projection, this.world);
     mat4.invert(this.inverseViewProjection, this.viewProjection);
 
+    this.recalculateFrustum();
+
     this.#engine.emit('camerachange');
+  }
+
+  recalculateFrustum() {
+    const { mat4 } = this.#engine.math;
+    const [x, y] = this.#engine.input.position;
+
+    const top = Math.tan(this.fovy * 0.5) * this.nearPlane;
+    const size = 2 * Math.abs(top / this.screenResolution[1]);
+
+    const left = x * size - this.aspect * top;
+    const bottom = (this.screenResolution[1] - y - 1) * size - top;
+
+    mat4.frustum(this.frustum, left, left + size, bottom, bottom + size, this.nearPlane, this.farPlane);
+    mat4.multiply(this.frustum, this.frustum, this.world);
   }
 }

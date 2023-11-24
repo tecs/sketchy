@@ -38,10 +38,11 @@ export default class Input {
    * @param {number} dY
    */
   setPosition(x, y, dX, dY) {
-    const previous = this.#engine.math.vec3.clone(this.position);
+    const { vec3 } = this.#engine.math;
+    const previous = vec3.clone(this.position);
     this.position[0] = x;
     this.position[1] = y;
-    this.#engine.emit('mousemove', this.position, this.#engine.math.vec3.fromValues(dX, dY, 0), previous);
+    this.#engine.emit('mousemove', this.position, vec3.fromValues(dX, dY, 0), previous);
   }
 
   /**
