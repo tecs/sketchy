@@ -15,7 +15,8 @@ export default (engine) => {
         attribute vec4 a_normal;
         attribute vec3 a_color;
 
-        uniform mat4 u_mvp;
+        uniform mat4 u_trs;
+        uniform mat4 u_viewProjection;
         uniform mat4 u_normalMvp;
         uniform float u_isSelected;
         uniform float u_isInShadow;
@@ -23,7 +24,7 @@ export default (engine) => {
         varying vec4 v_color;
 
         void main() {
-          gl_Position = u_mvp * a_position;
+          gl_Position = u_viewProjection * u_trs * a_position;
 
           vec3 normal = normalize(vec3(u_normalMvp * a_normal));
           float lightAngle = abs(dot(normal, vec3(0, 0, 1)));
@@ -59,14 +60,15 @@ export default (engine) => {
       vert`
         attribute vec4 a_position;
 
-        uniform mat4 u_mvp;
+        uniform mat4 u_trs;
+        uniform mat4 u_viewProjection;
         uniform float u_isSelected;
         uniform float u_isInShadow;
 
         varying vec4 v_color;
 
         void main() {
-          gl_Position = u_mvp * a_position;
+          gl_Position = u_viewProjection * u_trs * a_position;
           v_color = vec4(0.0, 0.0, 0.0, 1.0);
           if (u_isSelected == 1.0) {
             v_color.b = 1.0;
@@ -99,10 +101,11 @@ export default (engine) => {
       vert`
         attribute vec4 a_position;
 
-        uniform mat4 u_mvp;
+        uniform mat4 u_trs;
+        uniform mat4 u_viewProjection;
 
         void main() {
-          gl_Position = u_mvp * a_position;
+          gl_Position = u_viewProjection * u_trs * a_position;
         }
       `,
       frag`
@@ -155,7 +158,7 @@ export default (engine) => {
   engine.on('viewportresize', setupFramebufferTexture);
 
   // cached structures
-  const mvp = mat4.create();
+  const normalMvp = mat4.create();
 
   /**
    * @param {"objects"|"lines"|"hover"} step
@@ -193,14 +196,14 @@ export default (engine) => {
         const isSelected = scene.selectedInstance && instance.belongsTo(scene.selectedInstance) ? 1 : 0;
         const isInShadow = !isSelected && !instance.belongsTo(scene.currentInstance) ? 1 : 0;
 
-        mat4.multiply(mvp, camera.viewProjection, instance.globalTrs);
-        ctx.uniformMatrix4fv(program.uLoc.u_mvp, false, mvp);
+        ctx.uniformMatrix4fv(program.uLoc.u_trs, false, instance.globalTrs);
+        ctx.uniformMatrix4fv(program.uLoc.u_viewProjection, false, camera.viewProjection);
 
         if (step === 'objects') {
-          mat4.multiply(mvp, camera.world, instance.globalTrs);
-          mat4.transpose(mvp, mvp);
-          mat4.invert(mvp, mvp);
-          ctx.uniformMatrix4fv(program.uLoc.u_normalMvp, false, mvp);
+          mat4.multiply(normalMvp, camera.world, instance.globalTrs);
+          mat4.transpose(normalMvp, normalMvp);
+          mat4.invert(normalMvp, normalMvp);
+          ctx.uniformMatrix4fv(program.uLoc.u_normalMvp, false, normalMvp);
         }
         if (step === 'hover') {
           ctx.uniform4fv(program.uLoc.u_instanceId, instance.id.vec4);

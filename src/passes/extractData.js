@@ -12,12 +12,13 @@ export default (engine) => {
     vert`
       attribute vec4 a_position;
 
-      uniform mat4 u_mvp;
+      uniform mat4 u_trs;
+      uniform mat4 u_viewProjection;
 
       varying vec4 v_coord;
 
       void main() {
-        v_coord = gl_Position = u_mvp * a_position;
+        gl_Position = u_viewProjection * u_trs * a_position;
       }
     `,
     frag`
@@ -73,7 +74,6 @@ export default (engine) => {
   const negativeEye = vec3.create();
   const eyeNormal = vec3.create();
   const v3zero = vec3.create();
-  const mvp = mat4.create();
 
   return {
     program,
@@ -116,11 +116,10 @@ export default (engine) => {
 
       ctx.bindBuffer(ctx.ARRAY_BUFFER, scene.hoveredInstance.model.buffer.vertex);
 
-      mat4.multiply(mvp, camera.viewProjection, scene.hoveredInstance.globalTrs);
-
       ctx.enableVertexAttribArray(program.aLoc.a_position);
       ctx.vertexAttribPointer(program.aLoc.a_position, 3, ctx.FLOAT, false, 0, 0);
-      ctx.uniformMatrix4fv(program.uLoc.u_mvp, false, mvp);
+      ctx.uniformMatrix4fv(program.uLoc.u_trs, false, scene.hoveredInstance.globalTrs);
+      ctx.uniformMatrix4fv(program.uLoc.u_viewProjection, false, camera.viewProjection);
 
       ctx.bindBuffer(ctx.ELEMENT_ARRAY_BUFFER, scene.hoveredInstance.model.buffer.index);
       ctx.drawElements(ctx.TRIANGLES, scene.hoveredInstance.model.data.index.length, UNSIGNED_INDEX_TYPE, 0);
