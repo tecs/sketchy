@@ -97,12 +97,12 @@ export default (engine) => {
       mat4.scale(mvp, globalTrs, origin);
 
       vec3.transformMat4(origin, vec3zero, globalTrs);
-      vec3.transformMat4(origin, origin, camera.mvp);
+      vec3.transformMat4(origin, origin, camera.viewProjection);
       vec3.multiply(origin, origin, halfRes);
       vec3.add(origin, origin, halfRes);
       ctx.uniform3fv(program.uLoc.u_origin, origin);
 
-      mat4.multiply(mvp, camera.mvp, mvp);
+      mat4.multiply(mvp, camera.viewProjection, mvp);
       mat4.scale(mvp, mvp, farPlaneV3);
       ctx.uniformMatrix4fv(program.uLoc.u_matrix, false, mvp);
 

@@ -193,7 +193,7 @@ export default (engine) => {
         const isSelected = scene.selectedInstance && instance.belongsTo(scene.selectedInstance) ? 1 : 0;
         const isInShadow = !isSelected && !instance.belongsTo(scene.currentInstance) ? 1 : 0;
 
-        mat4.multiply(mvp, camera.mvp, instance.globalTrs);
+        mat4.multiply(mvp, camera.viewProjection, instance.globalTrs);
         ctx.uniformMatrix4fv(program.uLoc.u_mvp, false, mvp);
 
         if (step === 'objects') {

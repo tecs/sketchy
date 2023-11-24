@@ -194,7 +194,7 @@ export default class Scene {
    * @param {Readonly<vec4>} position
    */
   hover(position) {
-    this.#engine.math.vec4.transformMat4(this.hoveredGlobal, position, this.#engine.camera.inverseMvp);
+    this.#engine.math.vec4.transformMat4(this.hoveredGlobal, position, this.#engine.camera.inverseViewProjection);
 
     this.hovered[0] = position[0];
     this.hovered[1] = position[1];
@@ -209,7 +209,7 @@ export default class Scene {
     this.hoveredGlobal[1] = position[1];
     this.hoveredGlobal[2] = position[2];
 
-    this.#engine.math.vec4.transformMat4(this.hovered, position, this.#engine.camera.mvp);
+    this.#engine.math.vec4.transformMat4(this.hovered, position, this.#engine.camera.viewProjection);
     this.hovered[2] += this.#engine.camera.nearPlane * 2;
   }
 

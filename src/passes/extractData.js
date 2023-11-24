@@ -116,7 +116,7 @@ export default (engine) => {
 
       ctx.bindBuffer(ctx.ARRAY_BUFFER, scene.hoveredInstance.model.buffer.vertex);
 
-      mat4.multiply(mvp, camera.mvp, scene.hoveredInstance.globalTrs);
+      mat4.multiply(mvp, camera.viewProjection, scene.hoveredInstance.globalTrs);
 
       ctx.enableVertexAttribArray(program.aLoc.a_position);
       ctx.vertexAttribPointer(program.aLoc.a_position, 3, ctx.FLOAT, false, 0, 0);

@@ -43,10 +43,10 @@ export default class Camera {
   world;
 
   /** @type {mat4} */
-  mvp;
+  viewProjection;
 
   /** @type {mat4} */
-  inverseMvp;
+  inverseViewProjection;
 
   fovy = 1;
   aspect = 1;
@@ -74,8 +74,8 @@ export default class Camera {
     this.projection = mat4.create();
     this.normalProjection = mat4.create();
     this.world = mat4.create();
-    this.mvp = mat4.create();
-    this.inverseMvp = mat4.create();
+    this.viewProjection = mat4.create();
+    this.inverseViewProjection = mat4.create();
 
     engine.on('viewportresize', (current, previous) => {
       if (current[0] === previous[0] && current[1] === previous[1]) return;
@@ -208,8 +208,8 @@ export default class Camera {
     const { mat4 } = this.#engine.math;
 
     mat4.multiply(this.world, this.rotation, this.translation);
-    mat4.multiply(this.mvp, this.projection, this.world);
-    mat4.invert(this.inverseMvp, this.mvp);
+    mat4.multiply(this.viewProjection, this.projection, this.world);
+    mat4.invert(this.inverseViewProjection, this.viewProjection);
 
     this.#engine.emit('camerachange');
   }
