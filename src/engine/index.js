@@ -11,7 +11,9 @@ import Events from './events.js';
 import renderAxis from '../passes/axis.js';
 import renderSkybox from '../passes/skybox.js';
 import renderObjects from '../passes/objects.js';
-import extractData from '../passes/extractData.js';
+import renderLines from '../passes/lines.js';
+import extractId from '../passes/extractId.js';
+import extractPosition from '../passes/extractPosition.js';
 
 export default class Engine extends Events {
   /** @type {Readonly<GLMatrix>} */
@@ -54,7 +56,9 @@ export default class Engine extends Events {
 
     this.renderer.addToPipeline(renderSkybox);
     this.renderer.addToPipeline(renderObjects);
-    this.renderer.addToPipeline(extractData);
+    this.renderer.addToPipeline(renderLines);
+    this.renderer.addToPipeline(extractId);
+    this.renderer.addToPipeline(extractPosition);
     this.renderer.addToPipeline(renderAxis);
 
     const onResize = () => this.emit('viewportresize', this.driver.getCanvasSize(), this.camera.screenResolution);
