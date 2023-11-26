@@ -58,7 +58,9 @@ export default (engine) => {
 
   return {
     program,
-    render() {
+    render(draw) {
+      if (!draw) return;
+
       for (const model of scene.models) {
         ctx.bindBuffer(ctx.ARRAY_BUFFER, model.buffer.vertex);
         ctx.enableVertexAttribArray(program.aLoc.a_position);

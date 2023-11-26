@@ -79,7 +79,9 @@ export default (engine) => {
 
   return {
     program,
-    render() {
+    render(draw) {
+      if (!draw) return;
+
       ctx.enable(ctx.BLEND);
 
       ctx.bindBuffer(ctx.ARRAY_BUFFER, positionBuffer);

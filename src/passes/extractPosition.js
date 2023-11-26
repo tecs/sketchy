@@ -74,7 +74,9 @@ export default (engine) => {
 
   return {
     program,
-    render() {
+    render(_, extract) {
+      if (!extract) return;
+
       if (!scene.hoveredInstance) {
         mat4.getTranslation(translation, engine.camera.world);
         vec3.rotateX(negativeEye, translation, v3zero, -engine.camera.pitch);

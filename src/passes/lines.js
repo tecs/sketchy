@@ -48,7 +48,9 @@ export default (engine) => {
 
   return {
     program,
-    render() {
+    render(draw) {
+      if (!draw) return;
+
       for (const model of scene.models) {
         ctx.uniformMatrix4fv(program.uLoc.u_viewProjection, false, camera.viewProjection);
 

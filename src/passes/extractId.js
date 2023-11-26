@@ -52,7 +52,9 @@ export default (engine) => {
 
   return {
     program,
-    render() {
+    render(_, extract) {
+      if (!extract) return;
+
       ctx.bindFramebuffer(ctx.FRAMEBUFFER, framebuffer);
       ctx.clear(ctx.COLOR_BUFFER_BIT | ctx.DEPTH_BUFFER_BIT);
 

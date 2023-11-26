@@ -83,7 +83,9 @@ export default ({ math: { mat4 }, driver: { ctx, makeProgram, vert, frag }, came
 
   return {
     program,
-    render() {
+    render(draw) {
+      if (!draw) return;
+
       ctx.disable(ctx.DEPTH_TEST);
 
       ctx.bindBuffer(ctx.ARRAY_BUFFER, positionBuffer);

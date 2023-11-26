@@ -3,13 +3,14 @@
  *
  * @typedef RenderingPassRenderer
  * @property {Readonly<Program>} program
- * @property {() => void} render
+ * @property {(draw: boolean, extract: boolean) => void} render
  */
 
 export default class Renderer {
   /** @type {Engine} */
   #engine;
 
+  #pendingTypes = { draw: false, extract: false };
   #pendingRenders = 0;
 
   /** @type {RenderingPassRenderer[]} */
@@ -21,7 +22,7 @@ export default class Renderer {
   constructor(engine) {
     this.#engine = engine;
 
-    engine.on('mousemove', () => this.render());
+    engine.on('mousemove', () => this.render(false, true));
     engine.on('camerachange', () => this.render());
     engine.on('selectionchange', () => this.render());
     engine.on('currentchange', () => this.render());
@@ -35,23 +36,38 @@ export default class Renderer {
     this.pipeline.push(makePass(this.#engine));
   }
 
-  render() {
+  /**
+   * @param {boolean} draw
+   * @param {boolean} extract
+   */
+  render(draw = true, extract = false) {
+    this.#pendingTypes.draw ||= draw;
+    this.#pendingTypes.extract ||= extract;
+
     if (this.#pendingRenders++) return;
+
+    draw ||= this.#pendingTypes.draw;
+    extract ||= this.#pendingTypes.extract;
+
+    this.#pendingTypes.draw = false;
+    this.#pendingTypes.extract = false;
 
     requestAnimationFrame(() => {
       const { ctx } = this.#engine.driver;
 
-      ctx.clearColor(0, 0, 0, 0);
-      ctx.clearDepth(1);
+      if (draw) {
+        ctx.clearColor(0, 0, 0, 0);
+        ctx.clearDepth(1);
+        ctx.clear(ctx.COLOR_BUFFER_BIT | ctx.DEPTH_BUFFER_BIT);
+      }
       ctx.enable(ctx.DEPTH_TEST);
       ctx.depthFunc(ctx.LEQUAL);
       ctx.blendFunc(ctx.SRC_ALPHA, ctx.ONE_MINUS_SRC_ALPHA);
-      ctx.clear(ctx.COLOR_BUFFER_BIT | ctx.DEPTH_BUFFER_BIT);
       for (const renderingPass of this.pipeline) {
         renderingPass.program.use();
         ctx.bindFramebuffer(ctx.FRAMEBUFFER, null);
         try {
-          renderingPass.render();
+          renderingPass.render(draw, extract);
         } catch (e) {
           this.#engine.emit('error', 'Caught during render pass:', e);
         }
@@ -59,7 +75,7 @@ export default class Renderer {
 
       if (--this.#pendingRenders) {
         this.#pendingRenders = 0;
-        this.render();
+        this.render(false, false);
       }
     });
   }
