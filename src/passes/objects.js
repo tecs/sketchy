@@ -30,16 +30,15 @@ export default (engine) => {
 
         v_color = vec4(a_color, 1.0);
 
-        if (u_isInShadow == 1.0) {
-          v_color.rgb = v_color.rgb * 0.2 + 0.4;
-        }
+        // Darken non-selected instance
+        v_color.rgb *= max(1.0 - u_isInShadow, 0.2);
+        v_color.rgb += u_isInShadow * 0.4;
 
+        // Shading
         v_color.rgb *= lightIntensity;
 
         // Highlight selected instance
-        if (u_isSelected == 1.0) {
-          v_color.rgb += vec3(0.1);
-        }
+        v_color.rgb += vec3(0.1 * u_isSelected);
       }
     `,
     frag`

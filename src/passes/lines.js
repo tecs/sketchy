@@ -19,14 +19,11 @@ export default (engine) => {
 
       void main() {
         gl_Position = u_viewProjection * u_trs * a_position;
-        v_color = vec4(0.0, 0.0, 0.0, 1.0);
-        if (u_isSelected == 1.0) {
-          v_color.b = 1.0;
-        }
+        v_color = vec4(0.0, 0.0, u_isSelected, 1.0);
 
-        if (u_isInShadow == 1.0) {
-          v_color.rgb = v_color.rgb * 0.2 + 0.3;
-        }
+        // Darken non-selected instance
+        v_color.rgb *= max(1.0 - u_isInShadow, 0.2);
+        v_color.rgb += u_isInShadow * 0.3;
 
         // offset the coord a tiny bit towards the camera
         // so that lines at concave edges render in front
