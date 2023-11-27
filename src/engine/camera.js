@@ -106,13 +106,14 @@ export default class Camera {
   /**
    * @param {number} dX
    * @param {number} dY
+   * @param {vec3} rotationOrigin
    */
-  orbit(dX, dY) {
+  orbit(dX, dY, rotationOrigin) {
     const { mat4 } = this.#engine.math;
 
     toEye[0] = 0;
     toEye[1] = 0;
-    toEye[2] = this.#engine.state.hovered[2];
+    toEye[2] = rotationOrigin[2];
     if (!this.#engine.state.hoveredInstance) {
       toEye[2] = Math.abs(this.#startingPointVec[2]);
     }
@@ -153,8 +154,9 @@ export default class Camera {
   /**
    * @param {number} dX
    * @param {number} dY
+   * @param {vec3} rotationOrigin
    */
-  pan(dX, dY) {
+  pan(dX, dY, rotationOrigin) {
     const { mat4, vec3 } = this.#engine.math;
 
     zero[0] = 0;
@@ -165,7 +167,7 @@ export default class Camera {
     diff[1] = -dY;
     diff[2] = 0;
 
-    const scale = Math.abs(this.#engine.state.hovered[2]) * 2;
+    const scale = Math.abs(rotationOrigin[2]) * 2;
 
     vec3.multiply(diff, diff, this.inverseFovScaling);
     vec3.scale(diff, diff, scale);

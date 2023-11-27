@@ -7,6 +7,7 @@ export default (engine) => {
   const edge2 = vec3.create();
   const edge3 = vec3.create();
   const hovered = vec3.create();
+  const origin = vec3.create();
 
   /** @type {Tool} */
   const rectangle = {
@@ -17,17 +18,16 @@ export default (engine) => {
     cursor: 'crosshair',
     start() {
       if (state.drawing) return;
-      state.setHovered(scene.hovered);
-      state.setHoveredGlobal(scene.hoveredGlobal);
+      vec3.copy(origin, scene.hoveredGlobal);
       state.setDrawing(true);
 
       const model = scene.currentModelWithRoot;
 
       const vertices = new Float32Array(12);
-      vertices.set(scene.hoveredGlobal);
-      vertices.set(scene.hoveredGlobal, 3);
-      vertices.set(scene.hoveredGlobal, 6);
-      vertices.set(scene.hoveredGlobal, 9);
+      vertices.set(origin);
+      vertices.set(origin, 3);
+      vertices.set(origin, 6);
+      vertices.set(origin, 9);
 
       model.appendBufferData(vertices, 'lineVertex');
       model.appendBufferData(new UintIndexArray([0, 1, 1, 2, 2, 3, 3, 0]), 'lineIndex');
@@ -81,9 +81,13 @@ export default (engine) => {
       normals.set(scene.axisNormal, 6);
       normals.set(scene.axisNormal, 9);
       model.updateBufferEnd(normals, 'normal');
+
+      engine.emit('scenechange');
     },
     end() {
-      if (!state.drawing || vec3.distance(state.hoveredGlobal, scene.hoveredGlobal) < 0.1) return;
+      if (!state.drawing || vec3.distance(origin, scene.hoveredGlobal) < 0.1) return;
+      vec3.copy(origin, scene.hoveredGlobal);
+
       state.setDrawing(false);
     },
     abort() {

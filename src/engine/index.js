@@ -47,7 +47,7 @@ export default class Engine extends Events {
     super();
 
     this.driver = new Driver(canvas);
-    this.state = new State(this);
+    this.state = new State();
     this.input = new Input(this);
     this.camera = new Camera(this);
     this.renderer = new Renderer(this);

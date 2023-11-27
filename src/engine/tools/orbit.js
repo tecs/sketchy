@@ -1,6 +1,9 @@
 /** @type {(engine: Engine) => Tool} */
 export default (engine) => {
-  const { driver, state, scene, camera, input } = engine;
+  const { driver, state, scene, camera, input, math: { vec3 } } = engine;
+
+  // cached structures
+  const origin = vec3.create();
 
   /** @type {Tool} */
   let lastTool = {
@@ -12,8 +15,7 @@ export default (engine) => {
       if (state.orbiting) return;
       driver.canvas.requestPointerLock();
       state.setOrbiting(true);
-      state.setHovered(scene.hovered);
-      state.setHoveredGlobal(scene.hoveredGlobal);
+      vec3.copy(origin, scene.hovered);
       state.setHoveredInstance(scene.hoveredInstance);
       lastTool = this;
     },
@@ -26,9 +28,9 @@ export default (engine) => {
       const dY = delta[1] / camera.screenResolution[1];
 
       if (input.shift) {
-        camera.pan(dX, dY);
+        camera.pan(dX, dY, origin);
       } else {
-        camera.orbit(dX, dY);
+        camera.orbit(dX, dY, origin);
       }
     },
     end() {

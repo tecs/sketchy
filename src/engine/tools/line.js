@@ -3,6 +3,7 @@ export default (engine) => {
   const { driver: { UintIndexArray }, math: { vec3 }, state, scene } = engine;
 
   // cached structures
+  const origin = vec3.create();
   const coord = vec3.create();
 
   /** @type {Tool} */
@@ -14,15 +15,14 @@ export default (engine) => {
     cursor: 'crosshair',
     start() {
       if (state.drawing) return;
-      state.setHovered(scene.hovered);
-      state.setHoveredGlobal(scene.hoveredGlobal);
+      vec3.copy(origin, scene.hoveredGlobal);
       state.setDrawing(true);
 
       const model = scene.currentModelWithRoot;
 
       const vertices = new Float32Array(6);
-      vertices.set(scene.hoveredGlobal);
-      vertices.set(scene.hoveredGlobal, 3);
+      vertices.set(origin);
+      vertices.set(origin, 3);
       model.appendBufferData(vertices, 'lineVertex');
       model.appendBufferData(new UintIndexArray([0, 1]), 'lineIndex');
     },
@@ -35,15 +35,18 @@ export default (engine) => {
       vec3.add(coord, coord, scene.hoveredGlobal);
 
       model.updateBufferEnd(coord, 'lineVertex');
+
+      engine.emit('scenechange');
     },
     end() {
-      if (!state.drawing || vec3.distance(state.hoveredGlobal, scene.hoveredGlobal) < 0.1) return;
+      if (!state.drawing || vec3.distance(origin, scene.hoveredGlobal) < 0.1) return;
+      vec3.copy(origin, scene.hoveredGlobal);
 
       const model = scene.currentModelWithRoot;
 
       const vertices = new Float32Array(6);
       vertices.set(model.data.lineVertex.slice(-3));
-      vertices.set(scene.hoveredGlobal, 3);
+      vertices.set(origin, 3);
       model.appendBufferData(vertices, 'lineVertex');
       model.appendBufferData(new UintIndexArray([0, 1]), 'lineIndex');
     },
