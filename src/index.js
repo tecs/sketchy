@@ -4,7 +4,7 @@ import Engine from './engine/index.js';
 window.addEventListener('load', () => {
   const ui = new Ui(document.body);
 
-  const canvas = /** @type {HTMLCanvasElement} */ (document.querySelector('canvas'));
+  const { canvas } = ui;
   const engine = new Engine(canvas);
 
   for (const tool of engine.tools.tools) {
