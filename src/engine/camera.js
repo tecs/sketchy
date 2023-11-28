@@ -197,8 +197,8 @@ export default class Camera {
     zero[1] = 0;
     zero[2] = 0;
 
-    diff[0] = -direction;
-    diff[1] = -direction;
+    diff[0] = direction;
+    diff[1] = direction;
     diff[2] = -direction;
 
     vec3.multiply(origin, origin, diff);
