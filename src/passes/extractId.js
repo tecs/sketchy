@@ -62,16 +62,18 @@ export default (engine) => {
         // Prevent self-picking when editing
         if (engine.state.drawing && scene.currentModelWithRoot === model) continue;
 
+        ctx.bindBuffer(ctx.ELEMENT_ARRAY_BUFFER, model.buffer.index);
+
         ctx.bindBuffer(ctx.ARRAY_BUFFER, model.buffer.vertex);
         ctx.enableVertexAttribArray(program.aLoc.a_position);
         ctx.vertexAttribPointer(program.aLoc.a_position, 3, ctx.FLOAT, false, 0, 0);
+
         ctx.uniformMatrix4fv(program.uLoc.u_viewProjection, false, camera.frustum);
 
         for (const instance of model.instances) {
           ctx.uniformMatrix4fv(program.uLoc.u_trs, false, instance.globalTrs);
           ctx.uniform4fv(program.uLoc.u_instanceId, instance.id.vec4);
 
-          ctx.bindBuffer(ctx.ELEMENT_ARRAY_BUFFER, model.buffer.index);
           ctx.drawElements(ctx.TRIANGLES, model.data.index.length, UNSIGNED_INDEX_TYPE, 0);
         }
       }

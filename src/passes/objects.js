@@ -61,6 +61,8 @@ export default (engine) => {
       if (!draw) return;
 
       for (const model of scene.models) {
+        ctx.bindBuffer(ctx.ELEMENT_ARRAY_BUFFER, model.buffer.index);
+
         ctx.bindBuffer(ctx.ARRAY_BUFFER, model.buffer.vertex);
         ctx.enableVertexAttribArray(program.aLoc.a_position);
         ctx.vertexAttribPointer(program.aLoc.a_position, 3, ctx.FLOAT, false, 0, 0);
@@ -88,7 +90,6 @@ export default (engine) => {
           mat4.invert(normalMvp, normalMvp);
           ctx.uniformMatrix4fv(program.uLoc.u_normalMvp, false, normalMvp);
 
-          ctx.bindBuffer(ctx.ELEMENT_ARRAY_BUFFER, model.buffer.index);
           ctx.drawElements(ctx.TRIANGLES, model.data.index.length, UNSIGNED_INDEX_TYPE, 0);
         }
       }

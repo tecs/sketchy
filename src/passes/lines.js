@@ -38,7 +38,6 @@ export default (engine) => {
 
       void main() {
         gl_FragColor = v_color;
-
       }
     `,
   );
@@ -49,6 +48,12 @@ export default (engine) => {
       if (!draw) return;
 
       for (const model of scene.models) {
+        ctx.bindBuffer(ctx.ELEMENT_ARRAY_BUFFER, model.buffer.lineIndex);
+
+        ctx.bindBuffer(ctx.ARRAY_BUFFER, model.buffer.lineVertex);
+        ctx.enableVertexAttribArray(program.aLoc.a_position);
+        ctx.vertexAttribPointer(program.aLoc.a_position, 3, ctx.FLOAT, false, 0, 0);
+
         ctx.uniformMatrix4fv(program.uLoc.u_viewProjection, false, camera.viewProjection);
 
         for (const instance of model.instances) {
@@ -59,27 +64,28 @@ export default (engine) => {
           ctx.uniform1f(program.uLoc.u_isSelected, isSelected);
           ctx.uniform1f(program.uLoc.u_isInShadow, isInShadow);
 
-          if (instance !== scene.rootInstance && isSelected) {
-            ctx.lineWidth(2);
-            // Bounding box
-            if (instance === scene.selectedInstance) {
-              ctx.bindBuffer(ctx.ARRAY_BUFFER, model.buffer.boundingBoxVertex);
-              ctx.enableVertexAttribArray(program.aLoc.a_position);
-              ctx.vertexAttribPointer(program.aLoc.a_position, 3, ctx.FLOAT, false, 0, 0);
-
-              ctx.bindBuffer(ctx.ELEMENT_ARRAY_BUFFER, model.buffer.boundingBoxIndex);
-              ctx.drawElements(ctx.LINES, 24, UNSIGNED_INDEX_TYPE, 0);
-            }
-          }
-          ctx.bindBuffer(ctx.ARRAY_BUFFER, model.buffer.lineVertex);
-          ctx.enableVertexAttribArray(program.aLoc.a_position);
-          ctx.vertexAttribPointer(program.aLoc.a_position, 3, ctx.FLOAT, false, 0, 0);
-
-          ctx.bindBuffer(ctx.ELEMENT_ARRAY_BUFFER, model.buffer.lineIndex);
+          if (instance !== scene.rootInstance && isSelected) ctx.lineWidth(2);
           ctx.drawElements(ctx.LINES, model.data.lineIndex.length, UNSIGNED_INDEX_TYPE, 0);
-
           ctx.lineWidth(1);
         }
+      }
+
+      if (scene.selectedInstance) {
+        const { model, globalTrs } = scene.selectedInstance;
+
+        ctx.bindBuffer(ctx.ELEMENT_ARRAY_BUFFER, model.buffer.boundingBoxIndex);
+
+        ctx.bindBuffer(ctx.ARRAY_BUFFER, model.buffer.boundingBoxVertex);
+        ctx.enableVertexAttribArray(program.aLoc.a_position);
+        ctx.vertexAttribPointer(program.aLoc.a_position, 3, ctx.FLOAT, false, 0, 0);
+
+        ctx.uniformMatrix4fv(program.uLoc.u_trs, false, globalTrs);
+        ctx.uniform1f(program.uLoc.u_isSelected, 1);
+        ctx.uniform1f(program.uLoc.u_isInShadow, 0);
+
+        ctx.lineWidth(2);
+        ctx.drawElements(ctx.LINES, 24, UNSIGNED_INDEX_TYPE, 0);
+        ctx.lineWidth(1);
       }
     },
   };
