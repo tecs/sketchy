@@ -3,8 +3,8 @@ import Destructurable from './destructurable.js';
 /**
  * @typedef {[TemplateStringsArray, any[]?]} TaggedTemplateParams
  *
- * @typedef {{[key: string]: number}} AttributeLocationMap
- * @typedef {{[key: string]: WebGLUniformLocation | null}} UniformLocationMap
+ * @typedef {Record<string, number>} AttributeLocationMap
+ * @typedef {Record<string, WebGLUniformLocation | null>} UniformLocationMap
  *
  * @typedef {WebGLBuffer | null} GLBuffer
  *
