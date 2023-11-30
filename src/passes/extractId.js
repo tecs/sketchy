@@ -4,6 +4,7 @@ export default (engine) => {
     driver: { ctx, makeProgram, vert, frag, UNSIGNED_INDEX_TYPE },
     camera,
     scene,
+    tools,
   } = engine;
 
   const program = makeProgram(
@@ -58,9 +59,11 @@ export default (engine) => {
       ctx.bindFramebuffer(ctx.FRAMEBUFFER, framebuffer);
       ctx.clear(ctx.COLOR_BUFFER_BIT | ctx.DEPTH_BUFFER_BIT);
 
+      const drawing = tools.selected.active && (tools.selected.type === 'line' || tools.selected.type === 'rectangle');
+
       for (const model of scene.models) {
         // Prevent self-picking when editing
-        if (engine.state.drawing && scene.currentModelWithRoot === model) continue;
+        if (drawing && scene.currentModelWithRoot === model) continue;
 
         ctx.bindBuffer(ctx.ELEMENT_ARRAY_BUFFER, model.buffer.index);
 

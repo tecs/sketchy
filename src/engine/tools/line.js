@@ -1,6 +1,6 @@
 /** @type {(engine: Engine) => Tool} */
 export default (engine) => {
-  const { driver: { UintIndexArray }, math: { vec3 }, state, scene } = engine;
+  const { driver: { UintIndexArray }, math: { vec3 }, scene } = engine;
 
   // cached structures
   const origin = vec3.create();
@@ -13,10 +13,11 @@ export default (engine) => {
     shortcut: 'l',
     icon: '🖊',
     cursor: 'crosshair',
+    active: false,
     start() {
-      if (state.drawing) return;
+      if (this.active) return;
       vec3.copy(origin, scene.hoveredGlobal);
-      state.setDrawing(true);
+      this.active = true;
 
       const model = scene.currentModelWithRoot;
 
@@ -27,7 +28,7 @@ export default (engine) => {
       model.appendBufferData(new UintIndexArray([0, 1]), 'lineIndex');
     },
     update() {
-      if (!state.drawing) return;
+      if (!this.active) return;
 
       const model = scene.currentModelWithRoot;
 
@@ -39,7 +40,7 @@ export default (engine) => {
       engine.emit('scenechange');
     },
     end() {
-      if (!state.drawing || vec3.distance(origin, scene.hoveredGlobal) < 0.1) return;
+      if (!this.active || vec3.distance(origin, scene.hoveredGlobal) < 0.1) return;
       vec3.copy(origin, scene.hoveredGlobal);
 
       const model = scene.currentModelWithRoot;
@@ -51,14 +52,14 @@ export default (engine) => {
       model.appendBufferData(new UintIndexArray([0, 1]), 'lineIndex');
     },
     abort() {
-      if (!state.drawing || engine.tools.selected.type === 'orbit') return;
+      if (!this.active || engine.tools.selected.type === 'orbit') return;
 
       const model = scene.currentModelWithRoot;
 
       model.truncateBuffer('lineVertex', 6);
       model.truncateBuffer('lineIndex', 2);
 
-      state.setDrawing(false);
+      this.active = false;
       engine.emit('scenechange');
     },
   };
