@@ -114,7 +114,7 @@ export default class Camera {
     toEye[0] = 0;
     toEye[1] = 0;
     toEye[2] = rotationOrigin[2];
-    if (!this.#engine.state.hoveredInstance) {
+    if (!this.#engine.scene.hoveredInstance) {
       toEye[2] = Math.abs(this.#startingPointVec[2]);
     }
 

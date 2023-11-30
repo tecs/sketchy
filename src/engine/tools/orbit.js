@@ -1,6 +1,6 @@
 /** @type {(engine: Engine) => Tool} */
 export default (engine) => {
-  const { driver, state, scene, camera, input, math: { vec3 } } = engine;
+  const { driver, scene, camera, input, math: { vec3 } } = engine;
 
   // cached structures
   const origin = vec3.create();
@@ -17,7 +17,6 @@ export default (engine) => {
       driver.canvas.requestPointerLock();
       this.active = true;
       vec3.copy(origin, scene.hovered);
-      state.setHoveredInstance(scene.hoveredInstance);
       lastTool = this;
     },
     update(delta) {

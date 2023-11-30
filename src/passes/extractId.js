@@ -54,7 +54,7 @@ export default (engine) => {
   return {
     program,
     render(_, extract) {
-      if (!extract) return;
+      if (!extract || (tools.selected.active && tools.selected.type === 'orbit')) return;
 
       ctx.bindFramebuffer(ctx.FRAMEBUFFER, framebuffer);
       ctx.clear(ctx.COLOR_BUFFER_BIT | ctx.DEPTH_BUFFER_BIT);

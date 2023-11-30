@@ -6,6 +6,7 @@ export default (engine) => {
     camera,
     input,
     scene,
+    tools,
   } = engine;
 
   const program = makeProgram(
@@ -75,7 +76,7 @@ export default (engine) => {
   return {
     program,
     render(_, extract) {
-      if (!extract) return;
+      if (!extract || (tools.selected.active && tools.selected.type === 'orbit')) return;
 
       if (!scene.hoveredInstance) {
         mat4.getTranslation(translation, engine.camera.world);

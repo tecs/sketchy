@@ -1,5 +1,4 @@
 import Driver from './driver.js';
-import State from './state.js';
 import Input from './input.js';
 import Camera from './camera.js';
 import Renderer from './renderer.js';
@@ -21,9 +20,6 @@ export default class Engine extends Events {
 
   /** @type {Readonly<Driver>} */
   driver;
-
-  /** @type {Readonly<State>} */
-  state;
 
   /** @type {Readonly<Input>} */
   input;
@@ -47,7 +43,6 @@ export default class Engine extends Events {
     super();
 
     this.driver = new Driver(canvas);
-    this.state = new State();
     this.input = new Input(this);
     this.camera = new Camera(this);
     this.renderer = new Renderer(this);
