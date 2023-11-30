@@ -71,7 +71,7 @@ export default class Scene {
   constructor(engine) {
     this.#engine = engine;
 
-    this.#reset({ boundingBoxVertex: Array.from(new Array(24), () => 0) });
+    this.reset({});
     [this.rootModel] = this.models;
     [this.rootInstance] = this.rootModel.instances;
 
@@ -96,7 +96,7 @@ export default class Scene {
   /**
    * @param {Partial<ModelState["data"]>} rootData
    */
-  #reset(rootData) {
+  reset(rootData) {
     const { vec3, mat4 } = this.#engine.math;
 
     this.#instanceById.clear();
@@ -117,6 +117,8 @@ export default class Scene {
     this.currentInstance = null;
     this.selectedInstance = null;
     this.hoveredInstance = null;
+
+    this.#engine.emit('scenechange');
   }
 
   /**
@@ -262,7 +264,7 @@ export default class Scene {
       return;
     }
 
-    this.#reset(rootModelData.data);
+    this.reset(rootModelData.data);
 
     /** @type {Record<string, Model>} */
     const models = {};
@@ -279,5 +281,6 @@ export default class Scene {
     }
 
     this.setCurrentInstance(null);
+    this.#engine.emit('scenechange');
   }
 }
