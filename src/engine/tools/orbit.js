@@ -11,16 +11,17 @@ export default (engine) => {
     name: 'Orbit',
     shortcut: 'o',
     icon: '🞋',
+    active: false,
     start() {
-      if (state.orbiting) return;
+      if (this.active) return;
       driver.canvas.requestPointerLock();
-      state.setOrbiting(true);
+      this.active = true;
       vec3.copy(origin, scene.hovered);
       state.setHoveredInstance(scene.hoveredInstance);
       lastTool = this;
     },
     update(delta) {
-      if (!state.orbiting) return;
+      if (!this.active) return;
 
       if (!delta[0] && !delta[1]) return;
 
@@ -34,13 +35,13 @@ export default (engine) => {
       }
     },
     end() {
-      if (!state.orbiting || input.middleButton) return;
-      state.setOrbiting(false);
+      if (!this.active || input.middleButton) return;
+      this.active = false;
       document.exitPointerLock();
     },
     abort() {
-      if (!state.orbiting) return;
-      state.setOrbiting(false);
+      if (!this.active) return;
+      this.active = false;
       document.exitPointerLock();
     },
   };
@@ -48,7 +49,7 @@ export default (engine) => {
   const orbit = lastTool;
 
   engine.on('mousedown', (button) => {
-    if (button !== 'middle' || state.orbiting) return;
+    if (button !== 'middle' || orbit.active) return;
 
     const selectedTool = engine.tools.selected;
     if (selectedTool !== orbit) engine.tools.setTool(orbit);
@@ -58,7 +59,7 @@ export default (engine) => {
   });
 
   engine.on('mouseup', (button) => {
-    if (button !== 'middle' || !state.orbiting) return;
+    if (button !== 'middle' || !orbit.active) return;
 
     if (lastTool !== orbit) engine.tools.setTool(lastTool);
     else if (!input.leftButton) orbit.end();

@@ -184,8 +184,8 @@ export default class Camera {
    * @param {number} direction
    */
   zoom(direction) {
-    const { math: { mat4, vec3 }, scene: { hovered }, state: { orbiting } } = this.#engine;
-    if (orbiting) return;
+    const { math: { mat4, vec3 }, scene: { hovered }, tools: { selected } } = this.#engine;
+    if (selected.type === 'orbit' && selected.active) return;
 
     vec3.copy(origin, hovered);
 

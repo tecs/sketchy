@@ -13,6 +13,7 @@ import OrbitTool from './orbit.js';
  * @property {string} shortcut
  * @property {string} icon
  * @property {string} [cursor]
+ * @property {boolean} [active]
  * @property {() => void} start
  * @property {(delta: Readonly<vec3>) => void} update
  * @property {() => void} end
