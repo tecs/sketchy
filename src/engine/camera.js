@@ -57,6 +57,8 @@ export default class Camera {
   farPlane = 2000;
   pitch = 0;
   yaw = 0;
+  pixelSize = 1;
+  frustumOffset = new Float32Array(4);
 
   /**
    * @param {Engine} engine
@@ -96,6 +98,15 @@ export default class Camera {
       mat4.perspective(this.normalProjection, 1, this.aspect, 1, this.farPlane);
       mat4.getScaling(this.fovScaling, this.projection);
       vec3.inverse(this.inverseFovScaling, this.fovScaling);
+
+      const scaling = 1 / current[1];
+
+      this.pixelSize = 2 * Math.abs(Math.tan(this.fovy * 0.5)) * scaling * this.nearPlane;
+
+      this.frustumOffset[0] = -(1 + scaling) * current[0] * this.pixelSize * 0.5;
+      this.frustumOffset[1] = -(scaling - 1) * current[0] * this.pixelSize * 0.5;
+      this.frustumOffset[2] = -(scaling - 1) * current[1] * this.pixelSize * 0.5;
+      this.frustumOffset[3] = (3 - scaling) * current[1] * this.pixelSize * 0.5;
 
       this.recalculateMVP();
     });
@@ -229,13 +240,15 @@ export default class Camera {
     const { mat4 } = this.#engine.math;
     const [x, y] = this.#engine.input.position;
 
-    const top = Math.tan(this.fovy * 0.5) * this.nearPlane;
-    const size = 2 * Math.abs(top / this.screenResolution[1]);
+    const originX = (x + 0.5) * this.pixelSize;
+    const originY = (y + 0.5) * this.pixelSize;
 
-    const left = x * size - this.aspect * top;
-    const bottom = (this.screenResolution[1] - y - 1) * size - top;
+    const left = this.frustumOffset[0] + originX;
+    const right = this.frustumOffset[1] + originX;
+    const bottom = this.frustumOffset[2] - originY;
+    const top = this.frustumOffset[3] - originY;
 
-    mat4.frustum(this.frustum, left, left + size, bottom, bottom + size, this.nearPlane, this.farPlane);
+    mat4.frustum(this.frustum, left, right, bottom, top, this.nearPlane, this.farPlane);
     mat4.multiply(this.frustum, this.frustum, this.world);
   }
 }
