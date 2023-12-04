@@ -276,11 +276,10 @@ export default class Model {
   /**
    * @param {SubModel} subModel
    * @param {Instance | null} parent
-   * @param {number} [id]
    * @returns {Instance[]}
    */
-  instantiate(subModel, parent, id) {
-    const instance = new Instance(this, subModel, parent, this.#engine, id);
+  instantiate(subModel, parent) {
+    const instance = new Instance(this, subModel, parent, this.#engine);
     subModel.children.push(instance);
     parent?.children.push(instance);
     this.instances.push(instance);

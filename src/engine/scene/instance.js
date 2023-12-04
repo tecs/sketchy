@@ -41,9 +41,8 @@ export default class Instance {
    * @param {import("./model").SubModel} subModel
    * @param {Instance | null} parent
    * @param {Engine} engine
-   * @param {number} [id]
    */
-  constructor(model, subModel, parent, engine, id) {
+  constructor(model, subModel, parent, engine) {
     this.#engine = engine;
     this.subModel = subModel;
     this.globalTrs = engine.math.mat4.create();
@@ -51,7 +50,7 @@ export default class Instance {
     this.model = model;
     this.parent = parent;
 
-    id ??= ++Instance.#lastId;
+    const id = ++Instance.#lastId;
     this.id = {
       int: id,
       vec4: engine.math.vec4.fromValues(

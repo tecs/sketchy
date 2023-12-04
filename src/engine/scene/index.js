@@ -106,7 +106,7 @@ export default class Scene {
     this.models.push(this.rootModel);
 
     const subModel = { model: this.rootModel, trs: mat4.create(), children: [] };
-    [this.rootInstance] = this.rootModel.instantiate(subModel, null, 0);
+    [this.rootInstance] = this.rootModel.instantiate(subModel, null);
     this.#instanceById.set(this.rootInstance.id.int, this.rootInstance);
 
     vec3.set(this.axisNormal, 0, 1, 0);
