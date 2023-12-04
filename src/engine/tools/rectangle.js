@@ -86,7 +86,11 @@ export default (engine) => {
       engine.emit('scenechange');
     },
     end() {
-      if (!this.active || vec3.distance(origin, scene.hoveredGlobal) < 0.1) return;
+      const model = scene.currentModelWithRoot;
+      const v2 = model.data.lineVertex.slice(-9);
+      const v3 = v2.slice(-3);
+
+      if (!this.active || vec3.distance(origin, v2) < 0.1 || vec3.distance(origin, v3) < 0.1) return;
       vec3.copy(origin, scene.hoveredGlobal);
 
       this.active = false;
