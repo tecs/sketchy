@@ -1,6 +1,6 @@
 /** @type {(engine: Engine) => Tool} */
 export default (engine) => {
-  const { scene } = engine;
+  const { config, scene } = engine;
 
   let lastClick = 0;
 
@@ -16,7 +16,7 @@ export default (engine) => {
     },
     end() {
       const now = Date.now();
-      const doubleClicked = now - lastClick < 200;
+      const doubleClicked = now - lastClick < config.doubleClickDelay;
       lastClick = now;
 
       const currentInstance = scene.currentInstanceWithRoot;

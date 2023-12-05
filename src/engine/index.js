@@ -1,3 +1,4 @@
+import Config from './config.js';
 import Driver from './driver.js';
 import Input from './input.js';
 import Camera from './camera.js';
@@ -17,6 +18,9 @@ import extractPosition from '../passes/extractPosition.js';
 export default class Engine extends Events {
   /** @type {Readonly<GLMatrix>} */
   math = glMatrix;
+
+  /** @type {Readonly<Config>} */
+  config;
 
   /** @type {Readonly<Driver>} */
   driver;
@@ -42,6 +46,7 @@ export default class Engine extends Events {
   constructor(canvas) {
     super();
 
+    this.config = new Config();
     this.driver = new Driver(canvas);
     this.input = new Input(this);
     this.camera = new Camera(this);

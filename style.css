@@ -168,6 +168,32 @@ dialog::backdrop {
   margin: 0 -1em -1em;
 }
 
+/** Settings */
+
+.setting {
+  display: grid;
+  grid-template-columns: auto 1em;
+  column-gap: 1em;
+}
+.setting .reset {
+  display: none;
+  border: none;
+}
+.setting.changed .reset {
+  display: initial;
+}
+
+.setting label {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  column-gap: 1em;
+}
+
+.settingsButtons {
+  padding-top: 1em;
+  text-align: right;
+}
+
 /* Debug */
 
 .debug {
