@@ -16,7 +16,7 @@ export default class Dialog {
   error(message) {
     const onclick = () => this.hide();
 
-    $(this.element, { className: 'error' }, [
+    $(this.element, { className: 'error', innerHTML: '' }, [
       ['p', { className: 'dialogBody', innerText: message }],
       ['button', { className: 'dialogClose button', innerText: '⨯', onclick }],
       ['div', { className: 'dialogButtonWrapper' }, [
