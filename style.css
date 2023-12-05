@@ -148,6 +148,26 @@ dialog::backdrop {
   display: none;
 }
 
+/** Windows */
+
+.windowTitle {
+  padding: inherit;
+  margin: -1em -1em 0;
+  background-color: var(--darkOverlayColor);
+  color: var(--backgroundColor);
+}
+
+.windowTitle .dialogClose {
+  padding: inherit;
+  font-size: inherit;
+  color: inherit;
+}
+
+.windowBody {
+  padding: inherit;
+  margin: 0 -1em -1em;
+}
+
 /* Debug */
 
 .debug {

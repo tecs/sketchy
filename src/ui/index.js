@@ -1,5 +1,6 @@
 import Dialog from './dialog.js';
 import Menu from './menu.js';
+import Window from './window.js';
 
 export default class Ui {
   /** @type {HTMLElement} */
@@ -14,6 +15,9 @@ export default class Ui {
   /** @type {Dialog} */
   dialog;
 
+  /** @type {Window} */
+  window;
+
   canvas = document.createElement('canvas');
 
   /**
@@ -26,5 +30,6 @@ export default class Ui {
     this.dialog = new Dialog(appContainer);
     this.topMenu = new Menu(appContainer, { position: 'top' });
     this.sideMenu = new Menu(appContainer, { position: 'left' });
+    this.window = new Window(appContainer);
   }
 }
