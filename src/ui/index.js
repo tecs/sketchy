@@ -1,3 +1,4 @@
+import $ from './element.js';
 import Dialog from './dialog.js';
 import Menu from './menu.js';
 import Window from './window.js';
@@ -18,8 +19,7 @@ export default class Ui {
   /** @type {Window} */
   window;
 
-  canvas = document.createElement('canvas');
-
+  canvas = $('canvas');
   /**
    * @param {HTMLElement} appContainer
    */

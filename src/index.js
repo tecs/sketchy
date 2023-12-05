@@ -1,5 +1,6 @@
 import Ui from './ui/index.js';
 import Engine from './engine/index.js';
+import $ from './ui/element.js';
 
 window.addEventListener('load', () => {
   const ui = new Ui(document.body);
@@ -17,86 +18,59 @@ window.addEventListener('load', () => {
   ui.topMenu.addItem('save', 'Save file', '🖫', () => {
     const json = engine.scene.export();
     const data = btoa(unescape(encodeURIComponent(json)));
-    const el = document.createElement('a');
-    el.setAttribute('href', `data:text/plain;charset=utf8,${encodeURIComponent(data)}`);
-    el.setAttribute('download', 'Untitled.scene');
-    el.click();
+    $('a', { href: `data:text/plain;charset=utf8,${encodeURIComponent(data)}`, download: 'Untitled.scene' }).click();
   });
   ui.topMenu.addItem('load', 'Load file', '🖿', () => {
-    const el = document.createElement('input');
-    el.setAttribute('type', 'file');
-    el.setAttribute('accept', '.scene');
-    el.addEventListener('change', () => {
-      if (!el.files?.length) return;
-      const reader = new FileReader();
-      reader.addEventListener('load', () => {
-        const json = decodeURIComponent(escape(atob(reader.result?.toString() ?? '')));
-        engine.scene.import(json);
-      });
-      reader.readAsText(el.files[0]);
-    }, false);
-    el.click();
+    $('input', {
+      type: 'file',
+      accept: '.scene',
+      onchange({ currentTarget: el }) {
+        if (!(el instanceof HTMLInputElement) || !el.files?.length) return;
+        const reader = new FileReader();
+        reader.addEventListener('load', () => {
+          const json = decodeURIComponent(escape(atob(reader.result?.toString() ?? '')));
+          engine.scene.import(json);
+        });
+        reader.readAsText(el.files[0]);
+      },
+    }).click();
   });
 
   ui.topMenu.addItem('settings', 'Settings', '⚙', () => {
     const settings = engine.config.list();
 
-    const settingsList = document.createElement('div');
-    for (const setting of settings) {
-      const settingsItem = document.createElement('div');
-      settingsItem.className = 'setting';
-
-      const label = document.createElement('label');
-
-      const name = document.createElement('span');
-      name.innerText = setting.name;
-
+    const settingsList = $('div', {}, settings.map(setting => {
       const originalValue = String(setting.value);
 
-      const value = document.createElement('input');
-      value.type = 'number';
-      value.value = originalValue;
-      value.addEventListener('change', () => {
-        setting.value = parseInt(value.value, 10);
-        settingsItem.classList.toggle('changed', value.value !== originalValue);
+      const settingsItem = $('div', { className: 'setting' });
+
+      const value = $('input', {
+        type: 'number',
+        value: originalValue,
+        onchange() {
+          setting.value = parseInt(value.value, 10);
+          settingsItem.classList.toggle('changed', value.value !== originalValue);
+        },
       });
 
-      label.appendChild(name);
-      label.appendChild(value);
+      return $(settingsItem, {}, [
+        ['label', {}, [['span', { innerText: setting.name }], value]],
+        ['div', {
+          className: 'button reset',
+          innerText: '⟲',
+          onclick() { setting.reset(); value.value = originalValue; },
+        }],
+      ]);
+    }));
 
-      const onReset = () => {
-        setting.reset();
-        value.value = originalValue;
-      };
-      const reset = document.createElement('div');
-      reset.className = 'button reset';
-      reset.innerText = '⟲';
-
-      reset.addEventListener('click', onReset);
-
-      settingsItem.appendChild(label);
-      settingsItem.appendChild(reset);
-
-      settingsList.appendChild(settingsItem);
-    }
-
-    const save = document.createElement('button');
-    save.className = 'button';
-    save.innerText = 'save';
-    save.addEventListener('click', () => {
-      for (const setting of settings) setting.save();
-      ui.window.remove('settings');
-    });
-
-    const close = document.createElement('button');
-    close.className = 'button';
-    close.innerText = 'close';
-    close.addEventListener('click', () => ui.window.remove('settings'));
-
-    const buttons = document.createElement('div');
-    buttons.className = 'settingsButtons';
-    buttons.appendChild(save);
-    buttons.appendChild(close);
+    const buttons = $('div', { className: 'settingsButtons' }, [
+      ['button', {
+        className: 'button',
+        innerText: 'save',
+        onclick() { settings.forEach(setting => setting.save()); ui.window.remove('settings'); },
+      }],
+      ['button', { className: 'button', innerText: 'close', onclick: () => ui.window.remove('settings') }],
+    ]);
 
     ui.window.add({
       id: 'settings',

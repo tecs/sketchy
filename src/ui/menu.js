@@ -1,10 +1,13 @@
+import $ from './element.js';
+
 /**
  * @typedef Options
  * @property {"top"|"left"|"right"|"bottom"} position
  */
 
 export default class Menu {
-  element = document.createElement('div');
+  /** @type {HTMLElement} */
+  element;
 
   /** @type {Map<string, HTMLDivElement>} */
   items = new Map();
@@ -17,9 +20,7 @@ export default class Menu {
    * @param {Partial<Options>} options
    */
   constructor(parent, options = {}) {
-    this.element.className = 'menu';
-    this.element.classList.add(options.position ?? 'left');
-
+    this.element = $('div', { className: `menu ${options.position ?? 'left'}` });
     parent.appendChild(this.element);
   }
 
@@ -30,13 +31,11 @@ export default class Menu {
    * @param {Function} onSelect
    */
   addItem(id, name, icon, onSelect) {
-    const menuItem = document.createElement('div');
-    menuItem.className = 'menuItem';
-    menuItem.title = name;
-    menuItem.innerText = icon;
-
-    menuItem.addEventListener('click', () => {
-      if (this.selected !== id) onSelect();
+    const menuItem = $('div', {
+      className: 'menuItem',
+      title: name,
+      innerText: icon,
+      onclick: () => { if (this.selected !== id) onSelect(); },
     });
 
     this.element.appendChild(menuItem);
