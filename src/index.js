@@ -12,7 +12,10 @@ window.addEventListener('load', () => {
     ui.sideMenu.addItem(tool.type, tool.name, tool.icon, () => engine.tools.setTool(tool));
   }
   ui.sideMenu.select(engine.tools.selected.type);
-  engine.on('toolchange', (current) => ui.sideMenu.select(current.type));
+  engine.on('toolchange', (current) => {
+    ui.canvas.style.cursor = current.cursor ?? 'default';
+    ui.sideMenu.select(current.type);
+  });
 
   ui.topMenu.addItem('new', 'New file', '🗋', () => engine.scene.reset({}));
   ui.topMenu.addItem('save', 'Save file', '🖫', () => {

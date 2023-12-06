@@ -58,7 +58,6 @@ export default class Tools {
     if (previous === tool) return;
 
     this.selected = tool;
-    this.#engine.driver.canvas.style.cursor = tool.cursor ?? 'default';
 
     this.#engine.emit('toolchange', tool, previous);
   }
