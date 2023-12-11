@@ -8,6 +8,11 @@ export default (engine) => {
   const edge3 = vec3.create();
   const hovered = vec3.create();
   const origin = vec3.create();
+  const lineIndex = new UintIndexArray([0, 1, 1, 2, 2, 3, 3, 0]);
+  const index = new UintIndexArray([0, 1, 2, 0, 2, 3]);
+  const vertices = new Float32Array(12);
+  const normals = new Float32Array(12);
+  const colors = new Uint8Array(12);
 
   /** @type {Tool} */
   const rectangle = {
@@ -24,25 +29,23 @@ export default (engine) => {
 
       const model = scene.currentModelWithRoot;
 
-      const vertices = new Float32Array(12);
       vertices.set(origin);
       vertices.set(origin, 3);
       vertices.set(origin, 6);
       vertices.set(origin, 9);
 
       model.appendBufferData(vertices, 'lineVertex');
-      model.appendBufferData(new UintIndexArray([0, 1, 1, 2, 2, 3, 3, 0]), 'lineIndex');
+      model.appendBufferData(lineIndex, 'lineIndex');
       model.appendBufferData(vertices, 'vertex');
-      model.appendBufferData(new UintIndexArray([0, 1, 2, 0, 2, 3]), 'index');
+      model.appendBufferData(index, 'index');
 
       const color = [255, 255, 255];
-      const colors = new Uint8Array(12);
       colors.set(color);
       colors.set(color, 3);
       colors.set(color, 6);
       colors.set(color, 9);
       model.appendBufferData(colors, 'color');
-      model.appendBufferData(new Float32Array(12), 'normal');
+      model.appendBufferData(normals, 'normal');
     },
     update() {
       if (!this.active) return;
@@ -53,7 +56,7 @@ export default (engine) => {
       hovered[1] = 1;
       hovered[2] = 1;
 
-      const vertices = model.data.lineVertex.slice(-12);
+      vertices.set(model.data.lineVertex.subarray(-12));
       vec3.multiply(edge1, scene.axisNormal, vertices);
 
       vec3.subtract(hovered, hovered, scene.axisNormal);
@@ -76,7 +79,6 @@ export default (engine) => {
       model.updateBufferEnd(vertices, 'lineVertex');
       model.updateBufferEnd(vertices, 'vertex');
 
-      const normals = new Float32Array(12);
       normals.set(scene.axisNormal);
       normals.set(scene.axisNormal, 3);
       normals.set(scene.axisNormal, 6);

@@ -5,6 +5,8 @@ export default (engine) => {
   // cached structures
   const origin = vec3.create();
   const coord = vec3.create();
+  const lineIndex = new UintIndexArray([0, 1]);
+  const vertices = new Float32Array(6);
 
   /** @type {Tool} */
   const line = {
@@ -21,11 +23,10 @@ export default (engine) => {
 
       const model = scene.currentModelWithRoot;
 
-      const vertices = new Float32Array(6);
       vertices.set(origin);
       vertices.set(origin, 3);
       model.appendBufferData(vertices, 'lineVertex');
-      model.appendBufferData(new UintIndexArray([0, 1]), 'lineIndex');
+      model.appendBufferData(lineIndex, 'lineIndex');
     },
     update() {
       if (!this.active) return;
@@ -45,11 +46,10 @@ export default (engine) => {
 
       const model = scene.currentModelWithRoot;
 
-      const vertices = new Float32Array(6);
       vertices.set(model.data.lineVertex.slice(-3));
       vertices.set(origin, 3);
       model.appendBufferData(vertices, 'lineVertex');
-      model.appendBufferData(new UintIndexArray([0, 1]), 'lineIndex');
+      model.appendBufferData(lineIndex, 'lineIndex');
     },
     abort() {
       if (!this.active || engine.tools.selected.type === 'orbit') return;
