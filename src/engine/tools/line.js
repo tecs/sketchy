@@ -46,7 +46,7 @@ export default (engine) => {
 
       const model = scene.currentModelWithRoot;
 
-      vertices.set(model.data.lineVertex.slice(-3));
+      vertices.set(model.data.lineVertex.subarray(-3));
       vertices.set(origin, 3);
       model.appendBufferData(vertices, 'lineVertex');
       model.appendBufferData(lineIndex, 'lineIndex');

@@ -89,8 +89,8 @@ export default (engine) => {
     },
     end() {
       const model = scene.currentModelWithRoot;
-      const v2 = model.data.lineVertex.slice(-9);
-      const v3 = v2.slice(-3);
+      const v2 = model.data.lineVertex.subarray(-9, -6);
+      const v3 = model.data.lineVertex.subarray(-3);
 
       if (!this.active || vec3.distance(origin, v2) < 0.1 || vec3.distance(origin, v3) < 0.1) return;
       vec3.copy(origin, scene.hoveredGlobal);
