@@ -1,3 +1,5 @@
+const { mat4, vec3, vec4 } = glMatrix;
+
 /**
  * @typedef Id
  * @property {number} int
@@ -5,9 +7,9 @@
  */
 
 // cached structures
-const origin = new Float32Array(3);
-const relative = new Float32Array(3);
-const translate = new Float32Array(16);
+const origin = vec3.create();
+const relative = vec3.create();
+const translate = mat4.create();
 
 export default class Instance {
   static #lastId = 0;
@@ -45,15 +47,15 @@ export default class Instance {
   constructor(model, subModel, parent, engine) {
     this.#engine = engine;
     this.subModel = subModel;
-    this.globalTrs = engine.math.mat4.create();
-    this.inverseGlobalTrs = engine.math.mat4.create();
+    this.globalTrs = mat4.create();
+    this.inverseGlobalTrs = mat4.create();
     this.model = model;
     this.parent = parent;
 
     const id = ++Instance.#lastId;
     this.id = {
       int: id,
-      vec4: engine.math.vec4.fromValues(
+      vec4: vec4.fromValues(
         /* eslint-disable no-multi-spaces,space-in-parens */
         ( id        & 255) / 255,
         ((id >>  8) & 255) / 255,
@@ -67,8 +69,6 @@ export default class Instance {
   }
 
   recalculateGlobalTrs() {
-    const { mat4 } = this.#engine.math;
-
     if (this.parent) mat4.multiply(this.globalTrs, this.parent.globalTrs, this.subModel.trs);
     else mat4.copy(this.globalTrs, this.subModel.trs);
     mat4.invert(this.inverseGlobalTrs, this.globalTrs);
@@ -100,7 +100,7 @@ export default class Instance {
    * @returns {vec3}
    */
   toLocalCoords(out, globalCoords) {
-    return this.#engine.math.vec3.transformMat4(out, globalCoords, this.inverseGlobalTrs);
+    return vec3.transformMat4(out, globalCoords, this.inverseGlobalTrs);
   }
 
   /**
@@ -109,10 +109,7 @@ export default class Instance {
    * @returns {vec3}
    */
   toLocalRelativeCoords(out, globalRelativeCoords) {
-    const { vec3, mat4 } = this.#engine.math;
-
     vec3.transformMat4(out, globalRelativeCoords, this.inverseGlobalTrs);
-
     mat4.getTranslation(origin, this.inverseGlobalTrs);
     return vec3.subtract(out, out, origin);
   }
@@ -121,8 +118,6 @@ export default class Instance {
    * @param {vec3} translation
    */
   translateGlobal(translation) {
-    const { mat4 } = this.#engine.math;
-
     this.toLocalRelativeCoords(relative, translation);
     mat4.fromTranslation(translate, relative);
 

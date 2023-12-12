@@ -16,9 +16,6 @@ import extractId from '../passes/extractId.js';
 import extractPosition from '../passes/extractPosition.js';
 
 export default class Engine extends Events {
-  /** @type {Readonly<GLMatrix>} */
-  math = glMatrix;
-
   /** @type {Readonly<Config>} */
   config;
 

@@ -1,6 +1,8 @@
+const { vec3 } = glMatrix;
+
 /** @type {(engine: Engine) => Tool} */
 export default (engine) => {
-  const { driver, scene, camera, input, math: { vec3 } } = engine;
+  const { driver, scene, camera, input } = engine;
 
   // cached structures
   const origin = vec3.create();

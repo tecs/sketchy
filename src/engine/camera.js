@@ -1,15 +1,17 @@
+const { vec3, mat4 } = glMatrix;
+
 const PI = Math.PI;
 const twoPI = PI * 2;
 const halfPI = PI / 2;
 const threeFourthsPI = halfPI * 3;
 
 // cached structures
-const diff = new Float32Array(3);
-const origin = new Float32Array(3);
-const toEye = new Float32Array(3);
-const toPivot = new Float32Array(3);
-const zero = new Float32Array(3);
-const transform = new Float32Array(16);
+const diff = vec3.create();
+const origin = vec3.create();
+const toEye = vec3.create();
+const toPivot = vec3.create();
+const zero = vec3.create();
+const transform = mat4.create();
 
 export default class Camera {
   /** @type {Engine} */
@@ -64,7 +66,7 @@ export default class Camera {
    * @param {Engine} engine
    */
   constructor(engine) {
-    const { driver: { canvas }, math: { vec3, mat4 } } = engine;
+    const { driver: { canvas } } = engine;
     this.#engine = engine;
 
     this.fovScaling = vec3.create();
@@ -120,8 +122,6 @@ export default class Camera {
    * @param {vec3} rotationOrigin
    */
   orbit(dX, dY, rotationOrigin) {
-    const { mat4 } = this.#engine.math;
-
     toEye[0] = 0;
     toEye[1] = 0;
     toEye[2] = rotationOrigin[2];
@@ -168,8 +168,6 @@ export default class Camera {
    * @param {vec3} rotationOrigin
    */
   pan(dX, dY, rotationOrigin) {
-    const { mat4, vec3 } = this.#engine.math;
-
     zero[0] = 0;
     zero[1] = 0;
     zero[2] = 0;
@@ -195,7 +193,7 @@ export default class Camera {
    * @param {number} direction
    */
   zoom(direction) {
-    const { math: { mat4, vec3 }, scene: { hovered }, tools: { selected } } = this.#engine;
+    const { scene: { hovered }, tools: { selected } } = this.#engine;
     if (selected.type === 'orbit' && selected.active) return;
 
     vec3.copy(origin, hovered);
@@ -225,8 +223,6 @@ export default class Camera {
   }
 
   recalculateMVP() {
-    const { mat4 } = this.#engine.math;
-
     mat4.multiply(this.world, this.rotation, this.translation);
     mat4.multiply(this.viewProjection, this.projection, this.world);
     mat4.invert(this.inverseViewProjection, this.viewProjection);
@@ -237,7 +233,6 @@ export default class Camera {
   }
 
   recalculateFrustum() {
-    const { mat4 } = this.#engine.math;
     const [x, y] = this.#engine.input.position;
 
     const originX = (x + 0.5) * this.pixelSize;

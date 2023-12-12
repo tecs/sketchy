@@ -1,3 +1,5 @@
+const { vec3 } = glMatrix;
+
 /**
  * @typedef {"left"|"middle"|"right"} MouseButton
  */
@@ -27,7 +29,7 @@ export default class Input {
    */
   constructor(engine) {
     this.#engine = engine;
-    this.position = engine.math.vec3.fromValues(0, 0, 0);
+    this.position = vec3.fromValues(0, 0, 0);
   }
 
   /**
@@ -37,7 +39,6 @@ export default class Input {
    * @param {number} dY
    */
   setPosition(x, y, dX, dY) {
-    const { vec3 } = this.#engine.math;
     const previous = vec3.clone(this.position);
     this.position[0] = x;
     this.position[1] = y;

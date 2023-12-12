@@ -1,5 +1,7 @@
 import Model from './model.js';
 
+const { vec3, vec4, mat4 } = glMatrix;
+
 /**
  * @param {Uint8Array} uuuu
  * @returns {number}
@@ -37,13 +39,13 @@ export default class Scene {
   rootInstance;
 
   /** @type {vec3} */
-  axisNormal = new Float32Array(3);
+  axisNormal = vec3.create();
 
   /** @type {vec3} */
-  hovered = new Float32Array(3);
+  hovered = vec3.create();
 
   /** @type {vec3} */
-  hoveredGlobal = new Float32Array(3);
+  hoveredGlobal = vec3.create();
 
   /** @type {Model | null} */
   currentModel = null;
@@ -97,8 +99,6 @@ export default class Scene {
    * @param {Partial<ModelState["data"]>} rootData
    */
   reset(rootData) {
-    const { vec3, mat4 } = this.#engine.math;
-
     this.#instanceById.clear();
     this.models.splice(0);
 
@@ -196,7 +196,7 @@ export default class Scene {
    * @param {Readonly<vec4>} position
    */
   hover(position) {
-    this.#engine.math.vec4.transformMat4(this.hoveredGlobal, position, this.#engine.camera.inverseViewProjection);
+    vec4.transformMat4(this.hoveredGlobal, position, this.#engine.camera.inverseViewProjection);
 
     this.hovered[0] = position[0];
     this.hovered[1] = position[1];
@@ -211,7 +211,7 @@ export default class Scene {
     this.hoveredGlobal[1] = position[1];
     this.hoveredGlobal[2] = position[2];
 
-    this.#engine.math.vec4.transformMat4(this.hovered, position, this.#engine.camera.viewProjection);
+    vec4.transformMat4(this.hovered, position, this.#engine.camera.viewProjection);
     this.hovered[2] += this.#engine.camera.nearPlane * 2;
   }
 

@@ -1,3 +1,7 @@
+import Instance from './instance.js';
+
+const { mat4, vec3, quat } = glMatrix;
+
 /**
  * @typedef ModelData
  * @property {Uint16Array|Uint32Array} index
@@ -17,12 +21,10 @@
  * @property {Instance[]} children
  */
 
-import Instance from './instance.js';
-
 // cached structures
-const boundingCoord = new Float32Array(3);
-const min = new Float32Array(3);
-const max = new Float32Array(3);
+const boundingCoord = vec3.create();
+const min = vec3.create();
+const max = vec3.create();
 
 export default class Model {
   /** @type {Engine} */
@@ -30,9 +32,6 @@ export default class Model {
 
   /** @type {WebGLRenderingContext} */
   #ctx;
-
-  /** @type {GLMatrix} */
-  #math;
 
   /** @type {SubModel[]} */
   subModels = [];
@@ -57,7 +56,6 @@ export default class Model {
   constructor(name, data, engine) {
     this.#engine = engine;
     this.#ctx = engine.driver.ctx;
-    this.#math = engine.math;
 
     this.name = name;
     this.buffer = {
@@ -163,8 +161,6 @@ export default class Model {
    * @param {Float32Array} newData
    */
   #expandBoundingBox(newData) {
-    const { vec3 } = this.#math;
-
     min[0] = this.data.boundingBoxVertex[0];
     min[1] = this.data.boundingBoxVertex[1];
     min[2] = this.data.boundingBoxVertex[2];
@@ -186,8 +182,6 @@ export default class Model {
   }
 
   recalculateBoundingBox() {
-    const { vec3 } = this.#math;
-
     this.data.boundingBoxVertex.set([Infinity, Infinity, Infinity]);
     this.data.boundingBoxVertex.set([-Infinity, -Infinity, -Infinity], 18);
 
@@ -299,7 +293,7 @@ export default class Model {
    * @returns {Instance[]}
    */
   adopt(model, trs) {
-    const subModel = { model, trs: this.#engine.math.mat4.clone(trs), children: [] };
+    const subModel = { model, trs: mat4.clone(trs), children: [] };
     this.subModels.push(subModel);
     this.recalculateBoundingBox();
 

@@ -1,6 +1,8 @@
+const { vec3 } = glMatrix;
+
 /** @type {(engine: Engine) => Tool} */
 export default (engine) => {
-  const { scene, math: { vec3 } } = engine;
+  const { scene } = engine;
 
   /** @type {Instance | null} */
   let instance = null;

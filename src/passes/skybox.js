@@ -1,5 +1,7 @@
+const { mat4 } = glMatrix;
+
 /** @type {RenderingPass} */
-export default ({ math: { mat4 }, driver: { ctx, makeProgram, vert, frag }, camera }) => {
+export default ({ driver: { ctx, makeProgram, vert, frag }, camera }) => {
   const program = makeProgram(
     vert`
       attribute vec4 a_position;

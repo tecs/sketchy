@@ -1,7 +1,8 @@
+const { mat4 } = glMatrix;
+
 /** @type {RenderingPass} */
 export default (engine) => {
   const {
-    math: { mat4 },
     driver: { ctx, makeProgram, vert, frag, UNSIGNED_INDEX_TYPE },
     camera,
     scene,
