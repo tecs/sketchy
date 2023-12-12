@@ -193,31 +193,3 @@ dialog::backdrop {
   padding-top: 1em;
   text-align: right;
 }
-
-/* Debug */
-
-.debug {
-  background-color: var(--backgroundColor);
-  position: absolute;
-  bottom: 0;
-  right: 0;
-  pointer-events: none;
-  border-collapse: collapse;
-  -webkit-user-select: none;
-  -moz-user-select: none;
-  -ms-user-select: none;
-  user-select: none;
-}
-
-.debug, .debug td, .debug th {
-  border: 1px solid var(--borderColor);
-}
-
-.debug thead, .debug td:first-child {
-  font-weight: bold;
-  background: var(--darkOverlayColor);
-}
-
-.debug td, .debug th {
-  padding: 0.25rem;
-}

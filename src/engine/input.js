@@ -12,7 +12,6 @@ export default class Input {
   /** @type {string|null} */
   key = null;
 
-  // TODO store decimal values as well (0.0 - 1.0 and -1.0 to 1.0)
   /** @type {vec3} */
   position;
 

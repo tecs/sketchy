@@ -1,13 +1,4 @@
 /**
- * @typedef ExternalModel
- * @property {number[]} vertices
- * @property {number[]} normals
- * @property {number[]} colors
- * @property {number[]} vertexIndices
- * @property {number[]} normalIndices
- * @property {number[]} colorIndices
- * @property {number[]} lineIndices
- *
  * @typedef {import("./driver").Program} Program
  * @typedef {import("./driver").GLBuffer} GLBuffer
  *
