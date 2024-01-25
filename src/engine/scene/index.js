@@ -92,6 +92,7 @@ export default class Scene {
     engine.on('toolchange', (_, tool) => tool.abort());
     engine.on('keyup', (key) => {
       if (key === 'Escape') engine.tools.selected.abort();
+      else if (key === 'Delete') this.deleteInstance(this.selectedInstance);
     });
   }
 
@@ -150,6 +151,38 @@ export default class Scene {
     this.#engine.emit('scenechange');
 
     return instance;
+  }
+
+  /**
+   * @param {Instance | null} instance
+   * @param {boolean} [deleteFromParentModel]
+   */
+  deleteInstance(instance, deleteFromParentModel = true) {
+    if (!instance?.parent) return;
+    if (this.selectedInstance === instance) this.setSelectedInstance(null);
+
+    if (deleteFromParentModel) {
+      for (const sibling of instance.subModel.children) {
+        this.deleteInstance(sibling, false);
+      }
+
+      const { subModels } = instance.parent.model;
+      const subModelIndex = subModels.indexOf(instance.subModel);
+      subModels.splice(subModelIndex, 1);
+
+      instance.parent.model.recalculateBoundingBox();
+      this.#engine.emit('scenechange');
+      return;
+    }
+
+    const { model } = instance;
+    const index = model.instances.indexOf(instance);
+    model.instances.splice(index, 1);
+    this.#instanceById.delete(instance.id.int);
+
+    while (instance.children.length) {
+      this.deleteInstance(instance.children.pop() ?? null, false);
+    }
   }
 
   /**

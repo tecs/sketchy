@@ -1,6 +1,6 @@
 import Instance from './instance.js';
 
-const { mat4, vec3, quat } = glMatrix;
+const { mat4, vec3 } = glMatrix;
 
 /**
  * @typedef ModelData
