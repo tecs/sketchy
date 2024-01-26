@@ -201,6 +201,14 @@ export default class Model {
     this.#expandBoundingBox(this.data.vertex);
 
     this.#regenerateBoundingBox();
+
+    const parentModels = /** @type {Model[]} */ ([]);
+    for (const instance of this.instances) {
+      const parentModel = instance.parent?.model;
+      if (!parentModel || parentModels.includes(parentModel)) continue;
+      parentModels.push(parentModel);
+      parentModel.recalculateBoundingBox();
+    }
   }
 
   /**
