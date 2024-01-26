@@ -23,6 +23,7 @@ const { mat4, vec3 } = glMatrix;
 
 // cached structures
 const boundingCoord = vec3.create();
+const boundingBox = new Float32Array(24);
 const min = vec3.create();
 const max = vec3.create();
 
@@ -185,16 +186,15 @@ export default class Model {
     this.data.boundingBoxVertex.set([Infinity, Infinity, Infinity]);
     this.data.boundingBoxVertex.set([-Infinity, -Infinity, -Infinity], 18);
 
-    for (const { model, trs } of this.subModels) {
-      const newData = new Float32Array(model.data.boundingBoxVertex);
-      for (let i = 0; i < newData.length; i += 3) {
-        boundingCoord[0] = newData[i];
-        boundingCoord[1] = newData[i + 1];
-        boundingCoord[2] = newData[i + 2];
+    for (const { model: { data: { boundingBoxVertex } }, trs } of this.subModels) {
+      for (let i = 0; i < 24; i += 3) {
+        boundingCoord[0] = boundingBoxVertex[i];
+        boundingCoord[1] = boundingBoxVertex[i + 1];
+        boundingCoord[2] = boundingBoxVertex[i + 2];
         vec3.transformMat4(boundingCoord, boundingCoord, trs);
-        newData.set(boundingCoord, i);
+        boundingBox.set(boundingCoord, i);
       }
-      this.#expandBoundingBox(newData);
+      this.#expandBoundingBox(boundingBox);
     }
 
     this.#expandBoundingBox(this.data.lineVertex);
