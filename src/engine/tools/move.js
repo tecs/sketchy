@@ -2,7 +2,7 @@ const { vec3 } = glMatrix;
 
 /** @type {(engine: Engine) => Tool} */
 export default (engine) => {
-  const { scene } = engine;
+  const { scene, history } = engine;
 
   /** @type {Instance | null} */
   let instance = null;
@@ -19,7 +19,7 @@ export default (engine) => {
     icon: '🕀',
     cursor: 'move',
     start() {
-      if (instance) return;
+      if (instance || !history.lock()) return;
 
       const { selectedInstance, hoveredInstance, currentInstance } = scene;
 
@@ -48,11 +48,29 @@ export default (engine) => {
     end() {
       if (!instance || vec3.length(translation) < 0.1) return;
 
+      const translationInstance = instance;
+      const translationRevert = vec3.clone(translation);
+      const translationForward = vec3.clone(translation);
+      vec3.scale(translationForward, translationForward, -1);
+
+      history.push({
+        name: `Move instance #${translationInstance.id.int}`,
+        skip: true,
+        execute() {
+          translationInstance?.translateGlobal(translationForward);
+          engine.emit('scenechange');
+        },
+        revert() {
+          translationInstance?.translateGlobal(translationRevert);
+          engine.emit('scenechange');
+        },
+      });
       instance = null;
     },
     abort() {
       if (engine.tools.selected.type === 'orbit' || !instance) return;
 
+      history.unlock();
       instance.translateGlobal(translation);
       instance = null;
       engine.emit('scenechange');

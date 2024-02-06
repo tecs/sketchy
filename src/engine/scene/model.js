@@ -268,15 +268,16 @@ export default class Model {
 
   /**
    * @param {Readonly<SubModel>} subModel
+   * @param {Instance[]} [seedInstances]
    * @returns {Readonly<Instance>[]}
    */
-  adopt(subModel) {
+  adopt(subModel, seedInstances) {
     this.subModels.push(subModel);
     this.recalculateBoundingBox();
 
     const instances = [];
     for (const instance of this.instances) {
-      instances.push(...subModel.instantiate(instance));
+      instances.push(...subModel.instantiate(instance, seedInstances));
     }
     return instances;
   }

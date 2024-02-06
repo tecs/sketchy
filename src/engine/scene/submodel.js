@@ -23,17 +23,18 @@ export default class SubModel {
 
   /**
   * @param {Instance | null} parent
+  * @param {Instance[]} [seedInstances]
   * @returns {Instance[]}
   */
-  instantiate(parent) {
-    const instance = new Instance(this, parent);
+  instantiate(parent, seedInstances) {
+    const instance = seedInstances?.shift() ?? new Instance(this, parent);
     this.children.push(instance);
     parent?.children.push(instance);
     this.model.instances.push(instance);
     const instances = [instance];
 
     for (const subSubModel of this.model.subModels) {
-      instances.push(...subSubModel.instantiate(instance));
+      instances.push(...subSubModel.instantiate(instance, seedInstances));
     }
 
     return instances;

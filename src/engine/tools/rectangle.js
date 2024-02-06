@@ -2,7 +2,7 @@ const { vec3 } = glMatrix;
 
 /** @type {(engine: Engine) => Tool} */
 export default (engine) => {
-  const { driver: { UintIndexArray }, scene } = engine;
+  const { driver: { UintIndexArray }, history, scene } = engine;
 
   // cached structures
   const edge1 = vec3.create();
@@ -25,7 +25,7 @@ export default (engine) => {
     cursor: 'crosshair',
     active: false,
     start() {
-      if (this.active) return;
+      if (this.active || !history.lock()) return;
       vec3.copy(origin, scene.hoveredGlobal);
       this.active = true;
 
@@ -95,6 +95,32 @@ export default (engine) => {
       const v3 = model.data.lineVertex.subarray(-3);
 
       if (!this.active || vec3.distance(origin, v2) < 0.1 || vec3.distance(origin, v3) < 0.1) return;
+
+      const rectangleVertices = new Float32Array(vertices);
+      const rectangleColors = new Uint8Array(colors);
+      const rectangleNormals = new Float32Array(normals);
+      history.push({
+        name: 'Draw rectangle',
+        skip: true,
+        execute() {
+          model.appendBufferData(rectangleVertices, 'lineVertex');
+          model.appendBufferData(rectangleColors, 'color');
+          model.appendBufferData(rectangleNormals, 'normal');
+          model.appendBufferData(rectangleVertices, 'vertex');
+          model.appendBufferData(lineIndex, 'lineIndex');
+          model.appendBufferData(index, 'index');
+          engine.emit('scenechange');
+        },
+        revert() {
+          model.truncateBuffer('lineVertex', 12);
+          model.truncateBuffer('lineIndex', 8);
+          model.truncateBuffer('vertex', 12);
+          model.truncateBuffer('index', 6);
+          model.truncateBuffer('color', 12);
+          model.truncateBuffer('normal', 12);
+          engine.emit('scenechange');
+        },
+      });
       vec3.copy(origin, scene.hoveredGlobal);
 
       this.active = false;
@@ -102,6 +128,7 @@ export default (engine) => {
     abort() {
       if (!this.active || engine.tools.selected.type === 'orbit') return;
 
+      history.unlock();
       const model = scene.currentModelWithRoot;
 
       model.truncateBuffer('lineVertex', 12);

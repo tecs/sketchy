@@ -162,17 +162,34 @@ export default class Scene {
    * @param {Instance | null} instance
    */
   deleteInstance(instance) {
-    if (!instance?.parent) return;
+    if (!instance?.parent || !this.#engine.history.lock()) return;
 
-    const instances = instance.parent.model.disown(instance.subModel);
-    for (const deletedInstance of instances) {
-      if (this.selectedInstance === deletedInstance) {
-        this.setSelectedInstance(null);
-      }
-      this.#instanceById.delete(deletedInstance.id.int);
-    }
+    const { parent, subModel } = instance;
 
-   this.#engine.emit('scenechange');
+    const instances = parent.model.disown(subModel);
+
+    this.#engine.history.push({
+      name: `Delete instance #${instance.id} from model "${parent.model.name || '[[root]]'}"`,
+      execute: () => {
+        parent.model.disown(subModel);
+        for (const deletedInstance of instances) {
+          if (this.selectedInstance === deletedInstance) {
+            this.setSelectedInstance(null);
+          }
+          this.#instanceById.delete(deletedInstance.id.int);
+        }
+
+        this.#engine.emit('scenechange');
+      },
+      revert: () => {
+        parent.model.adopt(subModel, instances.slice());
+        for (const restoredInstance of instances) {
+          this.#instanceById.set(restoredInstance.id.int, restoredInstance);
+        }
+
+        this.#engine.emit('scenechange');
+      },
+    });
   }
 
   /**

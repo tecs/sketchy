@@ -2,7 +2,7 @@ const { vec3 } = glMatrix;
 
 /** @type {(engine: Engine) => Tool} */
 export default (engine) => {
-  const { driver: { UintIndexArray }, scene } = engine;
+  const { driver: { UintIndexArray }, history, scene } = engine;
 
   // cached structures
   const origin = vec3.create();
@@ -19,7 +19,7 @@ export default (engine) => {
     cursor: 'crosshair',
     active: false,
     start() {
-      if (this.active) return;
+      if (this.active || !history.lock()) return;
       vec3.copy(origin, scene.hoveredGlobal);
       this.active = true;
 
@@ -47,15 +47,35 @@ export default (engine) => {
       vec3.copy(origin, scene.hoveredGlobal);
 
       const model = scene.currentModelWithRoot;
+      const finalVertices = new Float32Array(vertices);
+      finalVertices.set(coord, 3);
+      history.push({
+        name: 'Draw line segment',
+        skip: true,
+        execute() {
+          model.appendBufferData(finalVertices, 'lineVertex');
+          model.appendBufferData(lineIndex, 'lineIndex');
+          engine.emit('scenechange');
+        },
+        revert() {
+          model.truncateBuffer('lineVertex', 6);
+          model.truncateBuffer('lineIndex', 2);
+          engine.emit('scenechange');
+        },
+      });
 
-      vertices.set(model.data.lineVertex.subarray(-3));
-      vertices.set(origin, 3);
-      model.appendBufferData(vertices, 'lineVertex');
-      model.appendBufferData(lineIndex, 'lineIndex');
+      this.active = history.lock();
+      if (this.active) {
+        vertices.set(model.data.lineVertex.subarray(-3));
+        vertices.set(origin, 3);
+        model.appendBufferData(vertices, 'lineVertex');
+        model.appendBufferData(lineIndex, 'lineIndex');
+      }
     },
     abort() {
       if (!this.active || engine.tools.selected.type === 'orbit') return;
 
+      history.unlock();
       const model = scene.currentModelWithRoot;
 
       model.truncateBuffer('lineVertex', 6);
