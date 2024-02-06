@@ -1,6 +1,4 @@
-import Instance from './instance.js';
-
-const { mat4, vec3 } = glMatrix;
+const { vec3 } = glMatrix;
 
 /**
  * @typedef ModelData
@@ -15,10 +13,7 @@ const { mat4, vec3 } = glMatrix;
  * @typedef {Record<keyof ModelData, number[]>} PlainModelData
  * @typedef {Record<keyof ModelData | "boundingBoxIndex", GLBuffer>} ModelBuffers
  *
- * @typedef SubModel
- * @property {Model} model
- * @property {mat4} trs
- * @property {Instance[]} children
+ * @typedef {import("./submodel").default} SubModel
  */
 
 // cached structures
@@ -28,9 +23,6 @@ const min = vec3.create();
 const max = vec3.create();
 
 export default class Model {
-  /** @type {Engine} */
-  #engine;
-
   /** @type {WebGLRenderingContext} */
   #ctx;
 
@@ -55,7 +47,6 @@ export default class Model {
    * @param {Engine} engine
    */
   constructor(name, data, engine) {
-    this.#engine = engine;
     this.#ctx = engine.driver.ctx;
 
     this.name = name;
@@ -276,38 +267,34 @@ export default class Model {
   }
 
   /**
-   * @param {SubModel} subModel
-   * @param {Instance | null} parent
-   * @returns {Instance[]}
+   * @param {Readonly<SubModel>} subModel
+   * @returns {Readonly<Instance>[]}
    */
-  instantiate(subModel, parent) {
-    const instance = new Instance(this, subModel, parent, this.#engine);
-    subModel.children.push(instance);
-    parent?.children.push(instance);
-    this.instances.push(instance);
-    const instances = [instance];
-
-    for (const subSubModel of this.subModels) {
-      const subInstances = subSubModel.model.instantiate(subSubModel, instance);
-      instances.push(...subInstances);
-    }
-
-    return instances;
-  }
-
-  /**
-   * @param {Model} model
-   * @param {mat4} trs
-   * @returns {Instance[]}
-   */
-  adopt(model, trs) {
-    const subModel = { model, trs: mat4.clone(trs), children: [] };
+  adopt(subModel) {
     this.subModels.push(subModel);
     this.recalculateBoundingBox();
 
     const instances = [];
     for (const instance of this.instances) {
-      instances.push(...model.instantiate(subModel, instance));
+      instances.push(...subModel.instantiate(instance));
+    }
+    return instances;
+  }
+
+  /**
+   * @param {Readonly<SubModel>} subModel
+   * @returns {Readonly<Instance>[]}
+   */
+  disown(subModel) {
+    const index = this.subModels.indexOf(subModel);
+    if (index === -1) return [];
+
+    this.subModels.splice(index, 1);
+    this.recalculateBoundingBox();
+
+    const instances = [];
+    for (const instance of this.instances) {
+      instances.push(...subModel.cleanup(instance));
     }
     return instances;
   }

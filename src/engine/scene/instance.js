@@ -14,16 +14,13 @@ const translate = mat4.create();
 export default class Instance {
   static #lastId = 0;
 
-  /** @type {Engine} */
-  #engine;
-
   /** @type {Id} */
   id;
 
   /** @type {Model} */
   model;
 
-  /** @type {import("./model").SubModel} */
+  /** @type {import("./submodel").default} */
   subModel;
 
   /** @type {mat4} */
@@ -39,17 +36,14 @@ export default class Instance {
   children = [];
 
   /**
-   * @param {Model} model
-   * @param {import("./model").SubModel} subModel
+   * @param {import("./submodel").default} subModel
    * @param {Instance | null} parent
-   * @param {Engine} engine
    */
-  constructor(model, subModel, parent, engine) {
-    this.#engine = engine;
+  constructor(subModel, parent) {
     this.subModel = subModel;
     this.globalTrs = mat4.create();
     this.inverseGlobalTrs = mat4.create();
-    this.model = model;
+    this.model = subModel.model;
     this.parent = parent;
 
     const id = ++Instance.#lastId;

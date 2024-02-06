@@ -1,4 +1,5 @@
 import Model from './model.js';
+import SubModel from './submodel.js';
 
 const { vec3, vec4, mat4 } = glMatrix;
 
@@ -106,8 +107,8 @@ export default class Scene {
     this.rootModel = new Model('', rootData, this.#engine);
     this.models.push(this.rootModel);
 
-    const subModel = { model: this.rootModel, trs: mat4.create(), children: [] };
-    [this.rootInstance] = this.rootModel.instantiate(subModel, null);
+    const subModel = new SubModel(this.rootModel, mat4.create());
+    [this.rootInstance] = subModel.instantiate(null);
     this.#instanceById.set(this.rootInstance.id.int, this.rootInstance);
 
     vec3.set(this.axisNormal, 0, 1, 0);
@@ -140,7 +141,8 @@ export default class Scene {
       this.models.push(model);
     }
 
-    const instances = currentInstance.model.adopt(model, trs);
+    const subModel = new SubModel(model, trs);
+    const instances = currentInstance.model.adopt(subModel);
 
     let instance = currentInstance;
     for (const newInstance of instances) {
@@ -155,34 +157,19 @@ export default class Scene {
 
   /**
    * @param {Instance | null} instance
-   * @param {boolean} [deleteFromParentModel]
    */
-  deleteInstance(instance, deleteFromParentModel = true) {
+  deleteInstance(instance) {
     if (!instance?.parent) return;
-    if (this.selectedInstance === instance) this.setSelectedInstance(null);
 
-    if (deleteFromParentModel) {
-      for (const sibling of instance.subModel.children) {
-        this.deleteInstance(sibling, false);
+    const instances = instance.parent.model.disown(instance.subModel);
+    for (const deletedInstance of instances) {
+      if (this.selectedInstance === deletedInstance) {
+        this.setSelectedInstance(null);
       }
-
-      const { subModels } = instance.parent.model;
-      const subModelIndex = subModels.indexOf(instance.subModel);
-      subModels.splice(subModelIndex, 1);
-
-      instance.parent.model.recalculateBoundingBox();
-      this.#engine.emit('scenechange');
-      return;
+      this.#instanceById.delete(deletedInstance.id.int);
     }
 
-    const { model } = instance;
-    const index = model.instances.indexOf(instance);
-    model.instances.splice(index, 1);
-    this.#instanceById.delete(instance.id.int);
-
-    while (instance.children.length) {
-      this.deleteInstance(instance.children.pop() ?? null, false);
-    }
+   this.#engine.emit('scenechange');
   }
 
   /**
