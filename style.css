@@ -1,5 +1,6 @@
 :root, ::backdrop {
   --textColor: #080808;
+  --disabledTextColor: #444;
   --backgroundColor: #EEEEEE;
   --lightenColor: #FFFFFF99;
   --darkenColor: #00000033;
@@ -113,6 +114,12 @@ html, body, canvas {
   border-left-color: var(--borderHighlightColor);
   border-right-color: var(--borderShadowColor);
   border-bottom-color: var(--borderHighlightColor);
+}
+
+.menuItem.disabled {
+  background-color: var(--darkenColor);
+  color: var(--disabledTextColor);
+  cursor: initial;
 }
 
 .top .menuItem, .bottom .menuItem {

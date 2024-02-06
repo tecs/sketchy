@@ -39,6 +39,16 @@ window.addEventListener('load', () => {
     }).click();
   });
 
+  ui.topMenu.addItem('undo', 'Undo', '↶', () => engine.history.undo());
+  ui.topMenu.addItem('redo', 'Redo', '↷', () => engine.history.redo());
+  ui.topMenu.toggleDisabled('undo');
+  ui.topMenu.toggleDisabled('redo');
+
+  engine.on('historychange', () => {
+    ui.topMenu.toggleDisabled('undo', !engine.history.canUndo);
+    ui.topMenu.toggleDisabled('redo', !engine.history.canRedo);
+  });
+
   ui.topMenu.addItem('settings', 'Settings', '⚙', () => {
     const settings = engine.config.list();
 

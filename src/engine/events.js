@@ -4,6 +4,7 @@
  *
  * @typedef {"viewportresize"} ViewportResizeEvent
  * @typedef {"camerachange"} CameraChangeEvent
+ * @typedef {"historychange"} HistoryChangeEvent
  * @typedef {"toolchange"} ToolChangeEvent
  * @typedef {"scenechange"} SceneChangeEvent
  * @typedef {"keyup"} KeyUpEvent
@@ -18,7 +19,7 @@
  *
  * @typedef {KeyUpEvent|KeyDownEvent} KeyEvent
  * @typedef {MouseUpEvent|MouseDownEvent} MouseButtonEvent
- * @typedef {CameraChangeEvent|SceneChangeEvent} ParamlessEvent
+ * @typedef {CameraChangeEvent|SceneChangeEvent|HistoryChangeEvent} ParamlessEvent
  * @typedef {SelectionChangeEvent|CurrentChangeEvent} InstanceChangeEvent
  * @typedef {UserError} UserMessageEvent
  * @typedef {SystemError} ErrorEvent

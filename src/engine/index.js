@@ -1,4 +1,5 @@
 import Config from './config.js';
+import History from './history.js';
 import Driver from './driver.js';
 import Input from './input.js';
 import Camera from './camera.js';
@@ -21,6 +22,9 @@ export default class Engine extends Events {
 
   /** @type {Readonly<Driver>} */
   driver;
+
+  /** @type {Readonly<History>} */
+  history;
 
   /** @type {Readonly<Input>} */
   input;
@@ -45,6 +49,7 @@ export default class Engine extends Events {
 
     this.config = new Config();
     this.driver = new Driver(canvas);
+    this.history = new History(this);
     this.input = new Input(this);
     this.camera = new Camera(this);
     this.renderer = new Renderer(this);

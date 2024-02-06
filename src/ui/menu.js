@@ -35,7 +35,11 @@ export default class Menu {
       className: 'menuItem',
       title: name,
       innerText: icon,
-      onclick: () => { if (this.selected !== id) onSelect(); },
+      onclick: () => {
+        if (this.selected !== id && !menuItem.classList.contains('disabled')) {
+          onSelect();
+        }
+      },
     });
 
     this.element.appendChild(menuItem);
@@ -53,5 +57,13 @@ export default class Menu {
       item.classList.add('selected');
       previousItem?.classList.remove('selected');
     }
+  }
+
+  /**
+   * @param {string} id
+   * @param {boolean} [disabled]
+   */
+  toggleDisabled(id, disabled = true) {
+    this.items.get(id)?.classList.toggle('disabled', disabled);
   }
 }

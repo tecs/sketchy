@@ -94,6 +94,8 @@ export default class Scene {
     engine.on('keyup', (key) => {
       if (key === 'Escape') engine.tools.selected.abort();
       else if (key === 'Delete') this.deleteInstance(this.selectedInstance);
+      else if (key.toLowerCase() === 'z' && engine.input.ctrl && engine.input.shift) engine.history.redo();
+      else if (key === 'z' && engine.input.ctrl) engine.history.undo();
     });
   }
 
@@ -120,6 +122,7 @@ export default class Scene {
     this.selectedInstance = null;
     this.hoveredInstance = null;
 
+    this.#engine.history.drop();
     this.#engine.emit('scenechange');
   }
 

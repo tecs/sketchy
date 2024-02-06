@@ -2,7 +2,9 @@
   "compilerOptions": {
     "target": "ES6",
     "lib": ["ES2019", "DOM"],
-    "module": "ES6",    "rootDir": "./src",    "moduleResolution": "node",
+    "module": "ES6",
+    "rootDir": "./src",
+    "moduleResolution": "node",
     "resolveJsonModule": true,
     "allowJs": true,
     "checkJs": true,
