@@ -86,7 +86,7 @@ window.addEventListener('load', () => {
   // eslint-disable-next-line no-console
   engine.on('error', console.error);
 
-  canvas.addEventListener('wheel', ({ deltaY }) => engine.camera.zoom(Math.sign(deltaY)));
+  canvas.addEventListener('wheel', ({ deltaY }) => engine.camera.zoom(Math.sign(deltaY)), { passive: true });
 
   canvas.addEventListener('mousedown', ({ button }) => engine.input.setButton(button, true));
   canvas.addEventListener('mouseup', ({ button }) => engine.input.setButton(button, false));
