@@ -19,14 +19,14 @@ export default (engine) => {
     icon: '🕀',
     cursor: 'move',
     start() {
-      if (instance || !history.lock()) return;
+      if (instance) return;
 
       const { selectedInstance, hoveredInstance, currentInstance } = scene;
 
       const candidateInstance = selectedInstance ?? hoveredInstance;
       if (!candidateInstance) return;
 
-      if (!candidateInstance.belongsTo(currentInstance)) return;
+      if (!candidateInstance.belongsTo(currentInstance) || !history.lock()) return;
 
       vec3.copy(origin, scene.hoveredGlobal);
       vec3.zero(translation);

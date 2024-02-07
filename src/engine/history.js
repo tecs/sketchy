@@ -75,7 +75,7 @@ export default class History {
     this.#stack.push(event);
     if (!event.skip) event.execute();
 
-    this.#locked = false;
+    this.unlock();
 
     this.#engine.emit('historychange');
   }
