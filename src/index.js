@@ -92,17 +92,46 @@ window.addEventListener('load', () => {
       return { setting, originalValue, input, el };
     });
 
-    const settingsList = $('div', {}, settingsItems.map(item => $(item.el, {}, [
-      ['label', {}, [['span', { innerText: item.setting.name }], item.input]],
-      ['div', {
-        className: 'button reset',
-        innerText: '⟲',
+    const categories = Object.entries(settingsItems.sort((a, b) => {
+      // make sure settings under the "general" namespace appear first
+      if (a.setting.id.startsWith('general.')) return -1;
+      if (b.setting.id.startsWith('general.')) return 1;
+      return settingsItems.indexOf(a) - settingsItems.indexOf(b);
+    }).reduce((o, item) => {
+      const path = item.setting.id.split('.');
+      const category = path.length < 2 ? 'general' : path[0];
+      o[category] ??= [];
+
+      const categoryContents = $(item.el, {}, [
+        ['label', {}, [['span', { innerText: item.setting.name }], item.input]],
+        ['div', {
+          className: 'button reset',
+          innerText: '⟲',
+          onclick() {
+            item.input.value = item.originalValue;
+            forceChange(item.input);
+          },
+        }],
+      ]);
+
+      o[category].push(categoryContents);
+      return o;
+    }, /** @type {Record<string, HTMLElement[]>} */({})));
+
+    const categoryContents = $('div', { className: 'settingsContents' }, categories[0][1]);
+
+    const categoriesList = $('div', { className: 'settingsCategories' }, categories.map(([innerText, contents], i) => {
+      const menuItem = $('div', {
+        innerText,
+        className: `settingCategory ${i ? '' : 'selected'}`,
         onclick() {
-          item.input.value = item.originalValue;
-          forceChange(item.input);
+          $(categoryContents, { innerHTML: '' }, contents);
+          categoriesList.querySelectorAll('.settingCategory')
+            .forEach(category => category.classList.toggle('selected', category === menuItem));
         },
-      }],
-    ])));
+      });
+      return menuItem;
+    }));
 
     const buttons = $('div', { className: 'settingsButtons' }, [
       ['button', {
@@ -128,7 +157,7 @@ window.addEventListener('load', () => {
     ui.window.add({
       id: 'settings',
       title: 'Settings',
-      contents: [settingsList, buttons],
+      contents: [$('div', { className: 'settings' }, [categoriesList, categoryContents, buttons])],
     });
   });
 
