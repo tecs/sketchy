@@ -51,6 +51,7 @@ window.addEventListener('load', () => {
 
   ui.topMenu.addItem('settings', 'Settings', '⚙', () => {
     const settings = engine.config.list();
+    const saves = /** @type {Function[]} */ ([]);
 
     const settingsList = $('div', {}, settings.map(setting => {
       const originalValue = String(setting.value);
@@ -61,9 +62,13 @@ window.addEventListener('load', () => {
         type: 'number',
         value: originalValue,
         onchange() {
-          setting.value = parseInt(value.value, 10);
           settingsItem.classList.toggle('changed', value.value !== originalValue);
         },
+      });
+
+      saves.push(() => {
+        if (value.value === originalValue) return;
+        setting.set(parseInt(value.value, 10));
       });
 
       return $(settingsItem, {}, [
@@ -71,7 +76,7 @@ window.addEventListener('load', () => {
         ['div', {
           className: 'button reset',
           innerText: '⟲',
-          onclick() { setting.reset(); value.value = originalValue; },
+          onclick() { value.value = originalValue; settingsItem.classList.toggle('changed', false); },
         }],
       ]);
     }));
@@ -80,7 +85,7 @@ window.addEventListener('load', () => {
       ['button', {
         className: 'button',
         innerText: 'save',
-        onclick() { settings.forEach(setting => setting.save()); ui.window.remove('settings'); },
+        onclick() { saves.forEach(save => save()); ui.window.remove('settings'); },
       }],
       ['button', { className: 'button', innerText: 'close', onclick: () => ui.window.remove('settings') }],
     ]);

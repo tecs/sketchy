@@ -2,6 +2,8 @@
 export default (engine) => {
   const { config, scene } = engine;
 
+  const doubleClickDelay = config.create('mouse.doubleClickDelay', 'Double click delay', 'int', 200);
+
   let lastClick = 0;
 
   /** @type {Tool} */
@@ -10,13 +12,11 @@ export default (engine) => {
     name: 'Select',
     shortcut: ' ',
     icon: '🮰',
-    start() {
-    },
-    update() {
-    },
+    start() {},
+    update() {},
     end() {
       const now = Date.now();
-      const doubleClicked = now - lastClick < config.doubleClickDelay;
+      const doubleClicked = now - lastClick < doubleClickDelay.value;
       lastClick = now;
 
       const currentInstance = scene.currentInstanceWithRoot;

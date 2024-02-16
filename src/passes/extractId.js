@@ -61,9 +61,10 @@ export default (engine) => {
       ctx.bindFramebuffer(ctx.FRAMEBUFFER, framebuffer);
       ctx.clear(ctx.COLOR_BUFFER_BIT | ctx.DEPTH_BUFFER_BIT);
 
-      ctx.uniform1f(program.uLoc.u_isLine, 0);
-
       const drawing = tools.selected.active && (tools.selected.type === 'line' || tools.selected.type === 'rectangle');
+
+      // Geometry
+      ctx.uniform1f(program.uLoc.u_isLine, 0);
 
       for (const model of scene.models) {
         // Prevent self-picking when editing
@@ -85,6 +86,7 @@ export default (engine) => {
         }
       }
 
+      // Lines
       ctx.uniform1f(program.uLoc.u_isLine, 1);
 
       ctx.lineWidth(5);
