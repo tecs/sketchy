@@ -2,7 +2,7 @@
 export default (engine) => {
   const { config, scene } = engine;
 
-  const doubleClickDelay = config.create('mouse.doubleClickDelay', 'Double click delay', 'int', 200);
+  const doubleClickDelay = config.createNumber('mouse.doubleClickDelay', 'Double click delay', 'int', 200);
 
   let lastClick = 0;
 

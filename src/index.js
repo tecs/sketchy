@@ -51,43 +51,78 @@ window.addEventListener('load', () => {
 
   ui.topMenu.addItem('settings', 'Settings', '⚙', () => {
     const settings = engine.config.list();
-    const saves = /** @type {Function[]} */ ([]);
 
-    const settingsList = $('div', {}, settings.map(setting => {
+    /** @type {(el: HTMLElement) => boolean} */
+    const forceChange = (el) => el.dispatchEvent(new Event('change'));
+
+    const settingsItems = settings.map(setting => {
+      const el = $('div', { className: 'setting' });
       const originalValue = String(setting.value);
 
-      const settingsItem = $('div', { className: 'setting' });
-
-      const value = $('input', {
-        type: 'number',
+      const input = $('input', {
+        type: typeof setting.value === 'number' ? 'number' : 'text',
         value: originalValue,
+        onkeydown({ key }) {
+          if (setting.type !== 'key') return true;
+
+          // block non-printable keys
+          if (key.length !== 1) return false;
+
+          input.value = key;
+          forceChange(input);
+          input.blur();
+
+          return false;
+        },
         onchange() {
-          settingsItem.classList.toggle('changed', value.value !== originalValue);
+          el.classList.toggle('changed', input.value !== originalValue);
+
+          if (setting.type !== 'key') return;
+
+          // make sure there are no shortcut conflicts
+          for (const item of settingsItems) {
+            if (item.setting !== setting && item.setting.type === 'key' && item.input.value === input.value) {
+              item.input.value = '';
+              forceChange(item.input);
+            }
+          }
         },
       });
 
-      saves.push(() => {
-        if (value.value === originalValue) return;
-        setting.set(parseInt(value.value, 10));
-      });
+      return { setting, originalValue, input, el };
+    });
 
-      return $(settingsItem, {}, [
-        ['label', {}, [['span', { innerText: setting.name }], value]],
-        ['div', {
-          className: 'button reset',
-          innerText: '⟲',
-          onclick() { value.value = originalValue; settingsItem.classList.toggle('changed', false); },
-        }],
-      ]);
-    }));
+    const settingsList = $('div', {}, settingsItems.map(item => $(item.el, {}, [
+      ['label', {}, [['span', { innerText: item.setting.name }], item.input]],
+      ['div', {
+        className: 'button reset',
+        innerText: '⟲',
+        onclick() {
+          item.input.value = item.originalValue;
+          forceChange(item.input);
+        },
+      }],
+    ])));
 
     const buttons = $('div', { className: 'settingsButtons' }, [
       ['button', {
         className: 'button',
         innerText: 'save',
-        onclick() { saves.forEach(save => save()); ui.window.remove('settings'); },
+        onclick() {
+          for (const { input, originalValue, setting } of settingsItems) {
+            if (input.value === originalValue) continue;
+
+            if (setting.type === 'int') setting.set(parseInt(input.value, 10));
+            else setting.set(input.value);
+          }
+          ui.window.remove('settings');
+        },
       }],
-      ['button', { className: 'button', innerText: 'close', onclick: () => ui.window.remove('settings') }],
+      ['button', {
+        className: 'button',
+        innerText: 'close',
+        onclick: () => ui.window.remove('settings'),
+      }],
     ]);
 
     ui.window.add({

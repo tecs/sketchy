@@ -44,9 +44,16 @@ export default class Tools {
 
     this.selected = this.tools[0];
 
+    const shortcuts = this.tools.map(({ name, type, shortcut }) => engine.config.createString(
+      `shortcuts.${type}Tool`,
+      `${name} tool shortcut`,
+      'key',
+      shortcut,
+    ));
+
     engine.on('keyup', (key) => {
-      const tool = this.tools.find(({ shortcut }) => shortcut === key);
-      if (tool) this.setTool(tool);
+      const index = shortcuts.findIndex(({ value }) => value === key);
+      if (index > -1) this.setTool(this.tools[index]);
     });
   }
 

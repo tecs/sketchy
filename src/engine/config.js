@@ -1,5 +1,5 @@
 /**
- * @typedef Setting
+ * @typedef NumberSetting
  * @property {string} id
  * @property {string} name
  * @property {"int"} type
@@ -7,6 +7,17 @@
  * @property {number} defaultValue
  * @property {(newValue: number) => void} set
  * @property {() => number} reset
+ *
+ * @typedef StringSetting
+ * @property {string} id
+ * @property {string} name
+ * @property {"key"} type
+ * @property {string} value
+ * @property {string} defaultValue
+ * @property {(newValue: string) => void} set
+ * @property {() => string} reset
+ *
+ * @typedef {NumberSetting|StringSetting} Setting
  */
 
 export default class Config {
@@ -14,16 +25,17 @@ export default class Config {
   #settings = {};
 
   /**
+   * @template {Setting} T
    * @param {string} id
    * @param {string} name
-   * @param {Setting["type"]} type
-   * @param {Setting["value"]} value
-   * @returns {Readonly<Setting>}
+   * @param {T["type"]} type
+   * @param {T["value"]} value
+   * @returns {Readonly<T>}
    */
-  create(id, name, type, value) {
+  #create(id, name, type, value) {
     if (this.#settings[id]) throw new Error(`Setting "${id}" already exists`);
 
-    const setting = /** @type {Setting} */ ({
+    const setting = /** @type {T} */ ({
       id,
       name,
       type,
@@ -44,6 +56,28 @@ export default class Config {
     this.#settings[id] = setting;
 
     return setting;
+  }
+
+  /**
+  * @param {string} id
+  * @param {string} name
+  * @param {NumberSetting["type"]} type
+  * @param {NumberSetting["value"]} value
+  * @returns {Readonly<NumberSetting>}
+  */
+  createNumber(id, name, type, value) {
+    return this.#create(id, name, type, value);
+  }
+
+  /**
+  * @param {string} id
+  * @param {string} name
+  * @param {StringSetting["type"]} type
+  * @param {StringSetting["value"]} value
+  * @returns {Readonly<StringSetting>}
+  */
+  createString(id, name, type, value) {
+    return this.#create(id, name, type, value);
   }
 
   /**
