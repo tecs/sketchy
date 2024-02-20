@@ -14,6 +14,7 @@ import OrbitTool from './orbit.js';
  * @property {string} icon
  * @property {string} [cursor]
  * @property {boolean} [active]
+ * @property {number[]} [distance]
  * @property {() => void} start
  * @property {(delta: Readonly<vec3>) => void} update
  * @property {() => void} end

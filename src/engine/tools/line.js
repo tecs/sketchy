@@ -18,10 +18,14 @@ export default (engine) => {
     icon: '🖊',
     cursor: 'crosshair',
     active: false,
+    get distance() {
+      return this.active ? [vec3.distance(origin, scene.hoveredGlobal)] : undefined;
+    },
     start() {
       if (this.active || !history.lock()) return;
       vec3.copy(origin, scene.hoveredGlobal);
       this.active = true;
+      engine.emit('toolactive', line);
 
       const model = scene.currentModelWithRoot;
 
@@ -43,7 +47,7 @@ export default (engine) => {
       engine.emit('scenechange');
     },
     end() {
-      if (!this.active || vec3.distance(origin, scene.hoveredGlobal) < 0.1) return;
+      if (!this.distance?.every(v => v >= 0.1)) return;
       vec3.copy(origin, scene.hoveredGlobal);
 
       const model = scene.currentModelWithRoot;
@@ -64,8 +68,10 @@ export default (engine) => {
         },
       });
 
+      engine.emit('toolinactive', line);
       this.active = history.lock();
       if (this.active) {
+        engine.emit('toolactive', line);
         vertices.set(model.data.lineVertex.subarray(-3));
         vertices.set(origin, 3);
         model.appendBufferData(vertices, 'lineVertex');
@@ -82,6 +88,7 @@ export default (engine) => {
       model.truncateBuffer('lineIndex', 2);
 
       this.active = false;
+      engine.emit('toolinactive', line);
       engine.emit('scenechange');
     },
   };

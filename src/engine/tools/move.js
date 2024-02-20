@@ -18,6 +18,10 @@ export default (engine) => {
     shortcut: 'm',
     icon: '🕀',
     cursor: 'move',
+    active: false,
+    get distance() {
+      return this.active ? [vec3.length(translation)] : undefined;
+    },
     start() {
       if (instance) return;
 
@@ -26,7 +30,9 @@ export default (engine) => {
       const candidateInstance = selectedInstance ?? hoveredInstance;
       if (!candidateInstance) return;
 
-      if (!candidateInstance.belongsTo(currentInstance) || !history.lock()) return;
+      if (!candidateInstance.belongsTo(currentInstance) || this.active || !history.lock()) return;
+      this.active = true;
+      engine.emit('toolactive', move);
 
       vec3.copy(origin, scene.hoveredGlobal);
       vec3.zero(translation);
@@ -46,7 +52,7 @@ export default (engine) => {
       engine.emit('scenechange');
     },
     end() {
-      if (!instance || vec3.length(translation) < 0.1) return;
+      if (!instance || !this.distance?.every(v => v >= 0.1)) return;
 
       const translationInstance = instance;
       const translationRevert = vec3.clone(translation);
@@ -65,6 +71,9 @@ export default (engine) => {
           engine.emit('scenechange');
         },
       });
+
+      this.active = false;
+      engine.emit('toolinactive', move);
       instance = null;
     },
     abort() {
@@ -73,6 +82,9 @@ export default (engine) => {
       history.unlock();
       instance.translateGlobal(translation);
       instance = null;
+
+      this.active = false;
+      engine.emit('toolinactive', move);
       engine.emit('scenechange');
     },
   };

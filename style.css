@@ -97,6 +97,7 @@ html, body, canvas {
 .menu.bottom {
   left: 0;
   bottom: 0;
+  right: 0;
 }
 
 .menuItem {
@@ -122,8 +123,12 @@ html, body, canvas {
   cursor: initial;
 }
 
-.top .menuItem, .bottom .menuItem {
+.top > *, .bottom > * {
   display: inline-block;
+}
+
+.menuLabel {
+  padding: 0.25em;
 }
 
 /* Dialogs */

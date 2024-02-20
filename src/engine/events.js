@@ -6,6 +6,8 @@
  * @typedef {"camerachange"} CameraChangeEvent
  * @typedef {"historychange"} HistoryChangeEvent
  * @typedef {"toolchange"} ToolChangeEvent
+ * @typedef {"toolactive"} ToolActiveEvent
+ * @typedef {"toolinactive"} ToolInactiveEvent
  * @typedef {"scenechange"} SceneChangeEvent
  * @typedef {"keyup"} KeyUpEvent
  * @typedef {"keydown"} KeyDownEvent
@@ -21,13 +23,15 @@
  * @typedef {MouseUpEvent|MouseDownEvent} MouseButtonEvent
  * @typedef {CameraChangeEvent|SceneChangeEvent|HistoryChangeEvent} ParamlessEvent
  * @typedef {SelectionChangeEvent|CurrentChangeEvent} InstanceChangeEvent
+ * @typedef {ToolActiveEvent|ToolInactiveEvent} ToolActivityEvent
  * @typedef {UserError} UserMessageEvent
  * @typedef {SystemError} ErrorEvent
  *
- * @typedef {MouseMoveEvent|InstanceChangeEvent|MouseButtonEvent|KeyEvent|ViewportResizeEvent|ToolChangeEvent|ParamlessEvent|UserMessageEvent|SystemError} EngineEvent
+ * @typedef {MouseMoveEvent|InstanceChangeEvent|MouseButtonEvent|KeyEvent|ViewportResizeEvent|ToolChangeEvent|ToolActivityEvent|ParamlessEvent|UserMessageEvent|SystemError} EngineEvent
  *
  * @typedef {(event: ViewportResizeEvent, current: Readonly<vec3>, previous: Readonly<vec3>) => void} ViewportResizeEventEmitter
  * @typedef {(event: ToolChangeEvent, current: Readonly<Tool>, previous: Readonly<Tool>) => void} ToolChangeEventEmitter
+ * @typedef {(event: ToolActivityEvent, tool: Readonly<Tool>) => void} ToolActivityEventEmitter
  * @typedef {(event: InstanceChangeEvent, current: Readonly<Instance> | null, previous: Readonly<Instance> | null) => void} InstanceChangeEventEmitter
  * @typedef {(event: KeyEvent, key: string) => void} KeyEventEmitter
  * @typedef {(event: MouseButtonEvent, button: MouseButton) => void} MouseButtonEventEmitter
@@ -36,10 +40,11 @@
  * @typedef {(event: ErrorEvent, message: string, detals: any) => void} ErrorEventEmitter
  * @typedef {(event: ParamlessEvent) => void} ParamlessEventEmitter
  *
- * @typedef {ViewportResizeEventEmitter&ToolChangeEventEmitter&InstanceChangeEventEmitter&KeyEventEmitter&MouseButtonEventEmitter&MouseMoveEventEmitter&ParamlessEventEmitter&UserMessageEventEmitter&ErrorEventEmitter} EventEmitter
+ * @typedef {ViewportResizeEventEmitter&ToolChangeEventEmitter&ToolActivityEventEmitter&InstanceChangeEventEmitter&KeyEventEmitter&MouseButtonEventEmitter&MouseMoveEventEmitter&ParamlessEventEmitter&UserMessageEventEmitter&ErrorEventEmitter} EventEmitter
  *
  * @typedef {(event: ViewportResizeEvent, handler: (current: Readonly<vec3>, previous: Readonly<vec3>) => void, once?: boolean) => void} ViewportResizeEventHandler
  * @typedef {(event: ToolChangeEvent, handler: (current: Readonly<Tool>, previous: Readonly<Tool>) => void, once?: boolean) => void} ToolChangeEventHandler
+ * @typedef {(event: ToolActivityEvent, handler: (tool: Readonly<Tool>) => void, once?: boolean) => void} ToolActivityEventHandler
  * @typedef {(event: InstanceChangeEvent, handler: (current: Readonly<Instance> | null, previous: Readonly<Instance> | null) => void, once?: boolean) => void} InstanceChangeEventHandler
  * @typedef {(event: KeyEvent, handler: (key: string) => void, once?: boolean) => void} KeyEventHandler
  * @typedef {(event: MouseButtonEvent, handler: (button: MouseButton) => void, once?: boolean) => void} MouseButtonEventHandler
@@ -48,7 +53,7 @@
  * @typedef {(event: ErrorEvent, handler: (message: string, detals: any) => void, once?: boolean) => void} ErrorEventHandler
  * @typedef {(event: ParamlessEvent, handler: () => void, once?: boolean) => void} ParamlessEventHandler
  *
- * @typedef {ViewportResizeEventHandler&ToolChangeEventHandler&InstanceChangeEventHandler&KeyEventHandler&MouseButtonEventHandler&MouseMoveEventHandler&ParamlessEventHandler&UserMessageEventHandler&ErrorEventHandler} EventHandler
+ * @typedef {ViewportResizeEventHandler&ToolChangeEventHandler&ToolActivityEventHandler&InstanceChangeEventHandler&KeyEventHandler&MouseButtonEventHandler&MouseMoveEventHandler&ParamlessEventHandler&UserMessageEventHandler&ErrorEventHandler} EventHandler
  */
 /* eslint-enable max-len */
 

@@ -24,10 +24,19 @@ export default (engine) => {
     icon: '⧄',
     cursor: 'crosshair',
     active: false,
+    get distance() {
+      if (!this.active) return undefined;
+
+      const { lineVertex } = scene.currentModelWithRoot.data;
+      const v2 = lineVertex.subarray(-9, -6);
+      const v3 = lineVertex.subarray(-3);
+      return [vec3.distance(origin, v2), vec3.distance(origin, v3)];
+    },
     start() {
       if (this.active || !history.lock()) return;
       vec3.copy(origin, scene.hoveredGlobal);
       this.active = true;
+      engine.emit('toolactive', rectangle);
 
       const model = scene.currentModelWithRoot;
 
@@ -90,11 +99,8 @@ export default (engine) => {
       engine.emit('scenechange');
     },
     end() {
+      if (!this.distance?.every(v => v >= 0.1)) return;
       const model = scene.currentModelWithRoot;
-      const v2 = model.data.lineVertex.subarray(-9, -6);
-      const v3 = model.data.lineVertex.subarray(-3);
-
-      if (!this.active || vec3.distance(origin, v2) < 0.1 || vec3.distance(origin, v3) < 0.1) return;
 
       const rectangleVertices = new Float32Array(vertices);
       const rectangleColors = new Uint8Array(colors);
@@ -124,6 +130,7 @@ export default (engine) => {
       vec3.copy(origin, scene.hoveredGlobal);
 
       this.active = false;
+      engine.emit('toolinactive', rectangle);
     },
     abort() {
       if (!this.active || engine.tools.selected.type === 'orbit') return;
@@ -139,6 +146,7 @@ export default (engine) => {
       model.truncateBuffer('normal', 12);
 
       this.active = false;
+      engine.emit('toolinactive', rectangle);
       engine.emit('scenechange');
     },
   };

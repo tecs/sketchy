@@ -161,6 +161,16 @@ window.addEventListener('load', () => {
     });
   });
 
+  ui.bottomMenu.addLabel('measurements', 'Measurements');
+  const measurementsInput = ui.bottomMenu.addInput('measurements-input', '', { disabled: true });
+
+  engine.on('toolinactive', () => {
+    measurementsInput.value = '';
+  });
+  engine.on('scenechange', () => {
+    measurementsInput.value = engine.tools.selected.distance?.map(v => v.toFixed(2)).join(', ') ?? '';
+  });
+
   engine.on('usererror', (message) => ui.dialog.error(message));
   // eslint-disable-next-line no-console
   engine.on('error', console.error);

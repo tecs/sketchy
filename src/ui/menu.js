@@ -9,7 +9,7 @@ export default class Menu {
   /** @type {HTMLElement} */
   element;
 
-  /** @type {Map<string, HTMLDivElement>} */
+  /** @type {Map<string, HTMLElement>} */
   items = new Map();
 
   /** @type {string | null} */
@@ -25,25 +25,55 @@ export default class Menu {
   }
 
   /**
+   * @template {keyof HTMLElementTagNameMap} T
+   * @param {string} id
+   * @param {T | HTMLElement} tag
+   * @param {Partial<HTMLElementTagNameMap[T]>} options
+   * @returns {HTMLElementTagNameMap[T]}
+   */
+  addElement(id, tag, options) {
+    const element = $(tag, options);
+    this.element.appendChild(element);
+    this.items.set(id, element);
+    return /** @type {HTMLElementTagNameMap[T]} */ (element);
+  }
+
+  /**
    * @param {string} id
    * @param {string} name
    * @param {string} icon
    * @param {Function} onSelect
    */
   addItem(id, name, icon, onSelect) {
-    const menuItem = $('div', {
+    const element = this.addElement(id, 'div', {
       className: 'menuItem',
       title: name,
       innerText: icon,
       onclick: () => {
-        if (this.selected !== id && !menuItem.classList.contains('disabled')) {
+        if (this.selected !== id && !element.classList.contains('disabled')) {
           onSelect();
         }
       },
     });
+  }
 
-    this.element.appendChild(menuItem);
-    this.items.set(id, menuItem);
+  /**
+   * @param {string} id
+   * @param {string} text
+   * @returns {HTMLDivElement}
+   */
+  addLabel(id, text) {
+    return this.addElement(id, 'div', { className: 'menuLabel', innerText: text });
+  }
+
+  /**
+   * @param {string} id
+   * @param {string} value
+   * @param {Partial<HTMLElementTagNameMap["input"]>} [options]
+   * @returns {HTMLInputElement}
+   */
+  addInput(id, value, options = {}) {
+    return this.addElement(id, 'input', { className: 'menuInput', value, ...options });
   }
 
   /**
