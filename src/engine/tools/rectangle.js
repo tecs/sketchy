@@ -27,10 +27,42 @@ export default (engine) => {
     get distance() {
       if (!this.active) return undefined;
 
-      const { lineVertex } = scene.currentModelWithRoot.data;
-      const v2 = lineVertex.subarray(-9, -6);
-      const v3 = lineVertex.subarray(-3);
+      const v2 = vertices.subarray(3, 6);
+      const v3 = vertices.subarray(9);
       return [vec3.distance(origin, v2), vec3.distance(origin, v3)];
+    },
+    setDistance([d1, d2]) {
+      if (!this.active) return;
+
+      const model = scene.currentModelWithRoot;
+
+      const v2 = vertices.subarray(3, 6);
+      const v3 = vertices.subarray(9);
+      vec3.subtract(edge2, v2, origin);
+      vec3.subtract(edge3, v3, origin);
+      vec3.normalize(edge2, edge2);
+      vec3.normalize(edge3, edge3);
+      vec3.scale(edge2, edge2, d1);
+      vec3.scale(edge3, edge3, d2);
+      vec3.add(edge2, edge2, origin);
+      vec3.add(edge3, edge3, origin);
+
+      vec3.multiply(edge1, scene.axisNormal, vertices);
+
+      const i1 = scene.axisNormal[0] ? 1 : 0;
+      const i2 = i1 ? 2 : scene.axisNormal[1] + 1;
+      edge1[i1] = edge2[i1];
+      edge1[i2] = edge3[i2];
+
+      vertices.set(edge1, 6);
+      vertices.set(edge2, 3);
+      vertices.set(edge3, 9);
+
+      model.updateBufferEnd(vertices, 'lineVertex');
+      model.updateBufferEnd(vertices, 'vertex');
+
+      this.end();
+      engine.emit('scenechange');
     },
     start() {
       if (this.active || !history.lock()) return;
@@ -67,7 +99,6 @@ export default (engine) => {
       hovered[1] = 1;
       hovered[2] = 1;
 
-      vertices.set(model.data.lineVertex.subarray(-12));
       vec3.multiply(edge1, scene.axisNormal, vertices);
 
       vec3.subtract(hovered, hovered, scene.axisNormal);

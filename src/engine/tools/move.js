@@ -22,6 +22,22 @@ export default (engine) => {
     get distance() {
       return this.active ? [vec3.length(translation)] : undefined;
     },
+    setDistance([distance]) {
+      if (!this.active || !instance) return;
+
+      instance.translateGlobal(translation);
+
+      const direction = vec3.create();
+      vec3.normalize(direction, translation);
+      vec3.scale(translation, direction, -distance);
+
+      instance.translateGlobal(translation);
+
+      vec3.scale(translation, translation, -1);
+
+      this.end();
+      engine.emit('scenechange');
+    },
     start() {
       if (instance) return;
 

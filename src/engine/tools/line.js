@@ -19,7 +19,21 @@ export default (engine) => {
     cursor: 'crosshair',
     active: false,
     get distance() {
-      return this.active ? [vec3.distance(origin, scene.hoveredGlobal)] : undefined;
+      return this.active ? [vec3.distance(origin, coord)] : undefined;
+    },
+    setDistance([distance]) {
+      if (!this.active) return;
+
+      const model = scene.currentModelWithRoot;
+      vec3.subtract(coord, vertices, scene.hoveredGlobal);
+      vec3.normalize(coord, coord);
+      vec3.scale(coord, coord, -distance);
+      vec3.add(coord, coord, vertices);
+
+      model.updateBufferEnd(coord, 'lineVertex');
+
+      this.end();
+      engine.emit('scenechange');
     },
     start() {
       if (this.active || !history.lock()) return;
