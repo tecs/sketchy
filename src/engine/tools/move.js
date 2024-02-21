@@ -9,6 +9,7 @@ export default (engine) => {
 
   // cached structures
   const origin = vec3.create();
+  const diff = vec3.create();
   const translation = vec3.create();
 
   /** @type {Tool} */
@@ -25,15 +26,11 @@ export default (engine) => {
     setDistance([distance]) {
       if (!this.active || !instance) return;
 
-      instance.translateGlobal(translation);
-
-      const direction = vec3.create();
-      vec3.normalize(direction, translation);
-      vec3.scale(translation, direction, -distance);
-
-      instance.translateGlobal(translation);
-
-      vec3.scale(translation, translation, -1);
+      vec3.copy(diff, translation);
+      vec3.normalize(translation, translation);
+      vec3.scale(translation, translation, distance);
+      vec3.subtract(diff, translation, diff);
+      instance.translateGlobal(diff);
 
       this.end();
       engine.emit('scenechange');
@@ -58,12 +55,10 @@ export default (engine) => {
     update() {
       if (!instance) return;
 
-      vec3.subtract(origin, scene.hoveredGlobal, origin);
-      vec3.subtract(translation, translation, origin);
-
-      instance.translateGlobal(origin);
-
-      vec3.copy(origin, scene.hoveredGlobal);
+      vec3.copy(diff, translation);
+      vec3.subtract(translation, scene.hoveredGlobal, origin);
+      vec3.subtract(diff, translation, diff);
+      instance.translateGlobal(diff);
 
       engine.emit('scenechange');
     },
@@ -71,31 +66,32 @@ export default (engine) => {
       if (!instance || !this.distance?.every(v => v >= 0.1)) return;
 
       const translationInstance = instance;
-      const translationRevert = vec3.clone(translation);
-      const translationForward = vec3.clone(translation);
-      vec3.scale(translationForward, translationForward, -1);
+      const translationVec = vec3.clone(translation);
 
       history.push({
         name: `Move instance #${translationInstance.id.int}`,
         skip: true,
         execute() {
-          translationInstance?.translateGlobal(translationForward);
+          translationInstance.translateGlobal(translationVec);
           engine.emit('scenechange');
         },
         revert() {
-          translationInstance?.translateGlobal(translationRevert);
+          const translationVecReverse = vec3.create();
+          vec3.scale(translationVecReverse, translationVec, -1);
+          translationInstance.translateGlobal(translationVecReverse);
           engine.emit('scenechange');
         },
       });
 
       this.active = false;
-      engine.emit('toolinactive', move);
       instance = null;
+      engine.emit('toolinactive', move);
     },
     abort() {
       if (engine.tools.selected.type === 'orbit' || !instance) return;
 
       history.unlock();
+      vec3.scale(translation, translation, -1);
       instance.translateGlobal(translation);
       instance = null;
 
