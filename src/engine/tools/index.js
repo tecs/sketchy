@@ -70,4 +70,15 @@ export default class Tools {
 
     this.#engine.emit('toolchange', tool, previous);
   }
+
+  /**
+   * @param  {...ToolType} toolTypes
+   * @returns {boolean}
+   */
+  isActive(...toolTypes) {
+    for (const { type, active } of this.tools) {
+      if (active && toolTypes.includes(type)) return true;
+    }
+    return false;
+  }
 }

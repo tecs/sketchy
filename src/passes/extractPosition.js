@@ -77,7 +77,7 @@ export default (engine) => {
   return {
     program,
     render(_, extract) {
-      if (!extract || (tools.selected.active && tools.selected.type === 'orbit')) return;
+      if (!extract || tools.isActive('orbit')) return;
 
       if (!scene.hoveredInstance) {
         mat4.getTranslation(translation, engine.camera.world);

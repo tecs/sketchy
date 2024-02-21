@@ -56,12 +56,12 @@ export default (engine) => {
   return {
     program,
     render(_, extract) {
-      if (!extract || (tools.selected.active && tools.selected.type === 'orbit')) return;
+      if (!extract || tools.isActive('orbit')) return;
 
       ctx.bindFramebuffer(ctx.FRAMEBUFFER, framebuffer);
       ctx.clear(ctx.COLOR_BUFFER_BIT | ctx.DEPTH_BUFFER_BIT);
 
-      const drawing = tools.selected.active && (tools.selected.type === 'line' || tools.selected.type === 'rectangle');
+      const drawing = tools.isActive('line', 'rectangle');
 
       // Geometry
       ctx.uniform1f(program.uLoc.u_isLine, 0);
