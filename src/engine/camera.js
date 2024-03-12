@@ -17,7 +17,7 @@ export default class Camera {
   /** @type {Engine} */
   #engine;
 
-  /** @type {vec3} */
+  /** @type {Readonly<vec3>} */
   #startingPointVec;
 
   /** @type {vec3} */
@@ -66,7 +66,7 @@ export default class Camera {
    * @param {Engine} engine
    */
   constructor(engine) {
-    const { driver: { canvas } } = engine;
+    const { config, driver: { canvas } } = engine;
     this.#engine = engine;
 
     this.fovScaling = vec3.create();
@@ -114,6 +114,40 @@ export default class Camera {
     });
 
     engine.on('mousemove', () => this.recalculateFrustum());
+
+    const cameraFaceXkey = config.createString('shortcuts.cameraX', 'Look along X-axis', 'key', '1');
+    const cameraFaceYkey = config.createString('shortcuts.cameraY', 'Look along Y-axis', 'key', '2');
+    const cameraFaceZkey = config.createString('shortcuts.cameraZ', 'Look along Z-axis', 'key', '3');
+    const cameraFaceReverseXkey = config.createString('shortcuts.cameraRevX', 'Look back at X-axis', 'key', '4');
+    const cameraFaceReverseYkey = config.createString('shortcuts.cameraRevY', 'Look back at Y-axis', 'key', '5');
+    const cameraFaceReverseZkey = config.createString('shortcuts.cameraRevZ', 'Look back at Z-axis', 'key', '6');
+    const cameraFaceXYZkey = config.createString('shortcuts.cameraXYZ', 'Look along XYZ-axis', 'key', '0');
+
+    engine.on('keyup', (key) => {
+      switch (key) {
+        case cameraFaceXkey.value:
+          this.resetAndLookFrom(0, halfPI);
+          break;
+        case cameraFaceYkey.value:
+          this.resetAndLookFrom(halfPI, 0);
+          break;
+        case cameraFaceZkey.value:
+          this.resetAndLookFrom(0, 0);
+          break;
+        case cameraFaceReverseXkey.value:
+          this.resetAndLookFrom(0, threeFourthsPI);
+          break;
+        case cameraFaceReverseYkey.value:
+          this.resetAndLookFrom(threeFourthsPI, 0);
+          break;
+        case cameraFaceReverseZkey.value:
+          this.resetAndLookFrom(0, Math.PI);
+          break;
+        case cameraFaceXYZkey.value:
+          this.resetAndLookFrom(halfPI / 2, threeFourthsPI + halfPI / 2);
+          break;
+      }
+    });
   }
 
   /**
@@ -157,6 +191,28 @@ export default class Camera {
     mat4.rotateY(transform, transform, dX * halfPI);
     mat4.translate(transform, transform, toEye);
 
+    mat4.multiply(this.rotation, transform, this.rotation);
+
+    this.recalculateMVP();
+  }
+
+  /**
+   * @param {number} pitch
+   * @param {number} yaw
+   */
+  resetAndLookFrom(pitch, yaw) {
+    this.pitch = pitch;
+    this.yaw = yaw;
+
+    mat4.fromTranslation(this.translation, this.#startingPointVec);
+
+    vec3.scale(toEye, this.#startingPointVec, -1);
+
+    mat4.rotateX(transform, this.translation, this.pitch);
+    mat4.rotateY(transform, transform, this.yaw);
+    mat4.translate(transform, transform, toEye);
+
+    mat4.identity(this.rotation);
     mat4.multiply(this.rotation, transform, this.rotation);
 
     this.recalculateMVP();
