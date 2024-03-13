@@ -124,6 +124,8 @@ export default class Camera {
     const cameraFaceXYZkey = config.createString('shortcuts.cameraXYZ', 'Look along XYZ-axis', 'key', '0');
 
     engine.on('keyup', (key) => {
+      if (engine.tools.selected.active) return;
+
       switch (key) {
         case cameraFaceXkey.value:
           this.resetAndLookFrom(0, halfPI);
