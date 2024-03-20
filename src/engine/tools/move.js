@@ -4,13 +4,18 @@ const { vec3 } = glMatrix;
 export default (engine) => {
   const { scene, history } = engine;
 
-  /** @type {Instance | null} */
-  let instance = null;
+  /**
+   * @typedef MoveData
+   * @property {Instance} instance
+   * @property {vec3} translation
+   */
+
+  /** @type {import("../history").HistoryAction<MoveData>|undefined} */
+  let historyAction;
 
   // cached structures
   const origin = vec3.create();
   const diff = vec3.create();
-  const translation = vec3.create();
 
   /** @type {Tool} */
   const move = {
@@ -19,12 +24,16 @@ export default (engine) => {
     shortcut: 'm',
     icon: '🕀',
     cursor: 'move',
-    active: false,
+    get active() {
+      return !!historyAction;
+    },
     get distance() {
-      return this.active ? [vec3.length(translation)] : undefined;
+      return historyAction ? [vec3.length(historyAction.data.translation)] : undefined;
     },
     setDistance([distance]) {
-      if (!this.active || !instance) return;
+      if (!historyAction) return;
+
+      const { instance, translation } = historyAction.data;
 
       vec3.copy(diff, translation);
       vec3.normalize(translation, translation);
@@ -36,24 +45,44 @@ export default (engine) => {
       engine.emit('scenechange');
     },
     start() {
-      if (instance) return;
+      if (historyAction) return;
 
       const { selectedInstance, hoveredInstance, currentInstance } = scene;
 
       const candidateInstance = selectedInstance ?? hoveredInstance;
       if (!candidateInstance) return;
 
-      if (!candidateInstance.belongsTo(currentInstance) || this.active || !history.lock()) return;
-      this.active = true;
-      engine.emit('toolactive', move);
+      if (!candidateInstance.belongsTo(currentInstance)) return;
+
+      historyAction = history.createAction(`Move instance #${candidateInstance.id.int}`, {
+        instance: candidateInstance,
+        translation: vec3.create(),
+      }, () => {
+        historyAction = undefined;
+        engine.emit('toolinactive', move);
+      });
+      if (!historyAction) return;
 
       vec3.copy(origin, scene.hoveredGlobal);
-      vec3.zero(translation);
+      engine.emit('toolactive', move);
 
-      instance = candidateInstance;
+      historyAction.append(
+        ({ instance, translation }) => {
+          instance.translateGlobal(translation);
+          engine.emit('scenechange');
+        },
+        ({ instance, translation }) => {
+          const translationVecReverse = vec3.create();
+          vec3.scale(translationVecReverse, translation, -1);
+          instance.translateGlobal(translationVecReverse);
+          engine.emit('scenechange');
+        },
+      );
     },
     update() {
-      if (!instance) return;
+      if (!historyAction) return;
+
+      const { instance, translation } = historyAction.data;
 
       vec3.copy(diff, translation);
       vec3.subtract(translation, scene.hoveredGlobal, origin);
@@ -63,41 +92,14 @@ export default (engine) => {
       engine.emit('scenechange');
     },
     end() {
-      if (!instance || !this.distance?.every(v => v >= 0.1)) return;
+      if (!historyAction || !this.distance?.every(v => v >= 0.1)) return;
 
-      const translationInstance = instance;
-      const translationVec = vec3.clone(translation);
-
-      history.push({
-        name: `Move instance #${translationInstance.id.int}`,
-        skip: true,
-        execute() {
-          translationInstance.translateGlobal(translationVec);
-          engine.emit('scenechange');
-        },
-        revert() {
-          const translationVecReverse = vec3.create();
-          vec3.scale(translationVecReverse, translationVec, -1);
-          translationInstance.translateGlobal(translationVecReverse);
-          engine.emit('scenechange');
-        },
-      });
-
-      this.active = false;
-      instance = null;
-      engine.emit('toolinactive', move);
+      historyAction.commit();
     },
     abort() {
-      if (engine.tools.selected.type === 'orbit' || !instance) return;
+      if (!historyAction || engine.tools.selected.type === 'orbit') return;
 
-      history.unlock();
-      vec3.scale(translation, translation, -1);
-      instance.translateGlobal(translation);
-      instance = null;
-
-      this.active = false;
-      engine.emit('toolinactive', move);
-      engine.emit('scenechange');
+      historyAction.discard();
     },
   };
 

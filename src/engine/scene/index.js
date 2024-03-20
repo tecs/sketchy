@@ -162,17 +162,21 @@ export default class Scene {
    * @param {Instance | null} instance
    */
   deleteInstance(instance) {
-    if (!instance?.parent || !this.#engine.history.lock()) return;
+    if (!instance?.parent) return;
 
     const { parent, subModel } = instance;
+    const action = this.#engine.history.createAction(
+      `Delete instance #${instance.id} from model "${parent.model.name || '[[root]]'}"`,
+      {
+        instances: /** @type {Instance[]} */ ([]),
+      },
+    );
+    if (!action) return;
 
-    const instances = parent.model.disown(subModel);
-
-    this.#engine.history.push({
-      name: `Delete instance #${instance.id} from model "${parent.model.name || '[[root]]'}"`,
-      execute: () => {
-        parent.model.disown(subModel);
-        for (const deletedInstance of instances) {
+    action.append(
+      (data) => {
+        data.instances = parent.model.disown(subModel);
+        for (const deletedInstance of data.instances) {
           if (this.selectedInstance === deletedInstance) {
             this.setSelectedInstance(null);
           }
@@ -181,7 +185,7 @@ export default class Scene {
 
         this.#engine.emit('scenechange');
       },
-      revert: () => {
+      ({ instances }) => {
         parent.model.adopt(subModel, instances.slice());
         for (const restoredInstance of instances) {
           this.#instanceById.set(restoredInstance.id.int, restoredInstance);
@@ -189,7 +193,8 @@ export default class Scene {
 
         this.#engine.emit('scenechange');
       },
-    });
+    );
+    action.commit();
   }
 
   /**

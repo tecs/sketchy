@@ -4,17 +4,24 @@ const { vec3 } = glMatrix;
 export default (engine) => {
   const { driver: { UintIndexArray }, history, scene } = engine;
 
+  /**
+   * @typedef RectData
+   * @property {Model} model
+   * @property {Float32Array} vertices
+   * @property {Float32Array} normals
+   */
+
+  /** @type {import("../history").HistoryAction<RectData>|undefined} */
+  let historyAction;
+
   // cached structures
   const edge1 = vec3.create();
   const edge2 = vec3.create();
   const edge3 = vec3.create();
   const hovered = vec3.create();
-  const origin = vec3.create();
   const lineIndex = new UintIndexArray([0, 1, 1, 2, 2, 3, 3, 0]);
   const index = new UintIndexArray([0, 1, 2, 0, 2, 3]);
-  const vertices = new Float32Array(12);
-  const normals = new Float32Array(12);
-  const colors = new Uint8Array(12);
+  const colors = new Uint8Array([255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255]);
 
   /** @type {Tool} */
   const rectangle = {
@@ -23,29 +30,33 @@ export default (engine) => {
     shortcut: 'r',
     icon: '⧄',
     cursor: 'crosshair',
-    active: false,
+    get active() {
+      return !!historyAction;
+    },
     get distance() {
-      if (!this.active) return undefined;
+      if (!historyAction) return undefined;
+
+      const { vertices } = historyAction.data;
 
       const v2 = vertices.subarray(3, 6);
       const v3 = vertices.subarray(9);
-      return [vec3.distance(origin, v2), vec3.distance(origin, v3)];
+      return [vec3.distance(vertices, v2), vec3.distance(vertices, v3)];
     },
     setDistance([d1, d2]) {
-      if (!this.active) return;
+      if (!historyAction) return;
 
-      const model = scene.currentModelWithRoot;
+      const { model, vertices } = historyAction.data;
 
       const v2 = vertices.subarray(3, 6);
       const v3 = vertices.subarray(9);
-      vec3.subtract(edge2, v2, origin);
-      vec3.subtract(edge3, v3, origin);
+      vec3.subtract(edge2, v2, vertices);
+      vec3.subtract(edge3, v3, vertices);
       vec3.normalize(edge2, edge2);
       vec3.normalize(edge3, edge3);
       vec3.scale(edge2, edge2, d1);
       vec3.scale(edge3, edge3, d2);
-      vec3.add(edge2, edge2, origin);
-      vec3.add(edge3, edge3, origin);
+      vec3.add(edge2, edge2, vertices);
+      vec3.add(edge3, edge3, vertices);
 
       vec3.multiply(edge1, scene.axisNormal, vertices);
 
@@ -65,35 +76,50 @@ export default (engine) => {
       engine.emit('scenechange');
     },
     start() {
-      if (this.active || !history.lock()) return;
-      vec3.copy(origin, scene.hoveredGlobal);
-      this.active = true;
+      if (this.active) return;
+
+      historyAction = history.createAction('Draw rectangle', {
+        model: scene.currentModelWithRoot,
+        vertices: new Float32Array(12),
+        normals: new Float32Array(12),
+      }, () => {
+        historyAction = undefined;
+        engine.emit('toolinactive', rectangle);
+      });
+      if (!historyAction) return;
+
+      historyAction.data.vertices.set(scene.hoveredGlobal);
+      historyAction.data.vertices.set(scene.hoveredGlobal, 3);
+      historyAction.data.vertices.set(scene.hoveredGlobal, 6);
+      historyAction.data.vertices.set(scene.hoveredGlobal, 9);
+
+      historyAction.append(
+        ({ model, vertices, normals }) => {
+          model.appendBufferData(vertices, 'vertex');
+          model.appendBufferData(vertices, 'lineVertex');
+          model.appendBufferData(normals, 'normal');
+          model.appendBufferData(colors, 'color');
+          model.appendBufferData(index, 'index');
+          model.appendBufferData(lineIndex, 'lineIndex');
+          engine.emit('scenechange');
+        },
+        ({ model }) => {
+          model.truncateBuffer('vertex', 12);
+          model.truncateBuffer('lineVertex', 12);
+          model.truncateBuffer('normal', 12);
+          model.truncateBuffer('color', 12);
+          model.truncateBuffer('index', 6);
+          model.truncateBuffer('lineIndex', 8);
+          engine.emit('scenechange');
+        },
+      );
+
       engine.emit('toolactive', rectangle);
-
-      const model = scene.currentModelWithRoot;
-
-      vertices.set(origin);
-      vertices.set(origin, 3);
-      vertices.set(origin, 6);
-      vertices.set(origin, 9);
-
-      model.appendBufferData(vertices, 'lineVertex');
-      model.appendBufferData(lineIndex, 'lineIndex');
-      model.appendBufferData(vertices, 'vertex');
-      model.appendBufferData(index, 'index');
-
-      const color = [255, 255, 255];
-      colors.set(color);
-      colors.set(color, 3);
-      colors.set(color, 6);
-      colors.set(color, 9);
-      model.appendBufferData(colors, 'color');
-      model.appendBufferData(normals, 'normal');
     },
     update() {
-      if (!this.active) return;
+      if (!historyAction) return;
 
-      const model = scene.currentModelWithRoot;
+      const { model, vertices, normals } = historyAction.data;
 
       hovered[0] = 1;
       hovered[1] = 1;
@@ -130,55 +156,13 @@ export default (engine) => {
       engine.emit('scenechange');
     },
     end() {
-      if (!this.distance?.every(v => v >= 0.1)) return;
-      const model = scene.currentModelWithRoot;
-
-      const rectangleVertices = new Float32Array(vertices);
-      const rectangleColors = new Uint8Array(colors);
-      const rectangleNormals = new Float32Array(normals);
-      history.push({
-        name: 'Draw rectangle',
-        skip: true,
-        execute() {
-          model.appendBufferData(rectangleVertices, 'lineVertex');
-          model.appendBufferData(rectangleColors, 'color');
-          model.appendBufferData(rectangleNormals, 'normal');
-          model.appendBufferData(rectangleVertices, 'vertex');
-          model.appendBufferData(lineIndex, 'lineIndex');
-          model.appendBufferData(index, 'index');
-          engine.emit('scenechange');
-        },
-        revert() {
-          model.truncateBuffer('lineVertex', 12);
-          model.truncateBuffer('lineIndex', 8);
-          model.truncateBuffer('vertex', 12);
-          model.truncateBuffer('index', 6);
-          model.truncateBuffer('color', 12);
-          model.truncateBuffer('normal', 12);
-          engine.emit('scenechange');
-        },
-      });
-      vec3.copy(origin, scene.hoveredGlobal);
-
-      this.active = false;
-      engine.emit('toolinactive', rectangle);
+      if (!historyAction || !this.distance?.every(v => v >= 0.1)) return;
+      historyAction.commit();
     },
     abort() {
-      if (!this.active || engine.tools.selected.type === 'orbit') return;
+      if (!historyAction || engine.tools.selected.type === 'orbit') return;
 
-      history.unlock();
-      const model = scene.currentModelWithRoot;
-
-      model.truncateBuffer('lineVertex', 12);
-      model.truncateBuffer('lineIndex', 8);
-      model.truncateBuffer('vertex', 12);
-      model.truncateBuffer('index', 6);
-      model.truncateBuffer('color', 12);
-      model.truncateBuffer('normal', 12);
-
-      this.active = false;
-      engine.emit('toolinactive', rectangle);
-      engine.emit('scenechange');
+      historyAction.discard();
     },
   };
 

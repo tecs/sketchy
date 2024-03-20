@@ -4,54 +4,78 @@ const { vec3 } = glMatrix;
 export default (engine) => {
   const { driver: { UintIndexArray }, history, scene } = engine;
 
-  // cached structures
-  const origin = vec3.create();
-  const coord = vec3.create();
-  const lineIndex = new UintIndexArray([0, 1]);
-  const vertices = new Float32Array(6);
+  /**
+   * @typedef LineData
+   * @property {Model} model
+   * @property {vec3} origin
+   * @property {vec3} coord
+   */
 
-  /** @type {Tool} */
+  /** @type {import("../history").HistoryAction<LineData>|undefined} */
+  let historyAction;
+
+  // cached structures
+  const lineIndex = new UintIndexArray([0, 1]);
+
+  /** @type {Omit<Tool, 'start'> & { start: (startCoord?: vec3) => void }} */
   const line = {
     type: 'line',
     name: 'Line/Arc',
     shortcut: 'l',
     icon: '🖊',
     cursor: 'crosshair',
-    active: false,
+    get active() {
+      return !!historyAction;
+    },
     get distance() {
-      return this.active ? [vec3.distance(origin, coord)] : undefined;
+      return historyAction ? [vec3.distance(historyAction.data.origin, historyAction.data.coord)] : undefined;
     },
     setDistance([distance]) {
-      if (!this.active) return;
+      if (!historyAction) return;
+      const { model, coord, origin } = historyAction.data;
 
-      const model = scene.currentModelWithRoot;
-      vec3.subtract(coord, vertices, scene.hoveredGlobal);
+      vec3.subtract(coord, origin, scene.hoveredGlobal);
       vec3.normalize(coord, coord);
       vec3.scale(coord, coord, -distance);
-      vec3.add(coord, coord, vertices);
+      vec3.add(coord, coord, origin);
 
       model.updateBufferEnd(coord, 'lineVertex');
+      engine.emit('scenechange');
 
       this.end();
-      engine.emit('scenechange');
     },
-    start() {
-      if (this.active || !history.lock()) return;
-      vec3.copy(origin, scene.hoveredGlobal);
-      this.active = true;
+    start(startCoord = scene.hoveredGlobal) {
+      if (this.active) return;
+
+      historyAction = history.createAction('Draw line segment', {
+        origin: vec3.clone(startCoord),
+        coord: vec3.clone(startCoord),
+        model: scene.currentModelWithRoot,
+      }, () => {
+        historyAction = undefined;
+        engine.emit('toolinactive', line);
+      });
+      if (!historyAction) return;
+
       engine.emit('toolactive', line);
 
-      const model = scene.currentModelWithRoot;
-
-      vertices.set(origin);
-      vertices.set(origin, 3);
-      model.appendBufferData(vertices, 'lineVertex');
-      model.appendBufferData(lineIndex, 'lineIndex');
+      historyAction.append(
+        ({ origin, coord, model }) => {
+          model.appendBufferData(origin, 'lineVertex');
+          model.appendBufferData(coord, 'lineVertex');
+          model.appendBufferData(lineIndex, 'lineIndex');
+          engine.emit('scenechange');
+        },
+        ({ model }) => {
+          model.truncateBuffer('lineVertex', 6);
+          model.truncateBuffer('lineIndex', 2);
+          engine.emit('scenechange');
+        },
+      );
     },
     update() {
-      if (!this.active) return;
-
-      const model = scene.currentModelWithRoot;
+      if (!historyAction) return;
+      const { model, coord } = historyAction.data;
 
       vec3.multiply(coord, scene.axisNormal, model.data.lineVertex);
       vec3.add(coord, coord, scene.hoveredGlobal);
@@ -61,49 +85,16 @@ export default (engine) => {
       engine.emit('scenechange');
     },
     end() {
-      if (!this.distance?.every(v => v >= 0.1)) return;
-      vec3.copy(origin, scene.hoveredGlobal);
+      if (!historyAction || !this.distance?.every(v => v >= 0.1)) return;
 
-      const model = scene.currentModelWithRoot;
-      const finalVertices = new Float32Array(vertices);
-      finalVertices.set(coord, 3);
-      history.push({
-        name: 'Draw line segment',
-        skip: true,
-        execute() {
-          model.appendBufferData(finalVertices, 'lineVertex');
-          model.appendBufferData(lineIndex, 'lineIndex');
-          engine.emit('scenechange');
-        },
-        revert() {
-          model.truncateBuffer('lineVertex', 6);
-          model.truncateBuffer('lineIndex', 2);
-          engine.emit('scenechange');
-        },
-      });
-
-      engine.emit('toolinactive', line);
-      this.active = history.lock();
-      if (this.active) {
-        engine.emit('toolactive', line);
-        vertices.set(model.data.lineVertex.subarray(-3));
-        vertices.set(origin, 3);
-        model.appendBufferData(vertices, 'lineVertex');
-        model.appendBufferData(lineIndex, 'lineIndex');
-      }
+      const { coord } = historyAction.data;
+      historyAction.commit();
+      this.start(coord);
     },
     abort() {
-      if (!this.active || engine.tools.selected.type === 'orbit') return;
+      if (!historyAction || engine.tools.selected.type === 'orbit') return;
 
-      history.unlock();
-      const model = scene.currentModelWithRoot;
-
-      model.truncateBuffer('lineVertex', 6);
-      model.truncateBuffer('lineIndex', 2);
-
-      this.active = false;
-      engine.emit('toolinactive', line);
-      engine.emit('scenechange');
+      historyAction.discard();
     },
   };
 
