@@ -17,7 +17,16 @@
  * @property {(newValue: string) => void} set
  * @property {() => string} reset
  *
- * @typedef {NumberSetting|StringSetting} Setting
+ * @typedef BooleanSetting
+ * @property {string} id
+ * @property {string} name
+ * @property {"toggle"} type
+ * @property {boolean} value
+ * @property {boolean} defaultValue
+ * @property {(newValue: boolean) => void} set
+ * @property {() => boolean} reset
+ *
+ * @typedef {NumberSetting|StringSetting|BooleanSetting} Setting
  */
 
 export default class Config {
@@ -77,6 +86,17 @@ export default class Config {
   * @returns {Readonly<StringSetting>}
   */
   createString(id, name, type, value) {
+    return this.#create(id, name, type, value);
+  }
+
+  /**
+  * @param {string} id
+  * @param {string} name
+  * @param {BooleanSetting["type"]} type
+  * @param {BooleanSetting["value"]} value
+  * @returns {Readonly<BooleanSetting>}
+  */
+  createBoolean(id, name, type, value) {
     return this.#create(id, name, type, value);
   }
 
