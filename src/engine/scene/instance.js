@@ -23,17 +23,14 @@ export default class Instance {
   /** @type {import("./submodel").default} */
   subModel;
 
-  /** @type {mat4} */
-  globalTrs;
-
-  /** @type {mat4} */
-  inverseGlobalTrs;
-
   /** @type {Instance | null} */
   parent;
 
   /** @type {Instance[]} */
   children = [];
+
+  globalTrs = mat4.create();
+  inverseGlobalTrs = mat4.create();
 
   /**
    * @param {import("./submodel").default} subModel
@@ -41,8 +38,6 @@ export default class Instance {
    */
   constructor(subModel, parent) {
     this.subModel = subModel;
-    this.globalTrs = mat4.create();
-    this.inverseGlobalTrs = mat4.create();
     this.model = subModel.model;
     this.parent = parent;
 

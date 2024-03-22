@@ -10,8 +10,9 @@ const diff = vec3.create();
 const origin = vec3.create();
 const toEye = vec3.create();
 const toPivot = vec3.create();
-const zero = vec3.create();
 const transform = mat4.create();
+/** @type {Readonly<vec3>} */
+const zero = vec3.create();
 
 export default class Camera {
   /** @type {Engine} */
@@ -20,38 +21,21 @@ export default class Camera {
   /** @type {Readonly<vec3>} */
   #startingPointVec;
 
-  /** @type {vec3} */
-  fovScaling;
-
-  /** @type {vec3} */
-  inverseFovScaling;
-
-  /** @type {vec3} */
-  screenResolution;
-
   /** @type {mat4} */
   translation;
 
-  /** @type {mat4} */
-  rotation;
 
-  /** @type {mat4} */
-  projection;
+  rotation = mat4.create();
+  projection = mat4.create();
+  normalProjection = mat4.create();
+  world = mat4.create();
+  viewProjection = mat4.create();
+  inverseViewProjection = mat4.create();
+  frustum = mat4.create();
 
-  /** @type {mat4} */
-  normalProjection;
-
-  /** @type {mat4} */
-  world;
-
-  /** @type {mat4} */
-  viewProjection;
-
-  /** @type {mat4} */
-  inverseViewProjection;
-
-  /** @type {mat4} */
-  frustum;
+  fovScaling = vec3.create();
+  inverseFovScaling = vec3.create();
+  screenResolution = vec3.create();
 
   fovy = 1;
   aspect = 1;
@@ -69,21 +53,10 @@ export default class Camera {
     const { config } = engine;
     this.#engine = engine;
 
-    this.fovScaling = vec3.create();
-    this.inverseFovScaling = vec3.create();
-    this.screenResolution = vec3.create();
-
     this.#startingPointVec = vec3.fromValues(0, 0, -5);
     const startingPointMat = mat4.fromTranslation(mat4.create(), this.#startingPointVec);
 
     this.translation = mat4.clone(startingPointMat);
-    this.rotation = mat4.create();
-    this.projection = mat4.create();
-    this.normalProjection = mat4.create();
-    this.world = mat4.create();
-    this.viewProjection = mat4.create();
-    this.inverseViewProjection = mat4.create();
-    this.frustum = mat4.create();
 
     engine.on('viewportresize', (current) => {
       this.screenResolution[0] = current[0];
@@ -206,10 +179,6 @@ export default class Camera {
    * @param {vec3} rotationOrigin
    */
   pan(dX, dY, rotationOrigin) {
-    zero[0] = 0;
-    zero[1] = 0;
-    zero[2] = 0;
-
     diff[0] = dX;
     diff[1] = -dY;
     diff[2] = 0;
@@ -239,10 +208,6 @@ export default class Camera {
     if (origin[2] < 0) vec3.scale(origin, origin, -1);
 
     if (direction > 0 && origin[2] < this.nearPlane * 2) return;
-
-    zero[0] = 0;
-    zero[1] = 0;
-    zero[2] = 0;
 
     diff[0] = direction;
     diff[1] = direction;

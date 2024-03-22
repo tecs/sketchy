@@ -14,8 +14,7 @@ export default class Input {
   /** @type {string|null} */
   key = null;
 
-  /** @type {vec3} */
-  position;
+  position = vec3.create();
 
   leftButton = false;
   middleButton = false;
@@ -29,7 +28,6 @@ export default class Input {
    */
   constructor(engine) {
     this.#engine = engine;
-    this.position = vec3.fromValues(0, 0, 0);
   }
 
   /**
