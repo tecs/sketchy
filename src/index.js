@@ -52,6 +52,13 @@ window.addEventListener('load', () => {
   ui.topMenu.addItem('settings', 'Settings', '⚙', () => {
     const settings = engine.config.list();
 
+    /** @type {Record<typeof settings[number]['type'], string>} */
+    const InputTypeMap = {
+      int: 'number',
+      key: 'text',
+      toggle: 'checkbox',
+    };
+
     /** @type {(el: HTMLElement) => boolean} */
     const forceChange = (el) => el.dispatchEvent(new Event('change'));
 
@@ -60,8 +67,9 @@ window.addEventListener('load', () => {
       const originalValue = String(setting.value);
 
       const input = $('input', {
-        type: typeof setting.value === 'number' ? 'number' : 'text',
+        type: InputTypeMap[setting.type],
         value: originalValue,
+        checked: setting.type === 'toggle' && setting.value,
         onkeydown({ key }) {
           if (setting.type !== 'key') return true;
 
@@ -75,7 +83,8 @@ window.addEventListener('load', () => {
           return false;
         },
         onchange() {
-          el.classList.toggle('changed', input.value !== originalValue);
+          if (setting.type === 'toggle') el.classList.toggle('changed', setting.value !== input.checked);
+          else el.classList.toggle('changed', input.value !== originalValue);
 
           if (setting.type !== 'key') return;
 
@@ -109,6 +118,7 @@ window.addEventListener('load', () => {
           innerText: '⟲',
           onclick() {
             item.input.value = item.originalValue;
+            item.input.checked = item.originalValue === 'true';
             forceChange(item.input);
           },
         }],
@@ -139,10 +149,11 @@ window.addEventListener('load', () => {
         innerText: 'save',
         onclick() {
           for (const { input, originalValue, setting } of settingsItems) {
-            if (input.value === originalValue) continue;
+            if ((setting.type === 'toggle' ? String(input.checked) : input.value) === originalValue) continue;
 
             if (setting.type === 'int') setting.set(parseInt(input.value, 10));
-            else setting.set(input.value);
+            else if (setting.type === 'key') setting.set(input.value);
+            else setting.set(input.checked);
           }
           ui.window.remove('settings');
         },
