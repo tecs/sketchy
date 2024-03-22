@@ -66,12 +66,12 @@ export default class Camera {
    * @param {Engine} engine
    */
   constructor(engine) {
-    const { config, driver: { canvas } } = engine;
+    const { config } = engine;
     this.#engine = engine;
 
     this.fovScaling = vec3.create();
     this.inverseFovScaling = vec3.create();
-    this.screenResolution = vec3.fromValues(canvas.width, canvas.height, 0);
+    this.screenResolution = vec3.create();
 
     this.#startingPointVec = vec3.fromValues(0, 0, -5);
     const startingPointMat = mat4.fromTranslation(mat4.create(), this.#startingPointVec);
@@ -85,32 +85,12 @@ export default class Camera {
     this.inverseViewProjection = mat4.create();
     this.frustum = mat4.create();
 
-    engine.on('viewportresize', (current, previous) => {
-      if (current[0] === previous[0] && current[1] === previous[1]) return;
-
-      canvas.width = current[0];
-      canvas.height = current[1];
+    engine.on('viewportresize', (current) => {
       this.screenResolution[0] = current[0];
       this.screenResolution[1] = current[1];
+      this.aspect = current[0] / current[1];
 
-      engine.driver.ctx.viewport(0, 0, canvas.width, canvas.height);
-
-      this.aspect = canvas.width / canvas.height;
-      mat4.perspective(this.projection, this.fovy, this.aspect, this.nearPlane, this.farPlane);
-      mat4.perspective(this.normalProjection, 1, this.aspect, 1, this.farPlane);
-      mat4.getScaling(this.fovScaling, this.projection);
-      vec3.inverse(this.inverseFovScaling, this.fovScaling);
-
-      const scaling = 1 / current[1];
-
-      this.pixelSize = 2 * Math.abs(Math.tan(this.fovy * 0.5)) * scaling * this.nearPlane;
-
-      this.frustumOffset[0] = -(1 + scaling) * current[0] * this.pixelSize * 0.5;
-      this.frustumOffset[1] = -(scaling - 1) * current[0] * this.pixelSize * 0.5;
-      this.frustumOffset[2] = -(scaling - 1) * current[1] * this.pixelSize * 0.5;
-      this.frustumOffset[3] = (3 - scaling) * current[1] * this.pixelSize * 0.5;
-
-      this.recalculateMVP();
+      this.recalculateProjection();
     });
 
     engine.on('mousemove', () => this.recalculateFrustum());
@@ -276,6 +256,25 @@ export default class Camera {
     vec3.rotateY(origin, origin, zero, -this.yaw);
 
     mat4.translate(this.translation, this.translation, origin);
+
+    this.recalculateMVP();
+  }
+
+  recalculateProjection() {
+    mat4.perspective(this.projection, this.fovy, this.aspect, this.nearPlane, this.farPlane);
+    mat4.perspective(this.normalProjection, 1, this.aspect, 1, this.farPlane);
+
+    mat4.getScaling(this.fovScaling, this.projection);
+    vec3.inverse(this.inverseFovScaling, this.fovScaling);
+
+    const scaling = 1 / this.screenResolution[1];
+
+    this.pixelSize = 2 * Math.abs(Math.tan(this.fovy * 0.5)) * scaling * this.nearPlane;
+
+    this.frustumOffset[0] = -(1 + scaling) * this.screenResolution[0] * this.pixelSize * 0.5;
+    this.frustumOffset[1] = -(scaling - 1) * this.screenResolution[0] * this.pixelSize * 0.5;
+    this.frustumOffset[2] = -(scaling - 1) * this.screenResolution[1] * this.pixelSize * 0.5;
+    this.frustumOffset[3] = (3 - scaling) * this.screenResolution[1] * this.pixelSize * 0.5;
 
     this.recalculateMVP();
   }

@@ -36,9 +36,10 @@ export default class Driver extends Destructurable {
   UNSIGNED_INDEX_TYPE;
 
   /**
+   * @param {Engine} engine
    * @param {HTMLCanvasElement} canvas
    */
-  constructor(canvas) {
+  constructor(engine, canvas) {
     super();
 
     this.canvas = canvas;
@@ -55,6 +56,12 @@ export default class Driver extends Destructurable {
     this.supportsUIntIndexes = !!ctx.getExtension('OES_element_index_uint');
     this.UintIndexArray = this.supportsUIntIndexes ? Uint32Array : Uint16Array;
     this.UNSIGNED_INDEX_TYPE = this.supportsUIntIndexes ? ctx.UNSIGNED_INT : ctx.UNSIGNED_SHORT;
+
+    engine.on('viewportresize', (current) => {
+      canvas.width = current[0];
+      canvas.height = current[1];
+      ctx.viewport(0, 0, canvas.width, canvas.height);
+    });
   }
 
   /**
