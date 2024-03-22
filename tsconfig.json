@@ -13,6 +13,6 @@
     "forceConsistentCasingInFileNames": true,
     "strict": true,
   },
-  "include": ["src/**/*.js", "libs/*.d.ts"],
+  "include": ["src/**/*.js", "src/**/*.d.ts", "libs/*.d.ts"],
   "exclude": ["node_modules"]
 }

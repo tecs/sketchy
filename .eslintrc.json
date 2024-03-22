@@ -3,19 +3,35 @@
     "browser": true,
     "es2021": true
   },
-  "extends": "airbnb-base",
+  "extends": [
+    "airbnb-base",
+    "plugin:@typescript-eslint/recommended",
+    "plugin:import/typescript"
+  ],
   "globals": {"glMatrix": true},
+  "parser": "@typescript-eslint/parser",
   "parserOptions": {
     "ecmaVersion": "latest",
     "sourceType": "module"
   },
+  "plugins": ["@typescript-eslint"],
+  "settings": {
+    "import/resolver": {
+      "node": {
+        "extensions": [".js", ".jsx", ".d.ts"]
+      }
+    }
+  },
   "rules": {
+    "@typescript-eslint/no-shadow": "error",
+    "@typescript-eslint/no-this-alias": "off",
     "arrow-parens": "off",
     "default-case": "off",
     "indent": ["error", 2, {"SwitchCase": 1}],
     "import/extensions": ["error", "always"],
+    "import/no-cycle": "off",
     "lines-between-class-members": "off",
-    "max-len": ["error", {"code": 120}],
+    "max-len": ["error", {"code": 120, "ignoreStrings": true}],
     "no-bitwise": "off",
     "no-continue": "off",
     "no-multi-spaces": ["error", { "exceptions": {"VariableDeclarator": true}}],
@@ -31,6 +47,7 @@
         "message": "`with` is disallowed in strict mode because it makes code impossible to predict and optimize."
       }
     ],
+    "no-use-before-define": "off",
     "object-curly-newline": "off",
     "prefer-destructuring": "off"
   }

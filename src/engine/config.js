@@ -1,31 +1,20 @@
 /**
- * @typedef NumberSetting
+ * @template T
+ * @template {string} N
+ * @typedef BaseSetting
  * @property {string} id
  * @property {string} name
- * @property {"int"} type
- * @property {number} value
- * @property {number} defaultValue
- * @property {(newValue: number) => void} set
- * @property {() => number} reset
- *
- * @typedef StringSetting
- * @property {string} id
- * @property {string} name
- * @property {"key"} type
- * @property {string} value
- * @property {string} defaultValue
- * @property {(newValue: string) => void} set
- * @property {() => string} reset
- *
- * @typedef BooleanSetting
- * @property {string} id
- * @property {string} name
- * @property {"toggle"} type
- * @property {boolean} value
- * @property {boolean} defaultValue
- * @property {(newValue: boolean) => void} set
- * @property {() => boolean} reset
- *
+ * @property {N} type
+ * @property {T} value
+ * @property {T} defaultValue
+ * @property {(newValue: T) => void} set
+ * @property {() => T} reset
+ */
+
+/**
+ * @typedef {BaseSetting<number, "int">} NumberSetting
+ * @typedef {BaseSetting<string, "key">} StringSetting
+ * @typedef {BaseSetting<boolean, "toggle">} BooleanSetting
  * @typedef {NumberSetting|StringSetting|BooleanSetting} Setting
  */
 

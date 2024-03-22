@@ -63,10 +63,13 @@ export default class Input {
         this.rightButton = down;
         this.button = 'right';
         break;
+      default:
+        this.button = null;
+        return;
     }
-    if (this.button) {
-      this.#engine.emit(down ? 'mousedown' : 'mouseup', this.button);
-    }
+
+    if (down) this.#engine.emit('mousedown', this.button);
+    else this.#engine.emit('mouseup', this.button);
   }
 
   /**
@@ -80,6 +83,7 @@ export default class Input {
       case 'Control': this.ctrl = down; break;
     }
     this.key = key;
-    this.#engine.emit(down ? 'keydown' : 'keyup', key);
+    if (down) this.#engine.emit('keydown', key);
+    else this.#engine.emit('keyup', key);
   }
 }
