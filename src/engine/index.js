@@ -47,7 +47,7 @@ export default class Engine extends Events {
   constructor(canvas) {
     super();
 
-    this.config = new Config();
+    this.config = new Config(this);
     this.driver = new Driver(canvas);
     this.history = new History(this);
     this.input = new Input(this);

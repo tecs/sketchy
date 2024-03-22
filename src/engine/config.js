@@ -18,9 +18,27 @@
  * @typedef {NumberSetting|StringSetting|BooleanSetting} Setting
  */
 
+/** @type {(engine: Engine, setting: Setting, current: Setting["value"], previous: Setting["value"] ) => void} */
+const forceEmit = (engine, setting, current, previous) => engine.emit(
+  'settingchange',
+  /** @type {NumberSetting} */(setting),
+  /** @type {number} */ (current),
+  /** @type {number} */ (previous),
+);
+
 export default class Config {
+  /** @type {Engine} */
+  #engine;
+
   /** @type {Record<string, Readonly<Setting>>} */
   #settings = {};
+
+  /**
+   * @param {Engine} engine
+   */
+  constructor(engine) {
+    this.#engine = engine;
+  }
 
   /**
    * @template {Setting} T
@@ -42,11 +60,15 @@ export default class Config {
       /**
        * @param {typeof setting["value"]} newValue
        */
-      set(newValue) {
+      set: (newValue) => {
+        const oldValue = setting.value;
         setting.value = newValue;
+        forceEmit(this.#engine, setting, newValue, oldValue);
       },
-      reset() {
+      reset: () => {
+        const oldValue = setting.value;
         setting.value = value;
+        forceEmit(this.#engine, setting, value, oldValue);
         return value;
       },
     });
