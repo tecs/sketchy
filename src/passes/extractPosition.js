@@ -80,9 +80,10 @@ export default (engine) => {
       if (!extract || tools.isActive('orbit')) return;
 
       if (!scene.hoveredInstance) {
-        mat4.getTranslation(translation, engine.camera.world);
-        vec3.rotateX(negativeEye, translation, v3zero, -engine.camera.pitch);
-        vec3.rotateY(negativeEye, negativeEye, v3zero, -engine.camera.yaw);
+        mat4.getTranslation(translation, camera.world);
+        vec3.scale(translation, translation, 1 / camera.scale);
+        vec3.rotateX(negativeEye, translation, v3zero, -camera.pitch);
+        vec3.rotateY(negativeEye, negativeEye, v3zero, -camera.yaw);
 
         vec3.scale(eye, negativeEye, -1);
 
@@ -90,8 +91,8 @@ export default (engine) => {
         const y = 1 - (2 * input.position[1]) / ctx.canvas.height;
         vec3.set(eyeNormal, x, y, -1);
         vec3.multiply(eyeNormal, eyeNormal, camera.inverseFovScaling);
-        vec3.rotateX(eyeNormal, eyeNormal, v3zero, -engine.camera.pitch);
-        vec3.rotateY(eyeNormal, eyeNormal, v3zero, -engine.camera.yaw);
+        vec3.rotateX(eyeNormal, eyeNormal, v3zero, -camera.pitch);
+        vec3.rotateY(eyeNormal, eyeNormal, v3zero, -camera.yaw);
         vec3.normalize(eyeNormal, eyeNormal);
 
         let dot = 0;

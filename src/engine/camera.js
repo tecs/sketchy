@@ -7,25 +7,18 @@ const threeFourthsPI = halfPI * 3;
 
 // cached structures
 const diff = vec3.create();
-const origin = vec3.create();
 const toEye = vec3.create();
 const toPivot = vec3.create();
 const transform = mat4.create();
-/** @type {Readonly<vec3>} */
-const zero = vec3.create();
 
 export default class Camera {
   /** @type {Engine} */
   #engine;
 
   /** @type {Readonly<vec3>} */
-  #startingPointVec;
-
-  /** @type {mat4} */
-  translation;
+  #startingPointVec = vec3.fromValues(0, 0, -5);
 
 
-  rotation = mat4.create();
   projection = mat4.create();
   normalProjection = mat4.create();
   world = mat4.create();
@@ -43,6 +36,7 @@ export default class Camera {
   farPlane = 2000;
   pitch = 0;
   yaw = 0;
+  scale = 1;
   pixelSize = 1;
   frustumOffset = new Float32Array(4);
 
@@ -53,10 +47,7 @@ export default class Camera {
     const { config } = engine;
     this.#engine = engine;
 
-    this.#startingPointVec = vec3.fromValues(0, 0, -5);
-    const startingPointMat = mat4.fromTranslation(mat4.create(), this.#startingPointVec);
-
-    this.translation = mat4.clone(startingPointMat);
+    mat4.fromTranslation(this.world, this.#startingPointVec);
 
     engine.on('viewportresize', (current) => {
       this.screenResolution[0] = current[0];
@@ -111,10 +102,12 @@ export default class Camera {
    * @param {Readonly<vec3>} rotationOrigin
    */
   orbit(dX, dY, rotationOrigin) {
-    toEye[0] = 0;
-    toEye[1] = 0;
+    toEye[0] = -rotationOrigin[0];
+    toEye[1] = -rotationOrigin[1];
     toEye[2] = rotationOrigin[2];
-    if (!this.#engine.scene.hoveredInstance) {
+    if (toEye[2] < 0) {
+      toEye[0] = 0;
+      toEye[1] = 0;
       toEye[2] = Math.abs(this.#startingPointVec[2]);
     }
 
@@ -122,12 +115,7 @@ export default class Camera {
     toPivot[1] = -toEye[1];
     toPivot[2] = -toEye[2];
 
-    // unpitch
-    mat4.fromTranslation(transform, toPivot);
-    mat4.rotateX(transform, transform, -this.pitch);
-    mat4.translate(transform, transform, toEye);
-
-    mat4.multiply(this.rotation, transform, this.rotation);
+    const oldPitch = this.pitch;
 
     this.pitch += dY * halfPI;
     if (this.pitch < 0) this.pitch += twoPI;
@@ -140,13 +128,13 @@ export default class Camera {
     else if (this.yaw > twoPI) this.yaw -= twoPI;
 
     // rotate
-    mat4.identity(transform);
-    mat4.translate(transform, transform, toPivot);
+    mat4.fromTranslation(transform, toPivot);
     mat4.rotateX(transform, transform, this.pitch);
     mat4.rotateY(transform, transform, dX * halfPI);
+    mat4.rotateX(transform, transform, -oldPitch);
     mat4.translate(transform, transform, toEye);
 
-    mat4.multiply(this.rotation, transform, this.rotation);
+    mat4.multiply(this.world, transform, this.world);
 
     this.recalculateMVP();
   }
@@ -159,16 +147,10 @@ export default class Camera {
     this.pitch = pitch;
     this.yaw = yaw;
 
-    mat4.fromTranslation(this.translation, this.#startingPointVec);
-
-    vec3.scale(toEye, this.#startingPointVec, -1);
-
-    mat4.rotateX(transform, this.translation, this.pitch);
-    mat4.rotateY(transform, transform, this.yaw);
-    mat4.translate(transform, transform, toEye);
-
-    mat4.identity(this.rotation);
-    mat4.multiply(this.rotation, transform, this.rotation);
+    mat4.identity(this.world);
+    mat4.fromTranslation(this.world, this.#startingPointVec);
+    mat4.rotateX(this.world, this.world, this.pitch);
+    mat4.rotateY(this.world, this.world, this.yaw);
 
     this.recalculateMVP();
   }
@@ -182,16 +164,18 @@ export default class Camera {
     diff[0] = dX;
     diff[1] = -dY;
     diff[2] = 0;
-
-    const scale = Math.abs(panOrigin[2]) * 2;
+    const grabPoint = panOrigin[2] > 0 ? panOrigin[2] : Math.abs(this.#startingPointVec[2]);
 
     vec3.multiply(diff, diff, this.inverseFovScaling);
-    vec3.scale(diff, diff, scale);
+    vec3.scale(diff, diff, grabPoint * 2);
 
-    vec3.rotateX(diff, diff, zero, -this.pitch);
-    vec3.rotateY(diff, diff, zero, -this.yaw);
+    mat4.rotateY(this.world, this.world, -this.yaw);
+    mat4.rotateX(this.world, this.world, -this.pitch);
 
-    mat4.translate(this.translation, this.translation, diff);
+    mat4.translate(this.world, this.world, diff);
+
+    mat4.rotateX(this.world, this.world, this.pitch);
+    mat4.rotateY(this.world, this.world, this.yaw);
 
     this.recalculateMVP();
   }
@@ -201,24 +185,31 @@ export default class Camera {
    * @param {Readonly<vec3>} zoomOrigin
    */
   zoom(direction, zoomOrigin) {
-    vec3.copy(origin, zoomOrigin);
+    const originalScale = this.scale;
+    this.scale = Math.min(Math.max(this.scale * (1 - direction * 0.1), 0.1), 10);
 
-    if (origin[2] < 0) vec3.scale(origin, origin, -1);
+    toEye[0] = -zoomOrigin[0];
+    toEye[1] = -zoomOrigin[1];
+    toEye[2] = zoomOrigin[2];
+    if (toEye[2] < 0) {
+      toEye[0] = 0;
+      toEye[1] = 0;
+      toEye[2] = Math.abs(this.#startingPointVec[2]);
+    }
 
-    if (direction > 0 && origin[2] < this.nearPlane * 2) return;
+    toPivot[0] = -toEye[0];
+    toPivot[1] = -toEye[1];
+    toPivot[2] = -toEye[2];
 
-    diff[0] = direction;
-    diff[1] = direction;
-    diff[2] = -direction;
+    diff[0] = this.scale / originalScale;
+    diff[1] = diff[0];
+    diff[2] = diff[0];
 
-    vec3.multiply(origin, origin, diff);
-    vec3.multiply(origin, origin, this.inverseFovScaling);
-    vec3.scale(origin, origin, 0.1);
+    mat4.fromTranslation(transform, toPivot);
+    mat4.scale(transform, transform, diff);
+    mat4.translate(transform, transform, toEye);
 
-    vec3.rotateX(origin, origin, zero, -this.pitch);
-    vec3.rotateY(origin, origin, zero, -this.yaw);
-
-    mat4.translate(this.translation, this.translation, origin);
+    mat4.multiply(this.world, transform, this.world);
 
     this.recalculateMVP();
   }
@@ -243,7 +234,6 @@ export default class Camera {
   }
 
   recalculateMVP() {
-    mat4.multiply(this.world, this.rotation, this.translation);
     mat4.multiply(this.viewProjection, this.projection, this.world);
     mat4.invert(this.inverseViewProjection, this.viewProjection);
 
