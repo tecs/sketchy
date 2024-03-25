@@ -30,7 +30,7 @@ export default (engine) => {
       const dY = delta[1] / camera.screenResolution[1];
 
       if (input.shift) {
-        camera.pan(dX, dY, origin);
+        camera.pan(dX, dY, 0, origin);
       } else {
         camera.orbit(dX, dY, origin);
       }
@@ -64,6 +64,10 @@ export default (engine) => {
 
     if (lastTool !== orbit) engine.tools.setTool(lastTool);
     else if (!input.leftButton) orbit.end();
+  });
+
+  engine.on('mousescroll', (direction) => {
+    if (input.shift) camera.pan(0, 0, -direction, scene.hovered);
   });
 
   return orbit;

@@ -158,16 +158,17 @@ export default class Camera {
   /**
    * @param {number} dX
    * @param {number} dY
+   * @param {number} dZ
    * @param {Readonly<vec3>} panOrigin
    */
-  pan(dX, dY, panOrigin) {
+  pan(dX, dY, dZ, panOrigin) {
     diff[0] = dX;
     diff[1] = -dY;
-    diff[2] = 0;
     const grabPoint = panOrigin[2] > 0 ? panOrigin[2] : Math.abs(this.#startingPointVec[2]);
 
     vec3.multiply(diff, diff, this.inverseFovScaling);
     vec3.scale(diff, diff, grabPoint * 2);
+    diff[2] = dZ;
 
     mat4.rotateY(this.world, this.world, -this.yaw);
     mat4.rotateX(this.world, this.world, -this.pitch);

@@ -29,7 +29,7 @@ export default (engine) => {
   engine.on('mousescroll', (direction) => {
     const { selected } = engine.tools;
 
-    if (selected.type === 'orbit' && selected.active) return;
+    if (input.shift || (selected.type === 'orbit' && selected.active)) return;
     camera.zoom(direction, scene.hovered);
   });
 
