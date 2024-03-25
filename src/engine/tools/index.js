@@ -3,9 +3,10 @@ import RectangleTool from './rectangle.js';
 import SelectTool from './select.js';
 import MoveTool from './move.js';
 import OrbitTool from './orbit.js';
+import ZoomTool from './zoom.js';
 
 /**
- * @typedef {"select"|"line"|"rectangle"|"orbit"|"move"} ToolType
+ * @typedef {"select"|"line"|"rectangle"|"orbit"|"move"|"zoom"} ToolType
  *
  * @typedef Tool
  * @property {ToolType} type
@@ -43,6 +44,7 @@ export default class Tools {
     this.tools.push(RectangleTool(engine));
     this.tools.push(MoveTool(engine));
     this.tools.push(OrbitTool(engine));
+    this.tools.push(ZoomTool(engine));
 
     this.selected = this.tools[0];
 

@@ -6,4 +6,5 @@ export type InputEventType = MergedEvent<
   | EventType<'mouseup', [button: MouseButton]>
   | EventType<'mousedown', [button: MouseButton]>
   | EventType<'mousemove', [current: Readonly<vec3>, delta: Readonly<vec3>, previous: Readonly<vec3>]>
+  | EventType<'mousescroll', [direction: -1 | 1]>
 >;

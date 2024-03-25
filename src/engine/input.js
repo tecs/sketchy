@@ -84,4 +84,11 @@ export default class Input {
     if (down) this.#engine.emit('keydown', key);
     else this.#engine.emit('keyup', key);
   }
+
+  /**
+   * @param {-1|1} direction
+   */
+  scroll(direction) {
+    this.#engine.emit('mousescroll', direction);
+  }
 }

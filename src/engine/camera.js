@@ -108,7 +108,7 @@ export default class Camera {
   /**
    * @param {number} dX
    * @param {number} dY
-   * @param {vec3} rotationOrigin
+   * @param {Readonly<vec3>} rotationOrigin
    */
   orbit(dX, dY, rotationOrigin) {
     toEye[0] = 0;
@@ -176,14 +176,14 @@ export default class Camera {
   /**
    * @param {number} dX
    * @param {number} dY
-   * @param {vec3} rotationOrigin
+   * @param {Readonly<vec3>} panOrigin
    */
-  pan(dX, dY, rotationOrigin) {
+  pan(dX, dY, panOrigin) {
     diff[0] = dX;
     diff[1] = -dY;
     diff[2] = 0;
 
-    const scale = Math.abs(rotationOrigin[2]) * 2;
+    const scale = Math.abs(panOrigin[2]) * 2;
 
     vec3.multiply(diff, diff, this.inverseFovScaling);
     vec3.scale(diff, diff, scale);
@@ -198,12 +198,10 @@ export default class Camera {
 
   /**
    * @param {number} direction
+   * @param {Readonly<vec3>} zoomOrigin
    */
-  zoom(direction) {
-    const { scene: { hovered }, tools: { selected } } = this.#engine;
-    if (selected.type === 'orbit' && selected.active) return;
-
-    vec3.copy(origin, hovered);
+  zoom(direction, zoomOrigin) {
+    vec3.copy(origin, zoomOrigin);
 
     if (origin[2] < 0) vec3.scale(origin, origin, -1);
 
