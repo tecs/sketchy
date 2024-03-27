@@ -34,7 +34,7 @@ export default (engine) => {
       if (!historyAction) return;
       const { model, coord, origin } = historyAction.data;
 
-      vec3.subtract(coord, origin, scene.hoveredGlobal);
+      vec3.subtract(coord, origin, scene.hovered);
       vec3.normalize(coord, coord);
       vec3.scale(coord, coord, -distance);
       vec3.add(coord, coord, origin);
@@ -44,7 +44,7 @@ export default (engine) => {
 
       this.end();
     },
-    start(startCoord = scene.hoveredGlobal) {
+    start(startCoord = scene.hovered) {
       if (this.active) return;
 
       historyAction = history.createAction('Draw line segment', {
@@ -78,7 +78,7 @@ export default (engine) => {
       const { model, coord } = historyAction.data;
 
       vec3.multiply(coord, scene.axisNormal, model.data.lineVertex);
-      vec3.add(coord, coord, scene.hoveredGlobal);
+      vec3.add(coord, coord, scene.hovered);
 
       model.updateBufferEnd(coord, 'lineVertex');
 

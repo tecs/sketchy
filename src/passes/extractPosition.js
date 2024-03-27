@@ -21,9 +21,8 @@ export default (engine) => {
       varying vec4 v_coord;
 
       void main() {
-        vec4 worldPosition = u_trs * a_position;
-        gl_Position = u_frustum * worldPosition;
-        v_coord = u_viewProjection * worldPosition;
+        v_coord = u_trs * a_position;
+        gl_Position = u_frustum * v_coord;
       }
     `,
     frag`
@@ -68,7 +67,6 @@ export default (engine) => {
     vec3.fromValues(0, 0, -1),
   ];
 
-  const translation = vec3.create();
   const eye = vec3.create();
   const negativeEye = vec3.create();
   const eyeNormal = vec3.create();
@@ -80,15 +78,15 @@ export default (engine) => {
       if (!extract || tools.isActive('orbit')) return;
 
       if (!scene.hoveredInstance) {
-        mat4.getTranslation(translation, camera.world);
-        vec3.scale(translation, translation, 1 / camera.scale);
-        vec3.rotateX(negativeEye, translation, v3zero, -camera.pitch);
+        mat4.getTranslation(negativeEye, camera.world);
+        vec3.scale(negativeEye, negativeEye, 1 / camera.scale);
+        vec3.rotateX(negativeEye, negativeEye, v3zero, -camera.pitch);
         vec3.rotateY(negativeEye, negativeEye, v3zero, -camera.yaw);
 
         vec3.scale(eye, negativeEye, -1);
 
-        const x = (2 * input.position[0]) / ctx.canvas.width - 1;
-        const y = 1 - (2 * input.position[1]) / ctx.canvas.height;
+        const x = (2 * input.position[0]) / camera.screenResolution[0] - 1;
+        const y = 1 - (2 * input.position[1]) / camera.screenResolution[1];
         vec3.set(eyeNormal, x, y, -1);
         vec3.multiply(eyeNormal, eyeNormal, camera.inverseFovScaling);
         vec3.rotateX(eyeNormal, eyeNormal, v3zero, -camera.pitch);
@@ -109,7 +107,7 @@ export default (engine) => {
         vec3.scaleAndAdd(coords, eye, eyeNormal, s);
         coords[3] = 1;
 
-        scene.hoverGlobal(coords);
+        scene.hover(coords);
         return;
       }
 

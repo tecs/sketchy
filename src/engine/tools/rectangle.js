@@ -88,10 +88,10 @@ export default (engine) => {
       });
       if (!historyAction) return;
 
-      historyAction.data.vertices.set(scene.hoveredGlobal);
-      historyAction.data.vertices.set(scene.hoveredGlobal, 3);
-      historyAction.data.vertices.set(scene.hoveredGlobal, 6);
-      historyAction.data.vertices.set(scene.hoveredGlobal, 9);
+      historyAction.data.vertices.set(scene.hovered);
+      historyAction.data.vertices.set(scene.hovered, 3);
+      historyAction.data.vertices.set(scene.hovered, 6);
+      historyAction.data.vertices.set(scene.hovered, 9);
 
       historyAction.append(
         ({ model, vertices, normals }) => {
@@ -128,7 +128,7 @@ export default (engine) => {
       vec3.multiply(edge1, scene.axisNormal, vertices);
 
       vec3.subtract(hovered, hovered, scene.axisNormal);
-      vec3.multiply(hovered, hovered, scene.hoveredGlobal);
+      vec3.multiply(hovered, hovered, scene.hovered);
       vec3.add(edge1, edge1, hovered);
 
       vec3.copy(edge2, edge1);

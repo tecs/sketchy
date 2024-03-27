@@ -63,7 +63,7 @@ export default (engine) => {
       });
       if (!historyAction) return;
 
-      vec3.copy(origin, scene.hoveredGlobal);
+      vec3.copy(origin, scene.hovered);
       engine.emit('toolactive', move);
 
       historyAction.append(
@@ -85,7 +85,7 @@ export default (engine) => {
       const { instance, translation } = historyAction.data;
 
       vec3.copy(diff, translation);
-      vec3.subtract(translation, scene.hoveredGlobal, origin);
+      vec3.subtract(translation, scene.hovered, origin);
       vec3.subtract(diff, translation, diff);
       instance.translateGlobal(diff);
 

@@ -18,7 +18,7 @@ export default (engine) => {
       if (this.active) return;
       driver.canvas.requestPointerLock();
       this.active = true;
-      vec3.copy(origin, scene.hovered);
+      vec3.copy(origin, scene.hoveredView);
       lastTool = this;
     },
     update(delta) {
@@ -67,7 +67,7 @@ export default (engine) => {
   });
 
   engine.on('mousescroll', (direction) => {
-    if (input.shift) camera.pan(0, 0, -direction, scene.hovered);
+    if (input.shift) camera.pan(0, 0, -direction, scene.hoveredView);
   });
 
   return orbit;

@@ -16,7 +16,7 @@ export default (engine) => {
     cursor: 'zoom-in',
     active: false,
     start() {
-      camera.zoom(input.ctrl ? 2 : -2, scene.hovered);
+      camera.zoom(input.ctrl ? 2 : -2, scene.hoveredView);
     },
     update() {},
     end() {},
@@ -30,7 +30,7 @@ export default (engine) => {
     const { selected } = engine.tools;
 
     if (input.shift || (selected.type === 'orbit' && selected.active)) return;
-    camera.zoom(direction, scene.hovered);
+    camera.zoom(direction, scene.hoveredView);
   });
 
   engine.on('keyup', () => {

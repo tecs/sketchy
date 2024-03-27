@@ -1,7 +1,7 @@
 import Model from './model.js';
 import SubModel from './submodel.js';
 
-const { vec3, vec4, mat4 } = glMatrix;
+const { vec3, mat4 } = glMatrix;
 
 /**
  * @param {Uint8Array} uuuu
@@ -43,10 +43,10 @@ export default class Scene {
   axisNormal = vec3.create();
 
   /** @type {vec3} */
-  hovered = vec3.create();
+  hoveredView = vec3.create();
 
   /** @type {vec3} */
-  hoveredGlobal = vec3.create();
+  hovered = vec3.create();
 
   /** @type {Model | null} */
   currentModel = null;
@@ -115,7 +115,7 @@ export default class Scene {
 
     vec3.set(this.axisNormal, 0, 1, 0);
     vec3.zero(this.hovered);
-    vec3.zero(this.hoveredGlobal);
+    vec3.zero(this.hoveredView);
 
     this.currentModel = null;
     this.currentInstance = null;
@@ -229,35 +229,20 @@ export default class Scene {
     if ((!id && !this.hoveredInstance) || id === this.hoveredInstance?.id.int) return;
 
     this.hoveredInstance = id ? this.#instanceById.get(id) ?? null : null;
-
-    if (!this.hoveredInstance) {
-      this.hovered[0] = 0;
-      this.hovered[1] = 0;
-      this.hovered[2] = 0;
-    }
+    this.hoveredFace = -1;
+    this.hoveredLine = -1;
   }
 
   /**
    * @param {Readonly<vec4>} position
    */
   hover(position) {
-    vec4.transformMat4(this.hoveredGlobal, position, this.#engine.camera.inverseViewProjection);
-
     this.hovered[0] = position[0];
     this.hovered[1] = position[1];
-    this.hovered[2] = position[3];
-  }
+    this.hovered[2] = position[2];
 
-  /**
-   * @param {Readonly<vec4>} position
-   */
-  hoverGlobal(position) {
-    this.hoveredGlobal[0] = position[0];
-    this.hoveredGlobal[1] = position[1];
-    this.hoveredGlobal[2] = position[2];
-
-    vec4.transformMat4(this.hovered, position, this.#engine.camera.viewProjection);
-    this.hovered[2] += this.#engine.camera.nearPlane * 2;
+    vec3.transformMat4(this.hoveredView, position, this.#engine.camera.world);
+    this.hoveredView[2] = -this.hoveredView[2];
   }
 
   /**
