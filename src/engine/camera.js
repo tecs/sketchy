@@ -144,6 +144,7 @@ export default class Camera {
   resetAndLookFrom(pitch, yaw) {
     this.pitch = pitch;
     this.yaw = yaw;
+    this.scale = 1;
 
     mat4.identity(this.world);
     mat4.fromTranslation(this.world, vec3.fromValues(0, 0, -this.#startingDistance));
