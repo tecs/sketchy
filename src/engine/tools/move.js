@@ -50,7 +50,7 @@ export default (engine) => {
       const { selectedInstance, hoveredInstance, currentInstance } = scene;
 
       const candidateInstance = selectedInstance ?? hoveredInstance;
-      if (!candidateInstance) return;
+      if (!candidateInstance || candidateInstance === scene.rootInstance) return;
 
       if (!candidateInstance.belongsTo(currentInstance)) return;
 
