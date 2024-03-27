@@ -15,9 +15,7 @@ export default class Camera {
   /** @type {Engine} */
   #engine;
 
-  /** @type {Readonly<vec3>} */
-  #startingPointVec = vec3.fromValues(0, 0, -5);
-
+  #startingDistance = 5;
 
   projection = mat4.create();
   normalProjection = mat4.create();
@@ -47,7 +45,7 @@ export default class Camera {
     const { config } = engine;
     this.#engine = engine;
 
-    mat4.fromTranslation(this.world, this.#startingPointVec);
+    mat4.fromTranslation(this.world, vec3.fromValues(0, 0, -this.#startingDistance));
 
     engine.on('viewportresize', (current) => {
       this.screenResolution[0] = current[0];
@@ -108,7 +106,7 @@ export default class Camera {
     if (toEye[2] < 0) {
       toEye[0] = 0;
       toEye[1] = 0;
-      toEye[2] = Math.abs(this.#startingPointVec[2]);
+      toEye[2] = this.#startingDistance;
     }
 
     toPivot[0] = -toEye[0];
@@ -148,7 +146,7 @@ export default class Camera {
     this.yaw = yaw;
 
     mat4.identity(this.world);
-    mat4.fromTranslation(this.world, this.#startingPointVec);
+    mat4.fromTranslation(this.world, vec3.fromValues(0, 0, -this.#startingDistance));
     mat4.rotateX(this.world, this.world, this.pitch);
     mat4.rotateY(this.world, this.world, this.yaw);
 
@@ -164,7 +162,7 @@ export default class Camera {
   pan(dX, dY, dZ, panOrigin) {
     diff[0] = dX;
     diff[1] = -dY;
-    const grabPoint = panOrigin[2] > 0 ? panOrigin[2] : Math.abs(this.#startingPointVec[2]);
+    const grabPoint = panOrigin[2] > 0 ? panOrigin[2] : this.#startingDistance;
 
     vec3.multiply(diff, diff, this.inverseFovScaling);
     vec3.scale(diff, diff, grabPoint * 2);
@@ -195,7 +193,7 @@ export default class Camera {
     if (toEye[2] < 0) {
       toEye[0] = 0;
       toEye[1] = 0;
-      toEye[2] = Math.abs(this.#startingPointVec[2]);
+      toEye[2] = this.#startingDistance;
     }
 
     toPivot[0] = -toEye[0];
