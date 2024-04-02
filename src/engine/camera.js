@@ -18,13 +18,11 @@ export default class Camera {
   #startingDistance = 5;
 
   projection = mat4.create();
-  normalProjection = mat4.create();
   world = mat4.create();
   viewProjection = mat4.create();
   inverseViewProjection = mat4.create();
   frustum = mat4.create();
 
-  fovScaling = vec3.create();
   inverseFovScaling = vec3.create();
   screenResolution = vec3.create();
 
@@ -215,20 +213,23 @@ export default class Camera {
   }
 
   recalculateProjection() {
-    mat4.perspective(this.projection, this.fovy, this.aspect, this.nearPlane, this.farPlane);
-    mat4.perspective(this.normalProjection, 1, this.aspect, 1, this.farPlane);
+    const top = Math.tan(this.fovy * 0.5) * this.nearPlane;
+    const right = top * this.aspect;
 
-    mat4.getScaling(this.fovScaling, this.projection);
-    vec3.inverse(this.inverseFovScaling, this.fovScaling);
+    mat4.frustum(this.projection, -right, right, -top, top, this.nearPlane, this.farPlane);
 
-    const scaling = 1 / this.screenResolution[1];
+    mat4.getScaling(this.inverseFovScaling, this.projection);
+    vec3.inverse(this.inverseFovScaling, this.inverseFovScaling);
 
-    this.pixelSize = 2 * Math.abs(Math.tan(this.fovy * 0.5)) * scaling * this.nearPlane;
+    const vScaling = -2 / this.screenResolution[1];
 
-    this.frustumOffset[0] = -(1 + scaling) * this.screenResolution[0] * this.pixelSize * 0.5;
-    this.frustumOffset[1] = -(scaling - 1) * this.screenResolution[0] * this.pixelSize * 0.5;
-    this.frustumOffset[2] = -(scaling - 1) * this.screenResolution[1] * this.pixelSize * 0.5;
-    this.frustumOffset[3] = (3 - scaling) * this.screenResolution[1] * this.pixelSize * 0.5;
+    this.pixelSize = top * vScaling;
+
+    const hScaling = 0.5 * vScaling * (this.aspect - 1);
+    this.frustumOffset[0] = (hScaling - this.aspect) * top;
+    this.frustumOffset[1] = (hScaling + this.aspect) * top;
+    this.frustumOffset[2] = (vScaling + 1) * top;
+    this.frustumOffset[3] = (vScaling + 3) * top;
 
     this.recalculateMVP();
   }
@@ -245,13 +246,13 @@ export default class Camera {
   recalculateFrustum() {
     const [x, y] = this.#engine.input.position;
 
-    const originX = (x + 0.5) * this.pixelSize;
-    const originY = (y + 0.5) * this.pixelSize;
+    const originX = x * this.pixelSize;
+    const originY = y * this.pixelSize;
 
-    const left = this.frustumOffset[0] + originX;
-    const right = this.frustumOffset[1] + originX;
-    const bottom = this.frustumOffset[2] - originY;
-    const top = this.frustumOffset[3] - originY;
+    const left = this.frustumOffset[0] - originX;
+    const right = this.frustumOffset[1] - originX;
+    const bottom = this.frustumOffset[2] + originY;
+    const top = this.frustumOffset[3] + originY;
 
     mat4.frustum(this.frustum, left, right, bottom, top, this.nearPlane, this.farPlane);
     mat4.multiply(this.frustum, this.frustum, this.world);
