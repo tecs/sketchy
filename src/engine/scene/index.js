@@ -234,7 +234,7 @@ export default class Scene {
   }
 
   /**
-   * @param {Readonly<vec4>} position
+   * @param {Readonly<vec3>} position
    */
   hover(position) {
     this.hovered[0] = position[0];

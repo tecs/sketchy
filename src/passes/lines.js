@@ -28,7 +28,7 @@ export default (engine) => {
         // offset the coord a tiny bit towards the camera
         // so that lines at concave edges render in front
         // of the object's faces
-        gl_Position.z -= 0.0001;
+        gl_Position.z -= 0.00001;
       }
     `,
     frag`

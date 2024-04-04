@@ -26,6 +26,7 @@ export default class Camera {
   inverseFovScaling = vec3.create();
   screenResolution = vec3.create();
 
+  orthographic = true;
   fovy = 1;
   aspect = 1;
   nearPlane = 0.01;
@@ -63,6 +64,18 @@ export default class Camera {
     const cameraFaceReverseZkey = config.createString('shortcuts.cameraRevZ', 'Look back at Z-axis', 'key', '6');
     const cameraFaceXYZkey = config.createString('shortcuts.cameraXYZ', 'Look along XYZ-axis', 'key', '0');
 
+    const orthoSetting = config.createBoolean('camera.ortho', 'Orthographic projection', 'toggle', this.orthographic);
+    this.orthographic = orthoSetting.value;
+
+    engine.on('settingchange', (setting) => {
+      if (setting === orthoSetting) {
+        this.orthographic = orthoSetting.value;
+        this.recalculateProjection();
+      }
+    });
+
+    const pKey = config.createString('shortcuts.changePerspective', 'Change perspective', 'key', 'p');
+
     engine.on('keyup', (key) => {
       if (engine.tools.selected.active) return;
 
@@ -87,6 +100,9 @@ export default class Camera {
           break;
         case cameraFaceXYZkey.value:
           this.resetAndLookFrom(halfPI / 2, threeFourthsPI + halfPI / 2);
+          break;
+        case pKey.value:
+          orthoSetting.set(!orthoSetting.value);
           break;
       }
     });
@@ -161,10 +177,13 @@ export default class Camera {
   pan(dX, dY, dZ, panOrigin) {
     diff[0] = dX;
     diff[1] = -dY;
-    const grabPoint = panOrigin[2] > 0 ? panOrigin[2] : this.#startingDistance;
 
     vec3.multiply(diff, diff, this.inverseFovScaling);
-    vec3.scale(diff, diff, grabPoint * 2);
+    let panScale = 2 / this.scale;
+    if (!this.orthographic) {
+      panScale *= panOrigin[2] > 0 ? panOrigin[2] : this.#startingDistance;
+    }
+    vec3.scale(diff, diff, panScale);
     diff[2] = dZ;
 
     mat4.rotateY(this.world, this.world, -this.yaw);
@@ -213,10 +232,14 @@ export default class Camera {
   }
 
   recalculateProjection() {
-    const top = Math.tan(this.fovy * 0.5) * this.nearPlane;
+    const top = Math.tan(this.fovy * 0.5) * (this.orthographic ? this.#startingDistance : this.nearPlane);
     const right = top * this.aspect;
 
-    mat4.frustum(this.projection, -right, right, -top, top, this.nearPlane, this.farPlane);
+    if (this.orthographic) {
+      mat4.ortho(this.projection, -right, right, -top, top, this.nearPlane, this.farPlane);
+    } else {
+      mat4.frustum(this.projection, -right, right, -top, top, this.nearPlane, this.farPlane);
+    }
 
     mat4.getScaling(this.inverseFovScaling, this.projection);
     vec3.inverse(this.inverseFovScaling, this.inverseFovScaling);
@@ -254,7 +277,11 @@ export default class Camera {
     const bottom = this.frustumOffset[2] + originY;
     const top = this.frustumOffset[3] + originY;
 
-    mat4.frustum(this.frustum, left, right, bottom, top, this.nearPlane, this.farPlane);
+    if (this.orthographic) {
+      mat4.ortho(this.frustum, left, right, bottom, top, this.nearPlane, this.farPlane);
+    } else {
+      mat4.frustum(this.frustum, left, right, bottom, top, this.nearPlane, this.farPlane);
+    }
     mat4.multiply(this.frustum, this.frustum, this.world);
   }
 }

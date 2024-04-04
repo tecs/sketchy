@@ -17,7 +17,7 @@ export default (engine) => {
 
       void main() {
         gl_Position = u_viewProjection * u_trs * a_position;
-        gl_Position.z -= u_isLine * 0.0001;
+        gl_Position.z -= u_isLine * 0.00001;
       }
     `,
     frag`
