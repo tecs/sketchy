@@ -26,7 +26,7 @@ export default class Camera {
   inverseFovScaling = vec3.create();
   screenResolution = vec3.create();
 
-  orthographic = true;
+  orthographic = false;
   fovy = 1;
   aspect = 1;
   nearPlane = 0.01;
