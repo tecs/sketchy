@@ -26,6 +26,7 @@ export default class Camera {
   inverseFovScaling = vec3.create();
   screenResolution = vec3.create();
 
+  invertZoom = false;
   orthographic = false;
   fovy = 1;
   aspect = 1;
@@ -67,10 +68,18 @@ export default class Camera {
     const orthoSetting = config.createBoolean('camera.ortho', 'Orthographic projection', 'toggle', this.orthographic);
     this.orthographic = orthoSetting.value;
 
+    const invertZoomSetting = config.createBoolean('mouse.invertZoom', 'Invert wheel', 'toggle', this.invertZoom);
+    this.invertZoom = invertZoomSetting.value;
+
     engine.on('settingchange', (setting) => {
-      if (setting === orthoSetting) {
-        this.orthographic = orthoSetting.value;
-        this.recalculateProjection();
+      switch (setting) {
+        case orthoSetting:
+          this.orthographic = setting.value;
+          this.recalculateProjection();
+          break;
+        case invertZoomSetting:
+          this.invertZoom = setting.value;
+          break;
       }
     });
 
@@ -175,6 +184,8 @@ export default class Camera {
    * @param {Readonly<vec3>} panOrigin
    */
   pan(dX, dY, dZ, panOrigin) {
+    if (this.invertZoom) dZ *= -1;
+
     diff[0] = dX;
     diff[1] = -dY;
 
@@ -202,6 +213,8 @@ export default class Camera {
    * @param {Readonly<vec3>} zoomOrigin
    */
   zoom(direction, zoomOrigin) {
+    if (this.invertZoom) direction *= -1;
+
     const originalScale = this.scale;
     this.scale = Math.min(Math.max(this.scale * (1 - direction * 0.1), 0.1), 10);
 
