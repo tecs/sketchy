@@ -8,6 +8,9 @@ window.addEventListener('load', () => {
   const { canvas } = ui;
   const engine = new Engine(canvas);
 
+  window.addEventListener('resize', engine.driver.resize);
+  engine.driver.resize();
+
   for (const tool of engine.tools.tools) {
     ui.sideMenu.addItem(tool.type, tool.name, tool.icon, () => engine.tools.setTool(tool));
   }

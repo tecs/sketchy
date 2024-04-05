@@ -2,7 +2,7 @@ const { vec3 } = glMatrix;
 
 /** @type {(engine: Engine) => Tool} */
 export default (engine) => {
-  const { driver: { UintIndexArray }, history, scene } = engine;
+  const { driver: { UintIndexArray }, history, scene, emit } = engine;
 
   /**
    * @typedef LineData
@@ -40,7 +40,7 @@ export default (engine) => {
       vec3.add(coord, coord, origin);
 
       model.updateBufferEnd(coord, 'lineVertex');
-      engine.emit('scenechange');
+      emit('scenechange');
 
       this.end();
     },
@@ -53,23 +53,23 @@ export default (engine) => {
         model: scene.currentModelWithRoot,
       }, () => {
         historyAction = undefined;
-        engine.emit('toolinactive', line);
+        emit('toolinactive', line);
       });
       if (!historyAction) return;
 
-      engine.emit('toolactive', line);
+      emit('toolactive', line);
 
       historyAction.append(
         ({ origin, coord, model }) => {
           model.appendBufferData(origin, 'lineVertex');
           model.appendBufferData(coord, 'lineVertex');
           model.appendBufferData(lineIndex, 'lineIndex');
-          engine.emit('scenechange');
+          emit('scenechange');
         },
         ({ model }) => {
           model.truncateBuffer('lineVertex', 6);
           model.truncateBuffer('lineIndex', 2);
-          engine.emit('scenechange');
+          emit('scenechange');
         },
       );
     },
@@ -82,7 +82,7 @@ export default (engine) => {
 
       model.updateBufferEnd(coord, 'lineVertex');
 
-      engine.emit('scenechange');
+      emit('scenechange');
     },
     end() {
       if (!historyAction || !this.distance?.every(v => v >= 0.1)) return;

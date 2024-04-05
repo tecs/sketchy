@@ -1,3 +1,4 @@
+import Base from '../base.js';
 import Model from './model.js';
 import SubModel from './submodel.js';
 
@@ -23,7 +24,7 @@ const uuuuToInt = (uuuu) => uuuu[0] + (uuuu[1] << 8) + (uuuu[2] << 16) + (uuuu[3
  * @property {ModelState[]} models
  */
 
-export default class Scene {
+export default class Scene extends Base {
   /** @type {Engine} */
   #engine;
 
@@ -72,11 +73,13 @@ export default class Scene {
    * @param {Engine} engine
    */
   constructor(engine) {
+    super();
     this.#engine = engine;
 
     this.reset({});
-    [this.rootModel] = this.models;
-    [this.rootInstance] = this.rootModel.instances;
+
+    this.rootModel = this.assertProperty('rootModel');
+    this.rootInstance = this.assertProperty('rootInstance');
 
     engine.on('mousedown', (button) => {
       if (button === 'left') engine.tools.selected.start();

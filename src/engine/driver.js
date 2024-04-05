@@ -1,4 +1,4 @@
-import Destructurable from './destructurable.js';
+import Base from './base.js';
 
 /**
  * @typedef {[TemplateStringsArray, any[]?]} TaggedTemplateParams
@@ -19,7 +19,10 @@ import Destructurable from './destructurable.js';
  * @property {() => void} use
  */
 
-export default class Driver extends Destructurable {
+export default class Driver extends Base {
+  /** @type {Engine} */
+  #engine;
+
   /** @type {WebGLRenderingContext} */
   ctx;
 
@@ -42,6 +45,7 @@ export default class Driver extends Destructurable {
   constructor(engine, canvas) {
     super();
 
+    this.#engine = engine;
     this.canvas = canvas;
 
     const ctx = canvas.getContext('webgl');
@@ -56,12 +60,6 @@ export default class Driver extends Destructurable {
     this.supportsUIntIndexes = !!ctx.getExtension('OES_element_index_uint');
     this.UintIndexArray = this.supportsUIntIndexes ? Uint32Array : Uint16Array;
     this.UNSIGNED_INDEX_TYPE = this.supportsUIntIndexes ? ctx.UNSIGNED_INT : ctx.UNSIGNED_SHORT;
-
-    engine.on('viewportresize', (current) => {
-      canvas.width = current[0];
-      canvas.height = current[1];
-      ctx.viewport(0, 0, canvas.width, canvas.height);
-    });
   }
 
   /**
@@ -156,13 +154,6 @@ export default class Driver extends Destructurable {
   }
 
   /**
-   * @returns {vec3}
-   */
-  getCanvasSize() {
-    return new Float32Array([this.canvas.clientWidth, this.canvas.clientHeight, 0]);
-  }
-
-  /**
    * @param  {TaggedTemplateParams} args
    * @returns {Shader}
    */
@@ -176,5 +167,16 @@ export default class Driver extends Destructurable {
    */
   frag(...args) {
     return this.#compileShader(String.raw(...args), this.ctx.FRAGMENT_SHADER);
+  }
+
+  resize() {
+    const oldSize = new Float32Array([this.canvas.width, this.canvas.height, 0]);
+    const newSize = new Float32Array([this.canvas.clientWidth, this.canvas.clientHeight, 0]);
+
+    this.canvas.width = newSize[0];
+    this.canvas.height = newSize[1];
+    this.ctx.viewport(0, 0, newSize[0], newSize[1]);
+
+    this.#engine.emit('viewportresize', newSize, oldSize);
   }
 }

@@ -2,7 +2,7 @@ const { vec3 } = glMatrix;
 
 /** @type {(engine: Engine) => Tool} */
 export default (engine) => {
-  const { camera, input, scene } = engine;
+  const { camera, input, scene, emit } = engine;
 
   // cached structures
   const neutralZoomOrigin = vec3.fromValues(0, 0, -1);
@@ -36,7 +36,7 @@ export default (engine) => {
   engine.on('keyup', () => {
     if (!input.ctrl && zoom.cursor === 'zoom-out') {
       zoom.cursor = 'zoom-in';
-      if (engine.tools.selected === zoom) engine.emit('toolchange', zoom, zoom);
+      if (engine.tools.selected === zoom) emit('toolchange', zoom, zoom);
     }
   });
 
@@ -51,7 +51,7 @@ export default (engine) => {
     }
     if (input.ctrl && zoom.cursor === 'zoom-in') {
       zoom.cursor = 'zoom-out';
-      if (engine.tools.selected === zoom) engine.emit('toolchange', zoom, zoom);
+      if (engine.tools.selected === zoom) emit('toolchange', zoom, zoom);
     }
   });
 

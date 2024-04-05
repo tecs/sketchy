@@ -2,7 +2,7 @@ const { vec3 } = glMatrix;
 
 /** @type {(engine: Engine) => Tool} */
 export default (engine) => {
-  const { scene, history } = engine;
+  const { scene, history, emit } = engine;
 
   /**
    * @typedef MoveData
@@ -42,7 +42,7 @@ export default (engine) => {
       instance.translateGlobal(diff);
 
       this.end();
-      engine.emit('scenechange');
+      emit('scenechange');
     },
     start() {
       if (historyAction) return;
@@ -59,23 +59,23 @@ export default (engine) => {
         translation: vec3.create(),
       }, () => {
         historyAction = undefined;
-        engine.emit('toolinactive', move);
+        emit('toolinactive', move);
       });
       if (!historyAction) return;
 
       vec3.copy(origin, scene.hovered);
-      engine.emit('toolactive', move);
+      emit('toolactive', move);
 
       historyAction.append(
         ({ instance, translation }) => {
           instance.translateGlobal(translation);
-          engine.emit('scenechange');
+          emit('scenechange');
         },
         ({ instance, translation }) => {
           const translationVecReverse = vec3.create();
           vec3.scale(translationVecReverse, translation, -1);
           instance.translateGlobal(translationVecReverse);
-          engine.emit('scenechange');
+          emit('scenechange');
         },
       );
     },
@@ -89,7 +89,7 @@ export default (engine) => {
       vec3.subtract(diff, translation, diff);
       instance.translateGlobal(diff);
 
-      engine.emit('scenechange');
+      emit('scenechange');
     },
     end() {
       if (!historyAction || !this.distance?.every(v => v >= 0.1)) return;

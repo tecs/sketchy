@@ -2,7 +2,7 @@ const { vec3 } = glMatrix;
 
 /** @type {(engine: Engine) => Tool} */
 export default (engine) => {
-  const { driver: { UintIndexArray }, history, scene } = engine;
+  const { driver: { UintIndexArray }, history, scene, emit } = engine;
 
   /**
    * @typedef RectData
@@ -73,7 +73,7 @@ export default (engine) => {
       model.updateBufferEnd(vertices, 'vertex');
 
       this.end();
-      engine.emit('scenechange');
+      emit('scenechange');
     },
     start() {
       if (this.active) return;
@@ -84,7 +84,7 @@ export default (engine) => {
         normals: new Float32Array(12),
       }, () => {
         historyAction = undefined;
-        engine.emit('toolinactive', rectangle);
+        emit('toolinactive', rectangle);
       });
       if (!historyAction) return;
 
@@ -101,7 +101,7 @@ export default (engine) => {
           model.appendBufferData(colors, 'color');
           model.appendBufferData(index, 'index');
           model.appendBufferData(lineIndex, 'lineIndex');
-          engine.emit('scenechange');
+          emit('scenechange');
         },
         ({ model }) => {
           model.truncateBuffer('vertex', 12);
@@ -110,11 +110,11 @@ export default (engine) => {
           model.truncateBuffer('color', 12);
           model.truncateBuffer('index', 6);
           model.truncateBuffer('lineIndex', 8);
-          engine.emit('scenechange');
+          emit('scenechange');
         },
       );
 
-      engine.emit('toolactive', rectangle);
+      emit('toolactive', rectangle);
     },
     update() {
       if (!historyAction) return;
@@ -153,7 +153,7 @@ export default (engine) => {
       normals.set(scene.axisNormal, 9);
       model.updateBufferEnd(normals, 'normal');
 
-      engine.emit('scenechange');
+      emit('scenechange');
     },
     end() {
       if (!historyAction || !this.distance?.every(v => v >= 0.1)) return;

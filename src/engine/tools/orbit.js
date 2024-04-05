@@ -52,11 +52,11 @@ export default (engine) => {
   engine.on('mousedown', (button) => {
     if (button !== 'middle' || orbit.active) return;
 
-    const selectedTool = engine.tools.selected;
-    if (selectedTool !== orbit) engine.tools.setTool(orbit);
+    const { selected } = engine.tools;
+    if (selected !== orbit) engine.tools.setTool(orbit);
 
     orbit.start();
-    lastTool = selectedTool;
+    lastTool = selected;
   });
 
   engine.on('mouseup', (button) => {
