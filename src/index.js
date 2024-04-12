@@ -20,7 +20,7 @@ window.addEventListener('load', () => {
     ui.sideMenu.select(current.type);
   });
 
-  ui.topMenu.addItem('new', 'New file', '🗋', () => engine.scene.reset({}));
+  ui.topMenu.addItem('new', 'New file', '🗋', () => engine.scene.reset());
   ui.topMenu.addItem('save', 'Save file', '🖫', () => {
     const json = engine.scene.export();
     const data = btoa(unescape(encodeURIComponent(json)));

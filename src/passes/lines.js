@@ -64,7 +64,7 @@ export default (engine) => {
           ctx.uniform1f(program.uLoc.u_isSelected, isSelected);
           ctx.uniform1f(program.uLoc.u_isInShadow, isInShadow);
 
-          if (instance !== scene.rootInstance && isSelected) ctx.lineWidth(2);
+          if (isSelected) ctx.lineWidth(2);
           ctx.drawElements(ctx.LINES, model.data.lineIndex.length, UNSIGNED_INDEX_TYPE, 0);
           ctx.lineWidth(1);
         }

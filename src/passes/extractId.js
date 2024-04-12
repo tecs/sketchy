@@ -68,7 +68,7 @@ export default (engine) => {
 
       for (const model of scene.models) {
         // Prevent self-picking when editing
-        if (drawing && scene.currentModelWithRoot === model) continue;
+        if (drawing && scene.currentInstance?.model === model) continue;
 
         ctx.bindBuffer(ctx.ELEMENT_ARRAY_BUFFER, model.buffer.index);
 
@@ -92,7 +92,7 @@ export default (engine) => {
       ctx.lineWidth(5);
       for (const model of scene.models) {
         // Prevent self-picking when editing
-        if (drawing && scene.currentModelWithRoot === model) continue;
+        if (drawing && scene.currentInstance?.model === model) continue;
 
         ctx.bindBuffer(ctx.ELEMENT_ARRAY_BUFFER, model.buffer.lineIndex);
 

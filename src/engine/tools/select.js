@@ -19,7 +19,7 @@ export default (engine) => {
       const doubleClicked = now - lastClick < doubleClickDelay.value;
       lastClick = now;
 
-      const currentInstance = scene.currentInstanceWithRoot;
+      const { currentInstance } = scene;
       let clickedInstance = scene.hoveredInstance;
       while (clickedInstance && clickedInstance !== currentInstance && clickedInstance.parent !== currentInstance) {
         clickedInstance = clickedInstance.parent;
@@ -36,7 +36,7 @@ export default (engine) => {
       if (clickedInstance === currentInstance) scene.setSelectedInstance(null);
       else if (clickedOwn) scene.setSelectedInstance(clickedInstance);
       else if (scene.selectedInstance) scene.setSelectedInstance(null);
-      else scene.setCurrentInstance(currentInstance.parent);
+      else scene.setCurrentInstance(currentInstance?.parent ?? null);
     },
     abort() {
       if (engine.tools.selected !== this) return;

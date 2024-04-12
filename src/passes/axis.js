@@ -70,6 +70,7 @@ export default (engine) => {
   ctx.bufferData(ctx.ARRAY_BUFFER, colors, ctx.STATIC_DRAW);
 
   // cached structures
+  const mat4zero = mat4.create();
   const mvp = mat4.create();
   const origin = vec3.create();
   const vec3zero = vec3.create();
@@ -93,7 +94,7 @@ export default (engine) => {
       ctx.enableVertexAttribArray(program.aLoc.a_color);
       ctx.vertexAttribPointer(program.aLoc.a_color, 3, ctx.FLOAT, false, 0, 0);
 
-      const { globalTrs } = scene.currentInstanceWithRoot;
+      const globalTrs = scene.currentInstance?.globalTrs ?? mat4zero;
 
       mat4.getScaling(origin, globalTrs);
       vec3.inverse(origin, origin);

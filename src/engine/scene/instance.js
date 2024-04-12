@@ -33,7 +33,7 @@ export default class Instance {
   inverseGlobalTrs = mat4.create();
 
   /**
-   * @param {import("./submodel").default} subModel
+   * @param {Instance["subModel"]} subModel
    * @param {Instance | null} parent
    */
   constructor(subModel, parent) {

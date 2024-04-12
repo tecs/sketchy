@@ -1,4 +1,3 @@
-import Base from '../base.js';
 import Model from './model.js';
 import SubModel from './submodel.js';
 
@@ -24,7 +23,7 @@ const uuuuToInt = (uuuu) => uuuu[0] + (uuuu[1] << 8) + (uuuu[2] << 16) + (uuuu[3
  * @property {ModelState[]} models
  */
 
-export default class Scene extends Base {
+export default class Scene {
   /** @type {Engine} */
   #engine;
 
@@ -34,11 +33,6 @@ export default class Scene extends Base {
   /** @type {Model[]} */
   models = [];
 
-  /** @type {Model} */
-  rootModel;
-
-  /** @type {Instance} */
-  rootInstance;
 
   /** @type {vec3} */
   axisNormal = vec3.create();
@@ -49,9 +43,6 @@ export default class Scene extends Base {
   /** @type {vec3} */
   hovered = vec3.create();
 
-  /** @type {Model | null} */
-  currentModel = null;
-
   /** @type {Instance | null} */
   currentInstance = null;
 
@@ -61,25 +52,13 @@ export default class Scene extends Base {
   /** @type {Instance | null} */
   hoveredInstance = null;
 
-  get currentModelWithRoot() {
-    return this.currentInstanceWithRoot.model;
-  }
-
-  get currentInstanceWithRoot() {
-    return this.currentInstance ?? this.rootInstance;
-  }
-
   /**
    * @param {Engine} engine
    */
   constructor(engine) {
-    super();
     this.#engine = engine;
 
-    this.reset({});
-
-    this.rootModel = this.assertProperty('rootModel');
-    this.rootInstance = this.assertProperty('rootInstance');
+    this.reset();
 
     engine.on('mousedown', (button) => {
       if (button === 'left') engine.tools.selected.start();
@@ -102,25 +81,14 @@ export default class Scene extends Base {
     });
   }
 
-  /**
-   * @param {Partial<ModelState["data"]>} rootData
-   */
-  reset(rootData) {
+  reset() {
     this.#instanceById.clear();
     this.models.splice(0);
-
-    this.rootModel = new Model('', rootData, this.#engine);
-    this.models.push(this.rootModel);
-
-    const subModel = new SubModel(this.rootModel, mat4.create());
-    [this.rootInstance] = subModel.instantiate(null);
-    this.#instanceById.set(this.rootInstance.id.int, this.rootInstance);
 
     vec3.set(this.axisNormal, 0, 1, 0);
     vec3.zero(this.hovered);
     vec3.zero(this.hoveredView);
 
-    this.currentModel = null;
     this.currentInstance = null;
     this.selectedInstance = null;
     this.hoveredInstance = null;
@@ -130,14 +98,12 @@ export default class Scene extends Base {
   }
 
   /**
-   *
    * @param {Model} model
    * @param {Readonly<mat4>} trs
    * @returns {Instance}
    */
   instanceModel(model, trs) {
-    const currentInstance = this.currentInstanceWithRoot;
-    if (model.getAllModels().includes(currentInstance.model)) {
+    if (this.currentInstance && model.getAllModels().includes(this.currentInstance.model)) {
       const message = 'Cannot add model to itself';
       this.#engine.emit('usererror', message);
       throw new Error(message);
@@ -148,28 +114,35 @@ export default class Scene extends Base {
     }
 
     const subModel = new SubModel(model, trs);
-    const instances = currentInstance.model.adopt(subModel);
+    const instances = this.currentInstance?.model.adopt(subModel) ?? subModel.instantiate(null);
 
-    let instance = currentInstance;
-    for (const newInstance of instances) {
-      this.#instanceById.set(newInstance.id.int, newInstance);
-      if (newInstance.parent === currentInstance) instance = newInstance;
+    let index = -1;
+    for (let i = 0; i < instances.length; ++i) {
+      this.#instanceById.set(instances[i].id.int, instances[i]);
+      if (instances[i].parent === this.currentInstance) index = i;
     }
 
     this.#engine.emit('scenechange');
 
-    return instance;
+    return instances[index];
+  }
+
+  /**
+   * @returns {Instance}
+   */
+  instanceEmptyModel() {
+    return this.instanceModel(new Model('', {}, this.#engine), mat4.create());
   }
 
   /**
    * @param {Instance | null} instance
    */
   deleteInstance(instance) {
-    if (!instance?.parent) return;
+    if (!instance) return;
 
     const { parent, subModel } = instance;
     const action = this.#engine.history.createAction(
-      `Delete instance #${instance.id} from model "${parent.model.name || '[[root]]'}"`,
+      `Delete instance #${instance.id} from model "${parent?.model.name ?? '[[root]]'}"`,
       {
         instances: /** @type {Instance[]} */ ([]),
       },
@@ -178,7 +151,7 @@ export default class Scene extends Base {
 
     action.append(
       (data) => {
-        data.instances = parent.model.disown(subModel);
+        data.instances = parent?.model.disown(subModel) ?? subModel.cleanup(null);
         for (const deletedInstance of data.instances) {
           if (this.selectedInstance === deletedInstance) {
             this.setSelectedInstance(null);
@@ -189,7 +162,8 @@ export default class Scene extends Base {
         this.#engine.emit('scenechange');
       },
       ({ instances }) => {
-        parent.model.adopt(subModel, instances.slice());
+        if (parent) parent?.model.adopt(subModel, instances.slice());
+        else subModel.instantiate(null, instances.slice());
         for (const restoredInstance of instances) {
           this.#instanceById.set(restoredInstance.id.int, restoredInstance);
         }
@@ -215,11 +189,9 @@ export default class Scene extends Base {
    * @param {Instance | null} newInstance
    */
   setCurrentInstance(newInstance) {
-    if (newInstance === this.rootInstance) newInstance = null;
     if (newInstance !== this.currentInstance) {
       const previous = this.currentInstance;
       this.currentInstance = newInstance;
-      this.currentModel = newInstance?.model ?? null;
       this.#engine.emit('currentchange', newInstance, previous);
     }
   }
@@ -290,14 +262,8 @@ export default class Scene extends Base {
   import(sceneData) {
     /** @type {SceneState} */
     const state = JSON.parse(sceneData);
-    const rootModelData = state?.models?.find?.(({ name }) => name === '');
 
-    if (!rootModelData?.data) {
-      this.#engine.emit('usererror', 'Invalid data');
-      return;
-    }
-
-    this.reset(rootModelData.data);
+    this.reset();
 
     /** @type {Record<string, Model>} */
     const models = {};

@@ -77,9 +77,10 @@ export default (engine) => {
     },
     start() {
       if (this.active) return;
+      const { model: currentModel } = scene.currentInstance ?? scene.instanceEmptyModel();
 
       historyAction = history.createAction('Draw rectangle', {
-        model: scene.currentModelWithRoot,
+        model: currentModel,
         vertices: new Float32Array(12),
         normals: new Float32Array(12),
       }, () => {

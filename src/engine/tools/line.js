@@ -17,7 +17,7 @@ export default (engine) => {
   // cached structures
   const lineIndex = new UintIndexArray([0, 1]);
 
-  /** @type {Omit<Tool, 'start'> & { start: (startCoord?: vec3) => void }} */
+  /** @type {Omit<Tool, 'start'> & { start: (startCoord?: vec3, currentModel? : Model) => void }} */
   const line = {
     type: 'line',
     name: 'Line/Arc',
@@ -44,13 +44,14 @@ export default (engine) => {
 
       this.end();
     },
-    start(startCoord = scene.hovered) {
+    start(startCoord = scene.hovered, currentModel = undefined) {
       if (this.active) return;
+      currentModel ??= scene.currentInstance?.model ?? scene.instanceEmptyModel().model;
 
       historyAction = history.createAction('Draw line segment', {
         origin: vec3.clone(startCoord),
         coord: vec3.clone(startCoord),
-        model: scene.currentModelWithRoot,
+        model: currentModel,
       }, () => {
         historyAction = undefined;
         emit('toolinactive', line);
@@ -87,9 +88,9 @@ export default (engine) => {
     end() {
       if (!historyAction || !this.distance?.every(v => v >= 0.1)) return;
 
-      const { coord } = historyAction.data;
+      const { coord, model } = historyAction.data;
       historyAction.commit();
-      this.start(coord);
+      this.start(coord, model);
     },
     abort() {
       if (!historyAction || engine.tools.selected.type === 'orbit') return;
