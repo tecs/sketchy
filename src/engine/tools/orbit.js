@@ -15,15 +15,12 @@ export default (engine) => {
     icon: '🞋',
     active: false,
     start() {
-      if (this.active) return;
       driver.canvas.requestPointerLock();
       this.active = true;
       vec3.copy(origin, scene.hoveredView);
       lastTool = this;
     },
     update(delta) {
-      if (!this.active) return;
-
       if (!delta[0] && !delta[1]) return;
 
       const dX = delta[0] / camera.screenResolution[0];
@@ -36,12 +33,10 @@ export default (engine) => {
       }
     },
     end() {
-      if (!this.active || input.middleButton) return;
-      this.active = false;
-      document.exitPointerLock();
+      if (input.middleButton) return;
+      this.abort();
     },
     abort() {
-      if (!this.active) return;
       this.active = false;
       document.exitPointerLock();
     },

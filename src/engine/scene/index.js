@@ -33,7 +33,6 @@ export default class Scene {
   /** @type {Model[]} */
   models = [];
 
-
   /** @type {vec3} */
   axisNormal = vec3.create();
 
@@ -61,20 +60,22 @@ export default class Scene {
     this.reset();
 
     engine.on('mousedown', (button) => {
-      if (button === 'left') engine.tools.selected.start();
+      if (button === 'left' && !engine.tools.selected.active) engine.tools.selected.start();
     });
 
     engine.on('mouseup', (button) => {
-      if (button === 'left') engine.tools.selected.end();
+      if (button === 'left' && engine.tools.selected.active !== false) engine.tools.selected.end();
     });
 
     engine.on('mousemove', (_, delta) => {
-      engine.tools.selected.update(delta);
+      if (engine.tools.selected.active !== false) engine.tools.selected.update(delta);
     });
 
-    engine.on('toolchange', (_, tool) => tool.abort());
+    engine.on('toolchange', (_, tool) => {
+      if (tool.active !== false) tool.abort();
+    });
     engine.on('keyup', (key) => {
-      if (key === 'Escape') engine.tools.selected.abort();
+      if (key === 'Escape' && engine.tools.selected.active !== false) engine.tools.selected.abort();
       else if (key === 'Delete') this.deleteInstance(this.selectedInstance);
       else if (key.toLowerCase() === 'z' && engine.input.ctrl && engine.input.shift) engine.history.redo();
       else if (key === 'z' && engine.input.ctrl) engine.history.undo();

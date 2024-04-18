@@ -45,7 +45,6 @@ export default (engine) => {
       this.end();
     },
     start(startCoord = scene.hovered, currentModel = undefined) {
-      if (this.active) return;
       currentModel ??= scene.currentInstance?.model ?? scene.instanceEmptyModel().model;
 
       historyAction = history.createAction('Draw line segment', {
@@ -93,9 +92,9 @@ export default (engine) => {
       this.start(coord, model);
     },
     abort() {
-      if (!historyAction || engine.tools.selected.type === 'orbit') return;
+      if (engine.tools.selected.type === 'orbit') return;
 
-      historyAction.discard();
+      historyAction?.discard();
     },
   };
 

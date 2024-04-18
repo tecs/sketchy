@@ -45,8 +45,6 @@ export default (engine) => {
       emit('scenechange');
     },
     start() {
-      if (historyAction) return;
-
       const { selectedInstance, hoveredInstance, currentInstance } = scene;
 
       const candidateInstance = selectedInstance ?? hoveredInstance;
@@ -92,14 +90,14 @@ export default (engine) => {
       emit('scenechange');
     },
     end() {
-      if (!historyAction || !this.distance?.every(v => v >= 0.1)) return;
+      if (!this.distance?.every(v => v >= 0.1)) return;
 
-      historyAction.commit();
+      historyAction?.commit();
     },
     abort() {
-      if (!historyAction || engine.tools.selected.type === 'orbit') return;
+      if (engine.tools.selected.type === 'orbit') return;
 
-      historyAction.discard();
+      historyAction?.discard();
     },
   };
 

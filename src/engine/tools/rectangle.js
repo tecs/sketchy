@@ -76,7 +76,6 @@ export default (engine) => {
       emit('scenechange');
     },
     start() {
-      if (this.active) return;
       const { model: currentModel } = scene.currentInstance ?? scene.instanceEmptyModel();
 
       historyAction = history.createAction('Draw rectangle', {
@@ -157,13 +156,13 @@ export default (engine) => {
       emit('scenechange');
     },
     end() {
-      if (!historyAction || !this.distance?.every(v => v >= 0.1)) return;
-      historyAction.commit();
+      if (!this.distance?.every(v => v >= 0.1)) return;
+      historyAction?.commit();
     },
     abort() {
-      if (!historyAction || engine.tools.selected.type === 'orbit') return;
+      if (engine.tools.selected.type === 'orbit') return;
 
-      historyAction.discard();
+      historyAction?.discard();
     },
   };
 

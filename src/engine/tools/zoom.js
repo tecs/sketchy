@@ -14,7 +14,6 @@ export default (engine) => {
     shortcut: 'z',
     icon: '🔍',
     cursor: 'zoom-in',
-    active: false,
     start() {
       camera.zoom(input.ctrl ? 2 : -2, scene.hoveredView);
     },
