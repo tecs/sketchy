@@ -10,6 +10,7 @@ const diff = vec3.create();
 const toEye = vec3.create();
 const toPivot = vec3.create();
 const transform = mat4.create();
+const v3zero = vec3.create();
 
 export default class Camera {
   /** @type {Engine} */
@@ -25,6 +26,8 @@ export default class Camera {
 
   inverseFovScaling = vec3.create();
   screenResolution = vec3.create();
+  eye = vec3.create();
+  eyeNormal = vec3.create();
 
   invertZoom = false;
   orthographic = false;
@@ -290,11 +293,28 @@ export default class Camera {
     const bottom = this.frustumOffset[2] + originY;
     const top = this.frustumOffset[3] + originY;
 
+    mat4.getTranslation(this.eye, this.world);
+    vec3.set(this.eyeNormal, (2 * x) / this.screenResolution[0] - 1, 1 - (2 * y) / this.screenResolution[1], -1);
+    vec3.multiply(this.eyeNormal, this.eyeNormal, this.inverseFovScaling);
+
     if (this.orthographic) {
       mat4.ortho(this.frustum, left, right, bottom, top, this.nearPlane, this.farPlane);
+
+      this.eyeNormal[2] = 0;
+      vec3.subtract(this.eye, this.eye, this.eyeNormal);
+      vec3.set(this.eyeNormal, 0, 0, -1);
     } else {
       mat4.frustum(this.frustum, left, right, bottom, top, this.nearPlane, this.farPlane);
+
+      vec3.normalize(this.eyeNormal, this.eyeNormal);
     }
     mat4.multiply(this.frustum, this.frustum, this.world);
+
+    vec3.scale(this.eye, this.eye, -1 / this.scale);
+    vec3.rotateX(this.eye, this.eye, v3zero, -this.pitch);
+    vec3.rotateY(this.eye, this.eye, v3zero, -this.yaw);
+
+    vec3.rotateX(this.eyeNormal, this.eyeNormal, v3zero, -this.pitch);
+    vec3.rotateY(this.eyeNormal, this.eyeNormal, v3zero, -this.yaw);
   }
 }

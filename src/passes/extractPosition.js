@@ -1,11 +1,10 @@
-const { mat4, vec3 } = glMatrix;
+const { vec3 } = glMatrix;
 
 /** @type {RenderingPass} */
 export default (engine) => {
   const {
     driver: { ctx, makeProgram, vert, frag, UNSIGNED_INDEX_TYPE },
     camera,
-    input,
     scene,
     tools,
   } = engine;
@@ -67,52 +66,25 @@ export default (engine) => {
     vec3.fromValues(0, 0, -1),
   ];
 
-  const eye = vec3.create();
-  const eyeNormal = vec3.create();
-  const v3zero = vec3.create();
-
   return {
     program,
     render(_, extract) {
       if (!extract || tools.isActive('orbit')) return;
 
       if (!scene.hoveredInstance) {
-        mat4.getTranslation(eye, camera.world);
-        vec3.scale(eye, eye, 1 / camera.scale);
-        vec3.rotateX(eye, eye, v3zero, -camera.pitch);
-        vec3.rotateY(eye, eye, v3zero, -camera.yaw);
-
-        vec3.scale(eye, eye, -1);
-
-        const x = (2 * input.position[0]) / camera.screenResolution[0] - 1;
-        const y = 1 - (2 * input.position[1]) / camera.screenResolution[1];
-        vec3.set(eyeNormal, x, y, camera.orthographic ? 0 : -1);
-        vec3.multiply(eyeNormal, eyeNormal, camera.inverseFovScaling);
-        vec3.rotateX(eyeNormal, eyeNormal, v3zero, -camera.pitch);
-        vec3.rotateY(eyeNormal, eyeNormal, v3zero, -camera.yaw);
-
-        if (camera.orthographic) {
-          vec3.scale(eyeNormal, eyeNormal, 1 / camera.scale);
-          vec3.add(eye, eye, eyeNormal);
-          vec3.set(eyeNormal, 0, 0, -1);
-          vec3.rotateX(eyeNormal, eyeNormal, v3zero, -camera.pitch);
-          vec3.rotateY(eyeNormal, eyeNormal, v3zero, -camera.yaw);
-        } else {
-          vec3.normalize(eyeNormal, eyeNormal);
-        }
 
         let dot = 0;
         let normal = scene.axisNormal;
         for (const plane of planes) {
-          const planeDot = vec3.dot(eyeNormal, plane);
+          const planeDot = vec3.dot(camera.eyeNormal, plane);
           if (dot >= planeDot) continue;
           dot = planeDot;
           normal = plane;
         }
         scene.setAxis(normal);
 
-        const distanceToPlane = -vec3.dot(normal, eye) / dot;
-        vec3.scaleAndAdd(coords, eye, eyeNormal, distanceToPlane);
+        const distanceToPlane = -vec3.dot(normal, camera.eye) / dot;
+        vec3.scaleAndAdd(coords, camera.eye, camera.eyeNormal, distanceToPlane);
         scene.hover(coords);
         return;
       }
