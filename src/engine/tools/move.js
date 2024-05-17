@@ -47,10 +47,12 @@ export default (engine) => {
     start() {
       const { selectedInstance, hoveredInstance, currentInstance } = scene;
 
-      const candidateInstance = selectedInstance ?? hoveredInstance;
-      if (!candidateInstance) return;
+      let candidateInstance = selectedInstance ?? hoveredInstance;
+      while (candidateInstance?.parent && candidateInstance.parent.instance !== currentInstance) {
+        candidateInstance = candidateInstance.parent.instance;
+      }
 
-      if (!candidateInstance.belongsTo(currentInstance)) return;
+      if (!candidateInstance?.belongsTo(currentInstance)) return;
 
       historyAction = history.createAction(`Move instance #${candidateInstance.id.int}`, {
         instance: candidateInstance,
