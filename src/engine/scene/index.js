@@ -33,15 +33,6 @@ export default class Scene {
   /** @type {Model[]} */
   models = [];
 
-  /** @type {vec3} */
-  axisNormal = vec3.create();
-
-  /** @type {vec3} */
-  hoveredView = vec3.create();
-
-  /** @type {vec3} */
-  hovered = vec3.create();
-
   /** @type {Instance | null} */
   currentInstance = null;
 
@@ -50,6 +41,10 @@ export default class Scene {
 
   /** @type {Instance | null} */
   hoveredInstance = null;
+
+  axisNormal = vec3.create();
+  hoveredView = vec3.create();
+  hovered = vec3.create();
 
   /**
    * @param {Engine} engine

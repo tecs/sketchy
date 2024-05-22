@@ -56,7 +56,9 @@ export default (engine) => {
   ctx.renderbufferStorage(ctx.RENDERBUFFER, ctx.DEPTH_COMPONENT16, 1, 1);
 
   // cached structures
-  const coords = new Float32Array(4);
+  // this needs 1 extra component for the alpha channel when reading from the framebuffer,
+  // which can safely be ignored in all vec3 operations
+  const coords = /** @type {vec3} */ (new Float32Array(4));
   const planes = [
     vec3.fromValues(1, 0, 0),
     vec3.fromValues(0, 1, 0),

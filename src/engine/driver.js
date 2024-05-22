@@ -1,5 +1,7 @@
 import Base from './base.js';
 
+const { vec3 } = glMatrix;
+
 /**
  * @typedef {[TemplateStringsArray, any[]?]} TaggedTemplateParams
  *
@@ -170,8 +172,8 @@ export default class Driver extends Base {
   }
 
   resize() {
-    const oldSize = new Float32Array([this.canvas.width, this.canvas.height, 0]);
-    const newSize = new Float32Array([this.canvas.clientWidth, this.canvas.clientHeight, 0]);
+    const oldSize = vec3.fromValues(this.canvas.width, this.canvas.height, 0);
+    const newSize = vec3.fromValues(this.canvas.clientWidth, this.canvas.clientHeight, 0);
 
     this.canvas.width = newSize[0];
     this.canvas.height = newSize[1];

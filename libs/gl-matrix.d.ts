@@ -1,25 +1,27 @@
-type NumArray = Float32Array | number[];
+interface LengthConstrainedFloat32Array<N extends number> extends Float32Array {
+    length: N;
+}
 
-type vec2 = Float32Array;
+type vec2 = LengthConstrainedFloat32Array<2>;
 type ReadonlyVec2 = Readonly<vec2>;
-type vec3 = Float32Array;
+type vec3 = LengthConstrainedFloat32Array<3>;
 type ReadonlyVec3 = Readonly<vec3>;
-type vec4 = Float32Array;
+type vec4 = LengthConstrainedFloat32Array<4>;
 type ReadonlyVec4 = Readonly<vec4>;
-type mat2 = Float32Array;
+type mat2 = LengthConstrainedFloat32Array<4>;
 type ReadonlyMat2 = Readonly<mat2>;
-type mat2d = Float32Array;
+type mat2d = LengthConstrainedFloat32Array<6>;
 type ReadonlyMat2d = Readonly<mat2d>;
-type mat3 = Float32Array;
+type mat3 = LengthConstrainedFloat32Array<9>;
 type ReadonlyMat3 = Readonly<mat3>;
-type mat4 = Float32Array;
+type mat4 = LengthConstrainedFloat32Array<16>;
 type ReadonlyMat4 = Readonly<mat4>;
-type quat = Float32Array;
+type quat = LengthConstrainedFloat32Array<4>;
 type ReadonlyQuat = Readonly<quat>;
-type quat2 = Float32Array;
+type quat2 = LengthConstrainedFloat32Array<8>;
 type ReadonlyQuat2 = Readonly<quat2>;
 
-type GlmBase<T, ReadonlyT> = {
+type GlmBase<T extends Float32Array, ReadonlyT> = {
     create: () => T;
     clone: (a: ReadonlyT) => T;
     copy: (out: T, a: ReadonlyT) => T;
@@ -29,6 +31,7 @@ type GlmBase<T, ReadonlyT> = {
     multiply: (out: T, a: ReadonlyT, b: ReadonlyT) => T;
     equals: (a: ReadonlyT, b: ReadonlyT) => boolean;
     exactEquals: (a: ReadonlyT, b: ReadonlyT) => boolean;
+    is: (v: Float32Array) => v is T;
 };
 
 type GlmBaseMQ<T, ReadonlyT> = {
@@ -52,21 +55,21 @@ type GlmBaseQV<T, ReadonlyT> = {
     scale: (out: T, a: ReadonlyT, b: number) => T;
 };
 
-type GlmBaseM<T, ReadonlyT> = GlmBase<T, ReadonlyT> & GlmBaseMQ<T, ReadonlyT> & GlmBaseMV<T, ReadonlyT> & {
+type GlmBaseM<T extends Float32Array, ReadonlyT> = GlmBase<T, ReadonlyT> & GlmBaseMQ<T, ReadonlyT> & GlmBaseMV<T, ReadonlyT> & {
     determinant: (a: ReadonlyT) => number;
     frob: (a: ReadonlyT) => number;
     multiplyScalar: (out: T, a: ReadonlyT, b: number) => T;
     multiplyScalarAndAdd: (out: T, a: ReadonlyT, b: ReadonlyT, scale: number) => T;
 };
 
-type GlmBaseQ<T, ReadonlyT> = GlmBase<T, ReadonlyT> & GlmBaseMQ<T, ReadonlyT> & GlmBaseQV<T, ReadonlyT> & {
+type GlmBaseQ<T extends Float32Array, ReadonlyT> = GlmBase<T, ReadonlyT> & GlmBaseMQ<T, ReadonlyT> & GlmBaseQV<T, ReadonlyT> & {
     conjugate: (out: T, a: ReadonlyT) => T;
     rotateX: (out: T, a: ReadonlyT, rad: number) => T;
     rotateY: (out: T, a: ReadonlyT, rad: number) => T;
     rotateZ: (out: T, a: ReadonlyT, rad: number) => T;
 };
 
-type GlmBaseV<T, ReadonlyT> = GlmBase<T, ReadonlyT> & GlmBaseMV<T, ReadonlyT> & GlmBaseQV<T, ReadonlyT> & {
+type GlmBaseV<T extends Float32Array, ReadonlyT> = GlmBase<T, ReadonlyT> & GlmBaseMV<T, ReadonlyT> & GlmBaseQV<T, ReadonlyT> & {
     random: (out: T, scale?: number) => T;
     zero: (out: T) => T;
     dist: (a: ReadonlyT, b: ReadonlyT) => number;
