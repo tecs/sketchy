@@ -1,4 +1,5 @@
-const { vec3 } = glMatrix;
+import Base from '../base.js';
+import BoundingBox from './boundingBox.js';
 
 /**
  * @typedef ModelData
@@ -8,21 +9,17 @@ const { vec3 } = glMatrix;
  * @property {Uint8Array} color
  * @property {Float32Array} lineVertex
  * @property {Uint16Array|Uint32Array} lineIndex
- * @property {Float32Array} boundingBoxVertex
  *
  * @typedef {Record<keyof ModelData, number[]>} PlainModelData
- * @typedef {Record<keyof ModelData | "boundingBoxIndex", GLBuffer>} ModelBuffers
+ * @typedef {Record<keyof ModelData, GLBuffer>} ModelBuffers
  *
  * @typedef {import("./submodel").default} SubModel
  */
 
-// cached structures
-const boundingCoord = vec3.create();
-const boundingBox = new Float32Array(24);
-const min = vec3.create();
-const max = vec3.create();
+export default class Model extends Base {
+  /** @type {Engine["driver"]} */
+  #driver;
 
-export default class Model {
   /** @type {WebGLRenderingContext} */
   #ctx;
 
@@ -41,12 +38,17 @@ export default class Model {
   /** @type {ModelData} */
   data;
 
+  boundingBox = new BoundingBox();
+
   /**
    * @param {string} name
    * @param {Readonly<Partial<PlainModelData>> | undefined} data
    * @param {Engine} engine
    */
   constructor(name, data, engine) {
+    super();
+
+    this.#driver = engine.driver;
     this.#ctx = engine.driver.ctx;
 
     this.name = name;
@@ -57,44 +59,26 @@ export default class Model {
       color: this.#ctx.createBuffer(),
       lineIndex: this.#ctx.createBuffer(),
       lineVertex: this.#ctx.createBuffer(),
-      boundingBoxIndex: this.#ctx.createBuffer(),
-      boundingBoxVertex: this.#ctx.createBuffer(),
     };
 
+    this.import(data);
+
+    this.data = this.assertProperty('data');
+  }
+
+  /**
+   * @param {Readonly<Partial<PlainModelData>> | undefined} data
+   */
+  import(data) {
     this.data = {
       vertex: new Float32Array(data?.vertex ?? []),
       normal: new Float32Array(data?.normal ?? []),
       color: new Uint8Array(data?.color ?? []),
-      index: new engine.driver.UintIndexArray(data?.index ?? []),
+      index: new this.#driver.UintIndexArray(data?.index ?? []),
       lineVertex: new Float32Array(data?.lineVertex ?? []),
-      lineIndex: new engine.driver.UintIndexArray(data?.lineIndex ?? []),
-      boundingBoxVertex: data?.boundingBoxVertex ? new Float32Array(data.boundingBoxVertex) : new Float32Array(24),
+      lineIndex: new this.#driver.UintIndexArray(data?.lineIndex ?? []),
     };
 
-    const boundingBoxIndex = new engine.driver.UintIndexArray([
-      // Bottom
-      0, 1, // BFL - BRL
-      1, 2, // BRL - BRR
-      2, 3, // BRR - BBL
-      3, 0, // BFR - BFL
-      // Top
-      4, 5, // TFL - TRL
-      5, 6, // TRL - TRR
-      6, 7, // TRR - TFR
-      7, 4, // TFR - TFL
-      // Side
-      0, 4, // BFL - TFL
-      1, 5, // BRL - TRL
-      2, 6, // BRR - TRR
-      3, 7, // BFR - TFR
-    ]);
-    this.#ctx.bindBuffer(this.#ctx.ELEMENT_ARRAY_BUFFER, this.buffer.boundingBoxIndex);
-    this.#ctx.bufferData(this.#ctx.ELEMENT_ARRAY_BUFFER, boundingBoxIndex, this.#ctx.STATIC_DRAW);
-
-    this.#bindModelBuffers();
-  }
-
-  #bindModelBuffers() {
     this.#ctx.bindBuffer(this.#ctx.ELEMENT_ARRAY_BUFFER, this.buffer.index);
     this.#ctx.bufferData(this.#ctx.ELEMENT_ARRAY_BUFFER, this.data.index, this.#ctx.STATIC_DRAW);
 
@@ -112,86 +96,14 @@ export default class Model {
 
     this.#ctx.bindBuffer(this.#ctx.ARRAY_BUFFER, this.buffer.lineVertex);
     this.#ctx.bufferData(this.#ctx.ARRAY_BUFFER, this.data.lineVertex, this.#ctx.STATIC_DRAW);
-    this.#regenerateBoundingBox();
-  }
 
-  /**
-   * Based on the diagonal bounding box vertices (p0 BFL, p6 TRR),
-   * recalculates all remaining vertices (p1-p5, p7) and reuploads their buffer to the GPU
-   */
-  #regenerateBoundingBox() {
-    // p1 BRL
-    this.data.boundingBoxVertex[3] = this.data.boundingBoxVertex[0];
-    this.data.boundingBoxVertex[4] = this.data.boundingBoxVertex[1];
-    this.data.boundingBoxVertex[5] = this.data.boundingBoxVertex[20];
-    // p2 BRR
-    this.data.boundingBoxVertex[6] = this.data.boundingBoxVertex[18];
-    this.data.boundingBoxVertex[7] = this.data.boundingBoxVertex[1];
-    this.data.boundingBoxVertex[8] = this.data.boundingBoxVertex[20];
-    // p3 BFR
-    this.data.boundingBoxVertex[9] = this.data.boundingBoxVertex[18];
-    this.data.boundingBoxVertex[10] = this.data.boundingBoxVertex[1];
-    this.data.boundingBoxVertex[11] = this.data.boundingBoxVertex[2];
-    // p4 TFL
-    this.data.boundingBoxVertex[12] = this.data.boundingBoxVertex[0];
-    this.data.boundingBoxVertex[13] = this.data.boundingBoxVertex[19];
-    this.data.boundingBoxVertex[14] = this.data.boundingBoxVertex[2];
-    // p5 TRL
-    this.data.boundingBoxVertex[15] = this.data.boundingBoxVertex[0];
-    this.data.boundingBoxVertex[16] = this.data.boundingBoxVertex[19];
-    this.data.boundingBoxVertex[17] = this.data.boundingBoxVertex[20];
-    // p7 TFR
-    this.data.boundingBoxVertex[21] = this.data.boundingBoxVertex[18];
-    this.data.boundingBoxVertex[22] = this.data.boundingBoxVertex[19];
-    this.data.boundingBoxVertex[23] = this.data.boundingBoxVertex[2];
-
-    this.#ctx.bindBuffer(this.#ctx.ARRAY_BUFFER, this.buffer.boundingBoxVertex);
-    this.#ctx.bufferData(this.#ctx.ARRAY_BUFFER, this.data.boundingBoxVertex, this.#ctx.STATIC_DRAW);
-  }
-
-  /**
-   * @param {Float32Array} newData
-   */
-  #expandBoundingBox(newData) {
-    min[0] = this.data.boundingBoxVertex[0];
-    min[1] = this.data.boundingBoxVertex[1];
-    min[2] = this.data.boundingBoxVertex[2];
-    max[0] = this.data.boundingBoxVertex[18];
-    max[1] = this.data.boundingBoxVertex[19];
-    max[2] = this.data.boundingBoxVertex[20];
-
-    for (let i = 0; i < newData.length; i += 3) {
-      boundingCoord[0] = newData[i];
-      boundingCoord[1] = newData[i + 1];
-      boundingCoord[2] = newData[i + 2];
-
-      vec3.min(min, min, boundingCoord);
-      vec3.max(max, max, boundingCoord);
-    }
-
-    this.data.boundingBoxVertex.set(min);
-    this.data.boundingBoxVertex.set(max, 18);
+    if (data) this.recalculateBoundingBox();
   }
 
   recalculateBoundingBox() {
-    this.data.boundingBoxVertex.set([Infinity, Infinity, Infinity]);
-    this.data.boundingBoxVertex.set([-Infinity, -Infinity, -Infinity], 18);
-
-    for (const { model: { data: { boundingBoxVertex } }, trs } of this.subModels) {
-      for (let i = 0; i < 24; i += 3) {
-        boundingCoord[0] = boundingBoxVertex[i];
-        boundingCoord[1] = boundingBoxVertex[i + 1];
-        boundingCoord[2] = boundingBoxVertex[i + 2];
-        vec3.transformMat4(boundingCoord, boundingCoord, trs);
-        boundingBox.set(boundingCoord, i);
-      }
-      this.#expandBoundingBox(boundingBox);
-    }
-
-    this.#expandBoundingBox(this.data.lineVertex);
-    this.#expandBoundingBox(this.data.vertex);
-
-    this.#regenerateBoundingBox();
+    this.boundingBox.reset();
+    this.boundingBox.expand(this.data.lineVertex);
+    this.boundingBox.expand(this.data.vertex);
 
     const parentModels = /** @type {Model[]} */ ([]);
     for (const instance of this.instances) {
@@ -204,7 +116,7 @@ export default class Model {
 
   /**
    * @param {Readonly<Float32Array|Uint16Array|Uint32Array|Uint8Array>} newData
-   * @param {keyof Omit<ModelData, "boundingBoxIndex" | "boundingBoxVertex">} part
+   * @param {keyof ModelData} part
    * @param {boolean} [normalizeIndices]
    */
   appendBufferData(newData, part, normalizeIndices = true) {
@@ -233,11 +145,11 @@ export default class Model {
     this.#ctx.bindBuffer(BUFFER_TYPE, this.buffer[part]);
     this.#ctx.bufferData(BUFFER_TYPE, data, this.#ctx.STATIC_DRAW);
 
-    if (part === 'lineVertex' || part === 'vertex') this.recalculateBoundingBox();
+    if (part === 'lineVertex' || part === 'vertex') this.boundingBox.expand(/** @type {Float32Array} */ (newData));
   }
 
   /**
-   * @param {keyof Omit<ModelData, "boundingBoxIndex" | "boundingBoxVertex">} part
+   * @param {keyof ModelData} part
    * @param {number} length
    */
   truncateBuffer(part, length) {
@@ -255,7 +167,7 @@ export default class Model {
   /**
    *
    * @param {Readonly<Float32Array|Uint8Array>} newData
-   * @param {keyof Omit<ModelData, "index" | "lineIndex" | "boundingBoxIndex" | "boundingBoxVertex">} part
+   * @param {keyof Omit<ModelData, "index" | "lineIndex">} part
    */
   updateBufferEnd(newData, part) {
     const oldLength = this.data[part].length - newData.length;

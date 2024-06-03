@@ -1,7 +1,7 @@
 /** @type {RenderingPass} */
 export default (engine) => {
   const {
-    driver: { ctx, makeProgram, vert, frag, UNSIGNED_INDEX_TYPE },
+    driver: { ctx, makeProgram, vert, frag, UintIndexArray, UNSIGNED_INDEX_TYPE },
     camera,
     scene,
   } = engine;
@@ -65,17 +65,20 @@ export default (engine) => {
           ctx.uniform1f(program.uLoc.u_isInShadow, isInShadow);
 
           if (isSelected) ctx.lineWidth(2);
+
           ctx.drawElements(ctx.LINES, model.data.lineIndex.length, UNSIGNED_INDEX_TYPE, 0);
           ctx.lineWidth(1);
         }
       }
 
+      // Draw bounding box of selected instance
       if (scene.selectedInstance) {
         const { model, globalTrs } = scene.selectedInstance;
 
-        ctx.bindBuffer(ctx.ELEMENT_ARRAY_BUFFER, model.buffer.boundingBoxIndex);
+        ctx.bindBuffer(ctx.ELEMENT_ARRAY_BUFFER, boundingBoxIndexBuffer);
 
-        ctx.bindBuffer(ctx.ARRAY_BUFFER, model.buffer.boundingBoxVertex);
+        ctx.bindBuffer(ctx.ARRAY_BUFFER, boundingBoxVertexBuffer);
+        ctx.bufferData(ctx.ARRAY_BUFFER, model.boundingBox.data, ctx.DYNAMIC_DRAW);
         ctx.enableVertexAttribArray(program.aLoc.a_position);
         ctx.vertexAttribPointer(program.aLoc.a_position, 3, ctx.FLOAT, false, 0, 0);
 
