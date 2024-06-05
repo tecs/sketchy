@@ -35,7 +35,10 @@ export default class Camera {
   aspect = 1;
   nearPlane = 0.01;
   farPlane = 2000;
+
+  /** Rotation around X */
   pitch = 0;
+  /** Rotation around Y */
   yaw = 0;
   scale = 1;
   pixelSize = 1;
@@ -118,6 +121,8 @@ export default class Camera {
           break;
       }
     });
+
+    engine.on('currentchange', () => this.resetAndLookFrom(0, 0));
   }
 
   /**
@@ -172,10 +177,14 @@ export default class Camera {
     this.yaw = yaw;
     this.scale = 1;
 
-    mat4.identity(this.world);
     mat4.fromTranslation(this.world, vec3.fromValues(0, 0, -this.#startingDistance));
     mat4.rotateX(this.world, this.world, this.pitch);
     mat4.rotateY(this.world, this.world, this.yaw);
+
+    const { currentInstance } = this.#engine.scene;
+    if (currentInstance) {
+      mat4.multiply(this.world, this.world, currentInstance.inverseGlobalTrs);
+    }
 
     this.recalculateMVP();
   }
@@ -200,6 +209,12 @@ export default class Camera {
     vec3.scale(diff, diff, panScale);
     diff[2] = dZ;
 
+    const { currentInstance } = this.#engine.scene;
+
+    if (currentInstance) {
+      mat4.multiply(this.world, this.world, currentInstance.globalTrs);
+    }
+
     mat4.rotateY(this.world, this.world, -this.yaw);
     mat4.rotateX(this.world, this.world, -this.pitch);
 
@@ -207,6 +222,10 @@ export default class Camera {
 
     mat4.rotateX(this.world, this.world, this.pitch);
     mat4.rotateY(this.world, this.world, this.yaw);
+
+    if (currentInstance) {
+      mat4.multiply(this.world, this.world, currentInstance.inverseGlobalTrs);
+    }
 
     this.recalculateMVP();
   }
