@@ -128,21 +128,20 @@ export default class Camera {
   /**
    * @param {number} dX
    * @param {number} dY
-   * @param {Readonly<vec3>} rotationOrigin
+   * @param {ReadonlyVec3} rotationOrigin
    */
   orbit(dX, dY, rotationOrigin) {
-    toEye[0] = -rotationOrigin[0];
-    toEye[1] = -rotationOrigin[1];
-    toEye[2] = rotationOrigin[2];
-    if (toEye[2] < 0) {
+    if (rotationOrigin[2] < 0) {
       toEye[0] = 0;
       toEye[1] = 0;
       toEye[2] = this.#startingDistance;
+    } else {
+      toEye[0] = -rotationOrigin[0];
+      toEye[1] = -rotationOrigin[1];
+      toEye[2] = rotationOrigin[2];
     }
 
-    toPivot[0] = -toEye[0];
-    toPivot[1] = -toEye[1];
-    toPivot[2] = -toEye[2];
+    vec3.scale(toPivot, toEye, -1);
 
     const oldPitch = this.pitch;
 
@@ -193,7 +192,7 @@ export default class Camera {
    * @param {number} dX
    * @param {number} dY
    * @param {number} dZ
-   * @param {Readonly<vec3>} panOrigin
+   * @param {ReadonlyVec3} panOrigin
    */
   pan(dX, dY, dZ, panOrigin) {
     if (this.invertZoom) dZ *= -1;
@@ -232,7 +231,7 @@ export default class Camera {
 
   /**
    * @param {number} direction
-   * @param {Readonly<vec3>} zoomOrigin
+   * @param {ReadonlyVec3} zoomOrigin
    */
   zoom(direction, zoomOrigin) {
     if (this.invertZoom) direction *= -1;
@@ -240,18 +239,17 @@ export default class Camera {
     const originalScale = this.scale;
     this.scale = Math.min(Math.max(this.scale * (1 - direction * 0.1), 0.1), 10);
 
-    toEye[0] = -zoomOrigin[0];
-    toEye[1] = -zoomOrigin[1];
-    toEye[2] = zoomOrigin[2];
-    if (toEye[2] < 0) {
+    if (zoomOrigin[2] < 0) {
       toEye[0] = 0;
       toEye[1] = 0;
       toEye[2] = this.#startingDistance;
+    } else {
+      toEye[0] = -zoomOrigin[0];
+      toEye[1] = -zoomOrigin[1];
+      toEye[2] = zoomOrigin[2];
     }
 
-    toPivot[0] = -toEye[0];
-    toPivot[1] = -toEye[1];
-    toPivot[2] = -toEye[2];
+    vec3.scale(toPivot, toEye, -1);
 
     diff[0] = this.scale / originalScale;
     diff[1] = diff[0];

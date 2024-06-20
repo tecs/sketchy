@@ -18,7 +18,7 @@ import ZoomTool from './zoom.js';
  * @property {number[]} [distance]
  * @property {(distance: number[]) => void} [setDistance]
  * @property {() => void} start
- * @property {(delta: Readonly<vec3>) => void} update
+ * @property {(delta: ReadonlyVec3) => void} update
  * @property {() => void} end
  * @property {() => void} abort
  */

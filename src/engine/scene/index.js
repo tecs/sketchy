@@ -42,6 +42,7 @@ export default class Scene {
   /** @type {Instance | null} */
   hoveredInstance = null;
 
+  /** @type {ReadonlyVec3} */
   axisNormal = vec3.create();
   hoveredView = vec3.create();
   hovered = vec3.create();
@@ -205,24 +206,20 @@ export default class Scene {
   }
 
   /**
-   * @param {Readonly<vec3>} position
+   * @param {ReadonlyVec3} position
    */
   hover(position) {
-    this.hovered[0] = position[0];
-    this.hovered[1] = position[1];
-    this.hovered[2] = position[2];
+    vec3.copy(this.hovered, position);
 
     vec3.transformMat4(this.hoveredView, position, this.#engine.camera.world);
     this.hoveredView[2] = -this.hoveredView[2];
   }
 
   /**
-   * @param {Readonly<vec3>} normal
+   * @param {ReadonlyVec3} normal
    */
   setAxis(normal) {
-    this.axisNormal[0] = Math.abs(normal[0]);
-    this.axisNormal[1] = Math.abs(normal[1]);
-    this.axisNormal[2] = Math.abs(normal[2]);
+    vec3.copy(this.axisNormal, normal);
   }
 
   /**

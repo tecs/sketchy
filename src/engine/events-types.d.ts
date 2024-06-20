@@ -19,7 +19,7 @@ type MergedEvent<E extends { type: string, emitter: E['emitter'], handler: E['ha
   handler: UnionToIntersection<E['handler']>;
 };
 
-type SystemError = EventType<'error', [message: string, detals: unknown]>;
+type SystemError = EventType<'error', [message: string, details: unknown]>;
 type UserError = EventType<'usererror', [message: string]>;
 
 type EngineEvent = MergedEvent<
