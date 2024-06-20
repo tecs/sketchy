@@ -99,16 +99,17 @@ export default (engine) => {
       ctx.uniformMatrix4fv(program.uLoc.u_viewProjection, false, camera.viewProjection);
       ctx.uniformMatrix4fv(program.uLoc.u_frustum, false, camera.frustum);
 
-      ctx.bindBuffer(ctx.ARRAY_BUFFER, scene.hoveredInstance.model.buffer.vertex);
+      const { model } = scene.hoveredInstance;
+      ctx.bindBuffer(ctx.ARRAY_BUFFER, model.buffer.vertex);
       ctx.vertexAttribPointer(program.aLoc.a_position, 3, ctx.FLOAT, false, 0, 0);
-      ctx.bindBuffer(ctx.ELEMENT_ARRAY_BUFFER, scene.hoveredInstance.model.buffer.index);
-      ctx.drawElements(ctx.TRIANGLES, scene.hoveredInstance.model.data.index.length, UNSIGNED_INDEX_TYPE, 0);
+      ctx.bindBuffer(ctx.ELEMENT_ARRAY_BUFFER, model.buffer.index);
+      ctx.drawElements(ctx.TRIANGLES, model.data.index.length, UNSIGNED_INDEX_TYPE, 0);
 
-      ctx.bindBuffer(ctx.ARRAY_BUFFER, scene.hoveredInstance.model.buffer.lineVertex);
+      ctx.bindBuffer(ctx.ARRAY_BUFFER, model.buffer.lineVertex);
       ctx.vertexAttribPointer(program.aLoc.a_position, 3, ctx.FLOAT, false, 0, 0);
-      ctx.bindBuffer(ctx.ELEMENT_ARRAY_BUFFER, scene.hoveredInstance.model.buffer.lineIndex);
+      ctx.bindBuffer(ctx.ELEMENT_ARRAY_BUFFER, model.buffer.lineIndex);
       ctx.lineWidth(5);
-      ctx.drawElements(ctx.LINES, scene.hoveredInstance.model.data.lineIndex.length, UNSIGNED_INDEX_TYPE, 0);
+      ctx.drawElements(ctx.LINES, model.data.lineIndex.length, UNSIGNED_INDEX_TYPE, 0);
       ctx.lineWidth(1);
 
       // requires OES_texture_float
