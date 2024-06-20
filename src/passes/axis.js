@@ -24,7 +24,7 @@ export default (engine) => {
         gl_Position = u_matrix * a_position;
 
         v_color = a_color;
-        v_distance = a_position.x + a_position.y - a_position.z;
+        v_distance = a_position.x + a_position.y + a_position.z;
       }
     `,
     frag`
