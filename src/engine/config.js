@@ -58,7 +58,7 @@ export default class Config {
       value,
       defaultValue: value,
       /**
-       * @param {typeof setting["value"]} newValue
+       * @param {T["value"]} newValue
        */
       set: (newValue) => {
         const oldValue = setting.value;
