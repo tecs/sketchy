@@ -4,7 +4,6 @@
     "es2021": true
   },
   "extends": [
-    "airbnb-base",
     "plugin:@typescript-eslint/recommended",
     "plugin:import/typescript"
   ],
@@ -14,7 +13,7 @@
     "ecmaVersion": "latest",
     "sourceType": "module"
   },
-  "plugins": ["@typescript-eslint"],
+  "plugins": ["@typescript-eslint", "import"],
   "settings": {
     "import/resolver": {
       "node": {
@@ -25,30 +24,13 @@
   "rules": {
     "@typescript-eslint/no-shadow": "error",
     "@typescript-eslint/no-this-alias": "off",
-    "arrow-parens": "off",
-    "default-case": "off",
+    "@typescript-eslint/no-unused-vars": ["error", { "argsIgnorePattern": "^_" }],
     "indent": ["error", 2, {"SwitchCase": 1}],
     "import/extensions": ["error", "always"],
     "import/no-cycle": "off",
-    "lines-between-class-members": "off",
     "max-len": ["error", {"code": 120, "ignoreStrings": true}],
-    "no-bitwise": "off",
-    "no-continue": "off",
+    "no-console": "warn",
     "no-multi-spaces": ["error", { "exceptions": {"VariableDeclarator": true}}],
-    "no-param-reassign": "off",
-    "no-plusplus": "off",
-    "no-restricted-syntax": ["error",
-      {
-        "selector": "ForInStatement",
-        "message": "for..in loops iterate over the entire prototype chain, which is virtually never what you want. Use Object.{keys,values,entries}, and iterate over the resulting array."
-      },
-      {
-        "selector": "WithStatement",
-        "message": "`with` is disallowed in strict mode because it makes code impossible to predict and optimize."
-      }
-    ],
-    "no-use-before-define": "off",
-    "object-curly-newline": "off",
-    "prefer-destructuring": "off"
+    "no-warning-comments": "error"
   }
 }
