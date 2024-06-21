@@ -31,6 +31,7 @@
     "max-len": ["error", {"code": 120, "ignoreStrings": true}],
     "no-console": "warn",
     "no-multi-spaces": ["error", { "exceptions": {"VariableDeclarator": true}}],
-    "no-warning-comments": "error"
+    "no-warning-comments": "error",
+    "semi": "error"
   }
 }
