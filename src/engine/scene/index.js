@@ -1,13 +1,8 @@
 import Model from './model.js';
 import SubModel from './submodel.js';
+import Id from '../Id.js';
 
 const { vec3, mat4 } = glMatrix;
-
-/**
- * @param {Uint8Array} uuuu
- * @returns {number}
- */
-const uuuuToInt = (uuuu) => uuuu[0] + (uuuu[1] << 8) + (uuuu[2] << 16) + (uuuu[3] << 24);
 
 /**
  * @typedef SubModelState
@@ -197,12 +192,10 @@ export default class Scene {
    * @param {Readonly<Uint8Array>} id4u
    */
   hoverOver(id4u) {
-    const id = uuuuToInt(id4u);
+    const id = Id.uuuuToInt(id4u);
     if ((!id && !this.hoveredInstance) || id === this.hoveredInstance?.id.int) return;
 
     this.hoveredInstance = id ? this.#instanceById.get(id) ?? null : null;
-    this.hoveredFace = -1;
-    this.hoveredLine = -1;
   }
 
   /**

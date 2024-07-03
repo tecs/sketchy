@@ -1,10 +1,6 @@
-const { mat4, vec3, vec4 } = glMatrix;
+import Id from '../Id.js';
 
-/**
- * @typedef Id
- * @property {number} int
- * @property {vec4} vec4
- */
+const { mat4, vec3 } = glMatrix;
 
 // cached structures
 const origin = vec3.create();
@@ -12,7 +8,6 @@ const relative = vec3.create();
 const translate = mat4.create();
 
 export default class Instance {
-  static #lastId = 0;
 
   /** @type {Id} */
   id;
@@ -41,18 +36,7 @@ export default class Instance {
     this.model = subModel.model;
     this.parent = parent;
 
-    const id = ++Instance.#lastId;
-    this.id = {
-      int: id,
-      vec4: vec4.fromValues(
-        /* eslint-disable no-multi-spaces,space-in-parens */
-        ( id        & 255) / 255,
-        ((id >>  8) & 255) / 255,
-        ((id >> 16) & 255) / 255,
-        ((id >> 24) & 255) / 255,
-        /* eslint-enable no-multi-spaces,space-in-parens */
-      ),
-    };
+    this.id = new Id();
 
     this.recalculateGlobalTrs();
   }
