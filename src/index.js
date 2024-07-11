@@ -55,7 +55,7 @@ window.addEventListener('load', () => {
   ui.topMenu.addItem('settings', 'Settings', '⚙', () => {
     const settings = engine.config.list();
 
-    /** @type {Record<typeof settings[number]['type'], string>} */
+    /** @type {Record<typeof settings[number]["type"], string>} */
     const InputTypeMap = {
       int: 'number',
       key: 'text',

@@ -1,4 +1,78 @@
+/**
+ * @typedef {new(...args: never[]) => object} Constructor
+ * @typedef {new() => { toString: () => string }} DefaultConstructor
+ * @typedef {{ [key: string]: Constructor }} Mapping
+ */
+
+/**
+ * @template {Mapping} T
+ * @typedef {{ [K in keyof T as ConstructorParameters<T[K]> extends [] ? never : K]: ConstructorParameters<T[K]> }} Args
+ */
+
+/**
+ * @template {Mapping} T
+ * @typedef {{ [K in keyof T]: InstanceType<T[K]> }} Type
+ */
+
+/**
+ * @template {Mapping} T
+ * @template {Constructor} [B=DefaultConstructor]
+ * @typedef {new(traitArgs: Args<T>, ...baseArgs: ConstructorParameters<B>) => InstanceType<B> & Type<T>} Derived
+ */
+
+/**
+ * @template {Mapping} T
+ * @template {Constructor} [B=DefaultConstructor]
+ * @param {T} traits
+ * @param {B} [Base]
+ * @returns {Derived<T, B>}
+ */
+export const implement = (traits, Base) => {
+  /**
+   * @param {Type<T>} obj
+   * @param {Args<T>} traitArgs
+   */
+  const applyTraits = (obj, traitArgs) => {
+    const keys = /** @type {(keyof Type<T>)[]} */ (Object.keys(traits));
+    for (const key of keys) {
+      /** @type {ConstructorParameters<T[typeof key]> | []} */
+      const args = key in traitArgs ? traitArgs[/** @type {keyof Args<T>} */ (key)] : [];
+      obj[key] = /** @type {Type<T>[typeof key]} */ (new traits[key](...args));
+    }
+  };
+
+  if (!Base) {
+    return /** @type {Derived<T>} */ (class {
+      /** @param {Args<T>} traitArgs */
+      constructor(traitArgs) {
+        applyTraits(/** @type {Type<T>} */ (this), traitArgs);
+      }
+    });
+  }
+
+  // @ts-expect-error Unlike TS mixins, these traits support their own constructor parameters
+  return class extends Base {
+    /**
+     * @param {Args<T>} traitArgs
+     * @param {ConstructorParameters<B>} baseArgs
+     */
+    constructor(traitArgs, ...baseArgs) {
+      super(...baseArgs);
+      applyTraits(/** @type {Type<T>} */ (this), traitArgs);
+    }
+  };
+};
+
 export default class Base {
+  /**
+   * @template {Mapping} T
+   * @param {T} traits
+   * @returns {Derived<T, Base>}
+   */
+  static implement(traits) {
+    return implement(traits, Base);
+  }
+
   constructor() {
     /** @type {(keyof this)[]} */ (Object.getOwnPropertyNames(Object.getPrototypeOf(this)))
       .forEach(key => {

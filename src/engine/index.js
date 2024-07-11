@@ -18,7 +18,7 @@ import extractPosition from '../passes/extractPosition.js';
 
 /**
  * @typedef {import('./events-types').EngineEvent} EngineEvent
- * @typedef {{ event: EngineEvent['type'], handler: Function, once: boolean }} EventHandlerData
+ * @typedef {{ event: EngineEvent["type"], handler: Function, once: boolean }} EventHandlerData
  */
 
 export default class Engine extends Base {

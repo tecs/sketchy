@@ -80,7 +80,7 @@ export default (engine) => {
 
         for (const instance of model.instances) {
           ctx.uniformMatrix4fv(program.uLoc.u_trs, false, instance.globalTrs);
-          ctx.uniform4fv(program.uLoc.u_instanceId, instance.id.vec4);
+          ctx.uniform4fv(program.uLoc.u_instanceId, instance.Id.vec4);
 
           ctx.drawElements(ctx.TRIANGLES, model.data.index.length, UNSIGNED_INDEX_TYPE, 0);
         }
@@ -104,7 +104,7 @@ export default (engine) => {
 
         for (const instance of model.instances) {
           ctx.uniformMatrix4fv(program.uLoc.u_trs, false, instance.globalTrs);
-          ctx.uniform4fv(program.uLoc.u_instanceId, instance.id.vec4);
+          ctx.uniform4fv(program.uLoc.u_instanceId, instance.Id.vec4);
 
           ctx.drawElements(ctx.LINES, model.data.lineIndex.length, UNSIGNED_INDEX_TYPE, 0);
         }

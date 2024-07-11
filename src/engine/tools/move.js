@@ -54,7 +54,7 @@ export default (engine) => {
 
       if (!candidateInstance?.belongsTo(currentInstance)) return;
 
-      historyAction = history.createAction(`Move instance #${candidateInstance.id.int}`, {
+      historyAction = history.createAction(`Move instance #${candidateInstance.Id.int}`, {
         instance: candidateInstance,
         translation: vec3.create(),
       }, () => {

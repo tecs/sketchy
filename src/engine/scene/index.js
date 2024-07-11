@@ -110,7 +110,7 @@ export default class Scene {
 
     let index = -1;
     for (let i = 0; i < instances.length; ++i) {
-      this.#instanceById.set(instances[i].id.int, instances[i]);
+      this.#instanceById.set(instances[i].Id.int, instances[i]);
       if (instances[i].parent === this.currentInstance) index = i;
     }
 
@@ -134,7 +134,7 @@ export default class Scene {
 
     const { parent, subModel } = instance;
     const action = this.#engine.history.createAction(
-      `Delete instance #${instance.id} from model "${parent?.model.name ?? '[[root]]'}"`,
+      `Delete instance #${instance.Id.int} from model "${parent?.model.name ?? '[[root]]'}"`,
       {
         instances: /** @type {Instance[]} */ ([]),
       },
@@ -148,7 +148,7 @@ export default class Scene {
           if (this.selectedInstance === deletedInstance) {
             this.setSelectedInstance(null);
           }
-          this.#instanceById.delete(deletedInstance.id.int);
+          this.#instanceById.delete(deletedInstance.Id.int);
         }
 
         this.#engine.emit('scenechange');
@@ -157,7 +157,7 @@ export default class Scene {
         if (parent) parent?.model.adopt(subModel, instances.slice());
         else subModel.instantiate(null, instances.slice());
         for (const restoredInstance of instances) {
-          this.#instanceById.set(restoredInstance.id.int, restoredInstance);
+          this.#instanceById.set(restoredInstance.Id.int, restoredInstance);
         }
 
         this.#engine.emit('scenechange');
@@ -193,9 +193,9 @@ export default class Scene {
    */
   hoverOver(id4u) {
     const id = Id.uuuuToInt(id4u);
-    if ((!id && !this.hoveredInstance) || id === this.hoveredInstance?.id.int) return;
+    if ((!id && !this.hoveredInstance) || id === this.hoveredInstance?.Id.int) return;
 
-    this.hoveredInstance = id ? this.#instanceById.get(id) ?? null : null;
+    this.hoveredInstance = id ? this.#engine.entities.getByType(Instance, id) ?? null : null;
   }
 
   /**

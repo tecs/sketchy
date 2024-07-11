@@ -1,4 +1,5 @@
 import Id from '../Id.js';
+import { implement } from '../base.js';
 
 const { mat4, vec3 } = glMatrix;
 
@@ -7,10 +8,8 @@ const origin = vec3.create();
 const relative = vec3.create();
 const translate = mat4.create();
 
-export default class Instance {
+export default class Instance extends implement({ Id }) {
 
-  /** @type {Id} */
-  id;
 
   /** @type {Model} */
   model;
@@ -32,11 +31,11 @@ export default class Instance {
    * @param {Instance | null} parent
    */
   constructor(subModel, parent) {
+    super({});
     this.subModel = subModel;
     this.model = subModel.model;
     this.parent = parent;
 
-    this.id = new Id();
 
     this.recalculateGlobalTrs();
   }
