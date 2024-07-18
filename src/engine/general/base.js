@@ -1,12 +1,11 @@
-/**
- * @typedef {new(...args: never[]) => object} Constructor
- * @typedef {new() => { toString: () => string }} DefaultConstructor
- * @typedef {{ [key: string]: Constructor }} Mapping
- */
+/** @typedef {new(...args: never[]) => object} Constructor */
+/** @typedef {new() => { toString: () => string }} DefaultConstructor */
+/** @typedef {{ [key: string]: Constructor }} Mapping */
 
 /**
  * @template {Mapping} T
- * @typedef {{ [K in keyof T as ConstructorParameters<T[K]> extends [] ? never : K]: ConstructorParameters<T[K]> }} Args
+ * @template {keyof T} [Key=Exclude<{[K in keyof T]: [K, ConstructorParameters<T[K]>] }[keyof T], [keyof T, []]>[0]]
+ * @typedef {{[K in Key]: ConstructorParameters<T[K]> }} Args
  */
 
 /**
@@ -33,11 +32,12 @@ export const implement = (traits, Base) => {
    * @param {Args<T>} traitArgs
    */
   const applyTraits = (obj, traitArgs) => {
-    const keys = /** @type {(keyof Type<T>)[]} */ (Object.keys(traits));
+    /** @typedef {keyof Type<T>} Key */
+    const keys = /** @type {Key[]} */ (Object.keys(traits));
     for (const key of keys) {
-      /** @type {ConstructorParameters<T[typeof key]> | []} */
+      /** @type {ConstructorParameters<T[Key]> | []} */
       const args = key in traitArgs ? traitArgs[/** @type {keyof Args<T>} */ (key)] : [];
-      obj[key] = /** @type {Type<T>[typeof key]} */ (new traits[key](...args));
+      obj[key] = /** @type {Type<T>[Key]} */ (new traits[key](...args));
     }
   };
 
@@ -67,7 +67,7 @@ export default class Base {
   /**
    * @template {Mapping} T
    * @param {T} traits
-   * @returns {Derived<T, Base>}
+   * @returns {Derived<T, typeof Base>}
    */
   static implement(traits) {
     return implement(traits, Base);

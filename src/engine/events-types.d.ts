@@ -1,4 +1,4 @@
-import type { CameraEvent } from './camera-types';
+import type { CameraEvent } from './3d/camera-types';
 import type { ConfigEvent } from './config-types';
 import type { HistoryEvent } from './history-types';
 import type { InputEventType } from './input-types';
@@ -24,11 +24,11 @@ type UserError = EventType<'usererror', [message: string]>;
 
 type EngineEvent = MergedEvent<
   SystemError
-  | UserError
-  | HistoryEvent
   | CameraEvent
   | ConfigEvent
-  | ToolEvent
+  | HistoryEvent
   | InputEventType
+  | UserError
   | SceneEvent
+  | ToolEvent
 >;

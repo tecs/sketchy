@@ -1,5 +1,5 @@
-import Id from '../Id.js';
-import { implement } from '../base.js';
+import { implement } from '../general/base.js';
+import Id from '../general/id.js';
 
 const { mat4, vec3 } = glMatrix;
 

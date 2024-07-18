@@ -11,12 +11,10 @@
  * @property {() => T} reset
  */
 
-/**
- * @typedef {BaseSetting<number, "int">} NumberSetting
- * @typedef {BaseSetting<string, "key">} StringSetting
- * @typedef {BaseSetting<boolean, "toggle">} BooleanSetting
- * @typedef {NumberSetting|StringSetting|BooleanSetting} Setting
- */
+/** @typedef {BaseSetting<number, "int">} NumberSetting */
+/** @typedef {BaseSetting<string, "key">} StringSetting */
+/** @typedef {BaseSetting<boolean, "toggle">} BooleanSetting */
+/** @typedef {NumberSetting|StringSetting|BooleanSetting} Setting */
 
 /** @type {(engine: Engine, setting: Setting, current: Setting["value"], previous: Setting["value"] ) => void} */
 const forceEmit = (engine, setting, current, previous) => engine.emit(
@@ -79,34 +77,34 @@ export default class Config {
   }
 
   /**
-  * @param {string} id
-  * @param {string} name
-  * @param {NumberSetting["type"]} type
-  * @param {NumberSetting["value"]} value
-  * @returns {Readonly<NumberSetting>}
-  */
+   * @param {string} id
+   * @param {string} name
+   * @param {NumberSetting["type"]} type
+   * @param {NumberSetting["value"]} value
+   * @returns {Readonly<NumberSetting>}
+   */
   createNumber(id, name, type, value) {
     return this.#create(id, name, type, value);
   }
 
   /**
-  * @param {string} id
-  * @param {string} name
-  * @param {StringSetting["type"]} type
-  * @param {StringSetting["value"]} value
-  * @returns {Readonly<StringSetting>}
-  */
+   * @param {string} id
+   * @param {string} name
+   * @param {StringSetting["type"]} type
+   * @param {StringSetting["value"]} value
+   * @returns {Readonly<StringSetting>}
+   */
   createString(id, name, type, value) {
     return this.#create(id, name, type, value);
   }
 
   /**
-  * @param {string} id
-  * @param {string} name
-  * @param {BooleanSetting["type"]} type
-  * @param {BooleanSetting["value"]} value
-  * @returns {Readonly<BooleanSetting>}
-  */
+   * @param {string} id
+   * @param {string} name
+   * @param {BooleanSetting["type"]} type
+   * @param {BooleanSetting["value"]} value
+   * @returns {Readonly<BooleanSetting>}
+   */
   createBoolean(id, name, type, value) {
     return this.#create(id, name, type, value);
   }

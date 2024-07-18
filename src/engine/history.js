@@ -4,6 +4,7 @@
  * @property {Function} execute
  * @property {Function} revert
  */
+
 /**
  * @template T
  * @typedef HistoryAction

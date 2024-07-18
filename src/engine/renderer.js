@@ -1,6 +1,6 @@
+/** @typedef {(engine: Engine) => RenderingPassRenderer} RenderingPass */
+
 /**
- * @typedef {(engine: Engine) => RenderingPassRenderer} RenderingPass
- *
  * @typedef RenderingPassRenderer
  * @property {Readonly<Program>} program
  * @property {(draw: boolean, extract: boolean) => void} render

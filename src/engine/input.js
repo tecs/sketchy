@@ -1,8 +1,6 @@
 const { vec3 } = glMatrix;
 
-/**
- * @typedef {"left"|"middle"|"right"} MouseButton
- */
+/** @typedef {"left"|"middle"|"right"} MouseButton */
 
 export default class Input {
   /** @type {Engine} */

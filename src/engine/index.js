@@ -1,10 +1,10 @@
-import Base from './base.js';
+import Base from './general/base.js';
 
 import Config from './config.js';
 import History from './history.js';
 import Driver from './driver.js';
 import Input from './input.js';
-import Camera from './camera.js';
+import Camera from './3d/camera.js';
 import Renderer from './renderer.js';
 import Scene from './scene/index.js';
 import Tools from './tools/index.js';
@@ -16,10 +16,8 @@ import renderLines from '../passes/lines.js';
 import extractId from '../passes/extractId.js';
 import extractPosition from '../passes/extractPosition.js';
 
-/**
- * @typedef {import('./events-types').EngineEvent} EngineEvent
- * @typedef {{ event: EngineEvent["type"], handler: Function, once: boolean }} EventHandlerData
- */
+/** @typedef {import('./events-types').EngineEvent} EngineEvent */
+/** @typedef {{ event: EngineEvent["type"], handler: Function, once: boolean }} EventHandlerData */
 
 export default class Engine extends Base {
   /** @type {EventHandlerData[]} */

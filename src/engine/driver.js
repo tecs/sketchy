@@ -1,19 +1,19 @@
-import Base from './base.js';
+import Base from './general/base.js';
 
 const { vec3 } = glMatrix;
 
+/** @typedef {[TemplateStringsArray, any[]?]} TaggedTemplateParams */
+/** @typedef {Record<string, number>} AttributeLocationMap */
+/** @typedef {Record<string, WebGLUniformLocation | null>} UniformLocationMap */
+/** @typedef {WebGLBuffer | null} GLBuffer */
+
 /**
- * @typedef {[TemplateStringsArray, any[]?]} TaggedTemplateParams
- *
- * @typedef {Record<string, number>} AttributeLocationMap
- * @typedef {Record<string, WebGLUniformLocation | null>} UniformLocationMap
- *
- * @typedef {WebGLBuffer | null} GLBuffer
- *
  * @typedef Shader
  * @property {WebGLShader} shader
  * @property {string[][]} vars
- *
+ */
+
+/**
  * @typedef Program
  * @property {WebGLProgram} program
  * @property {AttributeLocationMap} aLoc

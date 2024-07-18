@@ -5,9 +5,9 @@ import MoveTool from './move.js';
 import OrbitTool from './orbit.js';
 import ZoomTool from './zoom.js';
 
+/** @typedef {"select"|"line"|"rectangle"|"orbit"|"move"|"zoom"} ToolType */
+
 /**
- * @typedef {"select"|"line"|"rectangle"|"orbit"|"move"|"zoom"} ToolType
- *
  * @typedef Tool
  * @property {ToolType} type
  * @property {string} name

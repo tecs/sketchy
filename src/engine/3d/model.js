@@ -1,4 +1,4 @@
-import Base from '../base.js';
+import Base from '../general/base.js';
 import BoundingBox from './boundingBox.js';
 
 /**
@@ -9,12 +9,11 @@ import BoundingBox from './boundingBox.js';
  * @property {Uint8Array} color
  * @property {Float32Array} lineVertex
  * @property {Uint16Array|Uint32Array} lineIndex
- *
- * @typedef {Record<keyof ModelData, number[]>} PlainModelData
- * @typedef {Record<keyof ModelData, GLBuffer>} ModelBuffers
- *
- * @typedef {import("./submodel").default} SubModel
  */
+
+/** @typedef {Record<keyof ModelData, number[]>} PlainModelData */
+/** @typedef {Record<keyof ModelData, GLBuffer>} ModelBuffers */
+/** @typedef {import("../scene/submodel.js").default} SubInstance */
 
 export default class Model extends Base {
   /** @type {Engine["driver"]} */
