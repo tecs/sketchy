@@ -23,6 +23,7 @@ export default class Ui {
   window;
 
   canvas = $('canvas');
+
   /**
    * @param {HTMLElement} appContainer
    */

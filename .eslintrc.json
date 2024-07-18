@@ -5,7 +5,8 @@
   },
   "extends": [
     "plugin:@typescript-eslint/recommended",
-    "plugin:import/typescript"
+    "plugin:import/typescript",
+    "plugin:jsdoc/recommended-typescript-flavor-error"
   ],
   "globals": {"glMatrix": true},
   "parser": "@typescript-eslint/parser",
@@ -13,7 +14,7 @@
     "ecmaVersion": "latest",
     "sourceType": "module"
   },
-  "plugins": ["@typescript-eslint", "import"],
+  "plugins": ["@typescript-eslint", "import", "jsdoc"],
   "settings": {
     "import/resolver": {
       "node": {
@@ -35,6 +36,9 @@
     "indent": ["error", 2, {"SwitchCase": 1}],
     "import/extensions": ["error", "always"],
     "import/no-cycle": "off",
+    "jsdoc/require-param-description": "off",
+    "jsdoc/require-property-description": "off",
+    "jsdoc/require-returns-description": "off",
     "max-len": ["error", {"code": 120, "ignoreStrings": true}],
     "no-console": "warn",
     "no-empty": "error",

@@ -6,7 +6,9 @@ import $ from './element.js';
  * @property {string} title
  * @property {(id: string) => void} [onClose]
  * @property {HTMLElement[]} contents
- *
+ */
+
+/**
  * @typedef WindowData
  * @property {AddWindowParams["onClose"]} onClose
  * @property  {HTMLElement} ref

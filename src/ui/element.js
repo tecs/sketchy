@@ -12,7 +12,6 @@
  * @param {Opts<T, E>[1]} [attributes]
  * @param {Opts<T2, E>[2]} [children]
  * @returns {HTMLElementTagNameMap[T]}
- *
  */
 const element = (tag, attributes = {}, children = []) => {
   const el = /** @type {HTMLElementTagNameMap[T]} */ (tag instanceof HTMLElement ? tag : document.createElement(tag));
