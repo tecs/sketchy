@@ -1,8 +1,12 @@
+import Body from '../engine/cad/body.js';
+import SubInstance from '../engine/cad/subinstance.js';
+
 /** @type {RenderingPass} */
 export default (engine) => {
   const {
     driver: { ctx, makeProgram, vert, frag, UintIndexArray, UNSIGNED_INDEX_TYPE },
     camera,
+    entities,
     scene,
   } = engine;
 
@@ -42,25 +46,50 @@ export default (engine) => {
     `,
   );
 
+  const boundingBoxIndex = new UintIndexArray([
+    // Bottom
+    0, 1, // BFL - BRL
+    1, 2, // BRL - BRR
+    2, 3, // BRR - BBL
+    3, 0, // BFR - BFL
+    // Top
+    4, 5, // TFL - TRL
+    5, 6, // TRL - TRR
+    6, 7, // TRR - TFR
+    7, 4, // TFR - TFL
+    // Side
+    0, 4, // BFL - TFL
+    1, 5, // BRL - TRL
+    2, 6, // BRR - TRR
+    3, 7, // BFR - TFR
+  ]);
+  const boundingBoxVertexBuffer = ctx.createBuffer();
+  const boundingBoxIndexBuffer = ctx.createBuffer();
+  ctx.bindBuffer(ctx.ELEMENT_ARRAY_BUFFER, boundingBoxIndexBuffer);
+  ctx.bufferData(ctx.ELEMENT_ARRAY_BUFFER, boundingBoxIndex, ctx.STATIC_DRAW);
+
   return {
     program,
     render(draw) {
       if (!draw) return;
 
-      for (const model of scene.models) {
+      const bodies = entities.values(Body);
+      for (const { currentModel: model, instances } of bodies) {
+        if (!model) continue;
+
         ctx.bindBuffer(ctx.ELEMENT_ARRAY_BUFFER, model.buffer.lineIndex);
 
-        ctx.bindBuffer(ctx.ARRAY_BUFFER, model.buffer.lineVertex);
+        ctx.bindBuffer(ctx.ARRAY_BUFFER, model.buffer.vertex);
         ctx.enableVertexAttribArray(program.aLoc.a_position);
         ctx.vertexAttribPointer(program.aLoc.a_position, 3, ctx.FLOAT, false, 0, 0);
 
         ctx.uniformMatrix4fv(program.uLoc.u_viewProjection, false, camera.viewProjection);
 
-        for (const instance of model.instances) {
-          const isSelected = scene.selectedInstance && instance.belongsTo(scene.selectedInstance) ? 1 : 0;
-          const isInShadow = !isSelected && !instance.belongsTo(scene.currentInstance) ? 1 : 0;
+        for (const instance of instances) {
+          const isSelected = scene.selectedInstance && SubInstance.belongsTo(instance, scene.selectedInstance) ? 1 : 0;
+          const isInShadow = !isSelected && !SubInstance.belongsTo(instance, scene.enteredInstance) ? 1 : 0;
 
-          ctx.uniformMatrix4fv(program.uLoc.u_trs, false, instance.globalTrs);
+          ctx.uniformMatrix4fv(program.uLoc.u_trs, false, instance.Placement.trs);
           ctx.uniform1f(program.uLoc.u_isSelected, isSelected);
           ctx.uniform1f(program.uLoc.u_isInShadow, isInShadow);
 
@@ -72,17 +101,17 @@ export default (engine) => {
       }
 
       // Draw bounding box of selected instance
-      if (scene.selectedInstance) {
-        const { model, globalTrs } = scene.selectedInstance;
+      if (scene.selectedInstance?.body.currentModel) {
+        const { body, Placement: { trs } } = scene.selectedInstance;
 
         ctx.bindBuffer(ctx.ELEMENT_ARRAY_BUFFER, boundingBoxIndexBuffer);
 
         ctx.bindBuffer(ctx.ARRAY_BUFFER, boundingBoxVertexBuffer);
-        ctx.bufferData(ctx.ARRAY_BUFFER, model.boundingBox.data, ctx.DYNAMIC_DRAW);
+        ctx.bufferData(ctx.ARRAY_BUFFER, body.BoundingBox.data, ctx.DYNAMIC_DRAW);
         ctx.enableVertexAttribArray(program.aLoc.a_position);
         ctx.vertexAttribPointer(program.aLoc.a_position, 3, ctx.FLOAT, false, 0, 0);
 
-        ctx.uniformMatrix4fv(program.uLoc.u_trs, false, globalTrs);
+        ctx.uniformMatrix4fv(program.uLoc.u_trs, false, trs);
         ctx.uniform1f(program.uLoc.u_isSelected, 1);
         ctx.uniform1f(program.uLoc.u_isInShadow, 0);
 

@@ -6,3 +6,4 @@ type Model = import('./3d/model').default;
 type Instance = import('./scene/instance').default;
 type RenderingPass = import('./renderer').RenderingPass;
 type Engine = import('.').default;
+type Entities = import('./entities').default;

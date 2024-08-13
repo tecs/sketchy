@@ -1,3 +1,5 @@
+import SubInstance from '../cad/subinstance.js';
+
 const { vec3 } = glMatrix;
 
 /** @type {(engine: Engine) => Tool} */
@@ -45,14 +47,16 @@ export default (engine) => {
       emit('scenechange');
     },
     start() {
-      const { selectedInstance, hoveredInstance, currentInstance } = scene;
+      const { selectedInstance, hoveredInstance, enteredInstance } = scene;
 
       let candidateInstance = selectedInstance ?? hoveredInstance;
-      while (candidateInstance?.parent && candidateInstance.parent.instance !== currentInstance) {
-        candidateInstance = candidateInstance.parent.instance;
+      let parent = candidateInstance ? SubInstance.getParent(candidateInstance) : undefined;
+      while (parent && parent.instance !== enteredInstance) {
+        candidateInstance = parent.instance;
+        parent = SubInstance.getParent(candidateInstance);
       }
 
-      if (!candidateInstance?.belongsTo(currentInstance)) return;
+      if (!candidateInstance || !SubInstance.belongsTo(candidateInstance, enteredInstance)) return;
 
       historyAction = history.createAction(`Move instance #${candidateInstance.Id.int}`, {
         instance: candidateInstance,

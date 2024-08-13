@@ -1,3 +1,6 @@
+import Body from '../engine/cad/body.js';
+import SubInstance from '../engine/cad/subinstance.js';
+
 const { mat4 } = glMatrix;
 
 /** @type {RenderingPass} */
@@ -5,6 +8,7 @@ export default (engine) => {
   const {
     driver: { ctx, makeProgram, vert, frag, UNSIGNED_INDEX_TYPE },
     camera,
+    entities,
     scene,
   } = engine;
 
@@ -61,7 +65,9 @@ export default (engine) => {
     render(draw) {
       if (!draw) return;
 
-      for (const model of scene.models) {
+      const bodies = entities.values(Body);
+      for (const { currentModel: model, instances } of bodies) {
+        if (!model) continue;
         ctx.bindBuffer(ctx.ELEMENT_ARRAY_BUFFER, model.buffer.index);
 
         ctx.bindBuffer(ctx.ARRAY_BUFFER, model.buffer.vertex);
@@ -78,15 +84,15 @@ export default (engine) => {
 
         ctx.uniformMatrix4fv(program.uLoc.u_viewProjection, false, camera.viewProjection);
 
-        for (const instance of model.instances) {
-          const isSelected = scene.selectedInstance && instance.belongsTo(scene.selectedInstance) ? 1 : 0;
-          const isInShadow = !isSelected && !instance.belongsTo(scene.currentInstance) ? 1 : 0;
+        for (const instance of instances) {
+          const isSelected = scene.selectedInstance && SubInstance.belongsTo(instance, scene.selectedInstance) ? 1 : 0;
+          const isInShadow = !isSelected && !SubInstance.belongsTo(instance, scene.enteredInstance) ? 1 : 0;
 
-          ctx.uniformMatrix4fv(program.uLoc.u_trs, false, instance.globalTrs);
+          ctx.uniformMatrix4fv(program.uLoc.u_trs, false, instance.Placement.trs);
           ctx.uniform1f(program.uLoc.u_isSelected, isSelected);
           ctx.uniform1f(program.uLoc.u_isInShadow, isInShadow);
 
-          mat4.multiply(normalMvp, camera.world, instance.globalTrs);
+          mat4.multiply(normalMvp, camera.world, instance.Placement.trs);
           mat4.transpose(normalMvp, normalMvp);
           mat4.invert(normalMvp, normalMvp);
           ctx.uniformMatrix4fv(program.uLoc.u_normalMvp, false, normalMvp);

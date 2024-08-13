@@ -1,10 +1,16 @@
-import type { EventType, MergedEvent } from './events-types';
+import type { Event } from './general/events-types';
 
-export type InputEventType = MergedEvent<
-  EventType<'keyup', [key: string]>
-  | EventType<'keydown', [key: string]>
-  | EventType<'mouseup', [button: MouseButton]>
-  | EventType<'mousedown', [button: MouseButton]>
-  | EventType<'mousemove', [current: ReadonlyVec3, delta: ReadonlyVec3, previous: ReadonlyVec3]>
-  | EventType<'mousescroll', [direction: -1 | 1]>
->;
+type MouseMoveEvent = Event<'keyup', [key: string]>;
+type MouseScrollEvent = Event<'keydown', [key: string]>;
+type MouseDownEvent = Event<'mouseup', [button: MouseButton]>;
+type MouseUpEvent = Event<'mousedown', [button: MouseButton]>;
+type KeyDownEvent = Event<'mousemove', [current: ReadonlyVec3, delta: ReadonlyVec3, previous: ReadonlyVec3]>;
+type KeyUpEvent = Event<'mousescroll', [direction: -1 | 1]>;
+
+export type InputEvent =
+  MouseMoveEvent
+  | MouseScrollEvent
+  | MouseDownEvent
+  | MouseUpEvent
+  | KeyDownEvent
+  | KeyUpEvent;

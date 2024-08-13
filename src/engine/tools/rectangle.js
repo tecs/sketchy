@@ -1,27 +1,28 @@
-const { vec3 } = glMatrix;
+import Sketch from '../cad/sketch.js';
+
+const { vec2, vec3, mat4 } = glMatrix;
+
+/**
+ * @typedef RectData
+ * @property {import("../cad/sketch").default} sketch
+ * @property {import("../cad/sketch").LineConstructionElement} lineOriginVertical
+ * @property {import("../cad/sketch").LineConstructionElement} lineOriginHorizontal
+ * @property {import("../cad/sketch").LineConstructionElement} lineCoordVertical
+ * @property {import("../cad/sketch").LineConstructionElement} lineCoordHorizontal
+ */
 
 /** @type {(engine: Engine) => Tool} */
 export default (engine) => {
-  const { driver: { UintIndexArray }, history, scene, emit } = engine;
-
-  /**
-   * @typedef RectData
-   * @property {Model} model
-   * @property {Float32Array} vertices
-   * @property {Float32Array} normals
-   */
+  const { history, scene, emit } = engine;
 
   /** @type {import("../history").HistoryAction<RectData>|undefined} */
   let historyAction;
 
   // cached structures
-  const edge1 = vec3.create();
-  const edge2 = vec3.create();
-  const edge3 = vec3.create();
-  const hovered = vec3.create();
-  const lineIndex = new UintIndexArray([0, 1, 1, 2, 2, 3, 3, 0]);
-  const index = new UintIndexArray([0, 1, 2, 0, 2, 3]);
-  const colors = new Uint8Array([255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255]);
+  const transformation = mat4.create();
+  const origin = vec3.create();
+  const coord = vec3.create();
+  const line = new Float32Array(4);
 
   /** @type {Tool} */
   const rectangle = {
@@ -36,133 +37,122 @@ export default (engine) => {
     get distance() {
       if (!historyAction) return undefined;
 
-      const { vertices } = historyAction.data;
+      const { lineOriginHorizontal, lineOriginVertical } = historyAction.data;
 
-      const v2 = vertices.subarray(3, 6);
-      const v3 = vertices.subarray(9);
-      return [vec3.distance(vertices, v2), vec3.distance(vertices, v3)];
+      line.set(lineOriginHorizontal.data);
+      const d1 = vec2.distance(/** @type {vec2} */ (line), /** @type {vec2} */ (line.subarray(2)));
+
+      line.set(lineOriginVertical.data);
+      const d2 = vec2.distance(/** @type {vec2} */ (line), /** @type {vec2} */ (line.subarray(2)));
+
+      return [d1, d2];
     },
     setDistance([d1, d2]) {
       if (!historyAction) return;
 
-      const { model, vertices } = historyAction.data;
+      const {
+        sketch,
+        lineCoordHorizontal,
+        lineCoordVertical,
+        lineOriginHorizontal,
+        lineOriginVertical,
+      } = historyAction.data;
 
-      const v2 = vertices.subarray(3, 6);
-      const v3 = vertices.subarray(9);
-      vec3.subtract(edge2, v2, vertices);
-      vec3.subtract(edge3, v3, vertices);
-      vec3.normalize(edge2, edge2);
-      vec3.normalize(edge3, edge3);
-      vec3.scale(edge2, edge2, d1);
-      vec3.scale(edge3, edge3, d2);
-      vec3.add(edge2, edge2, vertices);
-      vec3.add(edge3, edge3, vertices);
+      coord[0] = origin[0] + (coord[0] > 0 ? d1 : -d1);
+      coord[1] = origin[1] + (coord[1] > 0 ? d2 : -d2);
 
-      vec3.multiply(edge1, scene.axisNormal, vertices);
+      lineCoordVertical.data[0] = coord[0];
+      lineCoordVertical.data[2] = coord[0];
+      lineCoordHorizontal.data[2] = coord[0];
+      lineOriginHorizontal.data[2] = coord[0];
 
-      const i1 = scene.axisNormal[0] ? 1 : 0;
-      const i2 = i1 ? 2 : scene.axisNormal[1] + 1;
-      edge1[i1] = edge2[i1];
-      edge1[i2] = edge3[i2];
+      lineCoordHorizontal.data[1] = coord[1];
+      lineCoordHorizontal.data[3] = coord[1];
+      lineCoordVertical.data[3] = coord[1];
+      lineOriginVertical.data[3] = coord[1];
 
-      vertices.set(edge1, 6);
-      vertices.set(edge2, 3);
-      vertices.set(edge3, 9);
-
-      model.updateBufferEnd(vertices, 'lineVertex');
-      model.updateBufferEnd(vertices, 'vertex');
+      sketch.update();
 
       this.end();
-      emit('scenechange');
     },
     start() {
-      const { model: currentModel } = scene.currentInstance ?? scene.instanceEmptyModel();
+      const instance = scene.currentInstance;
+      const normal = vec3.create();
+      vec3.transformQuat(normal, scene.axisNormal, instance.Placement.inverseRotation);
 
+      const sketch = instance.body.createStep(Sketch, {
+        attachment: {
+          type: 'plane',
+          normal: /** @type {PlainVec3} */ ([...normal]),
+        },
+      });
+
+      mat4.multiply(transformation, instance.Placement.inverseTrs, sketch.toSketch);
+      vec3.transformMat4(origin, scene.hovered, transformation);
+      vec3.copy(coord, origin);
+
+      const lineOriginHorizontal = Sketch.makeConstructionElement('line', [origin[0], origin[1], origin[0], origin[1]]);
       historyAction = history.createAction('Draw rectangle', {
-        model: currentModel,
-        vertices: new Float32Array(12),
-        normals: new Float32Array(12),
+        sketch,
+        lineOriginHorizontal,
+        lineOriginVertical: Sketch.cloneConstructionElement(lineOriginHorizontal),
+        lineCoordHorizontal: Sketch.cloneConstructionElement(lineOriginHorizontal),
+        lineCoordVertical: Sketch.cloneConstructionElement(lineOriginHorizontal),
       }, () => {
         historyAction = undefined;
         emit('toolinactive', rectangle);
       });
       if (!historyAction) return;
 
-      historyAction.data.vertices.set(scene.hovered);
-      historyAction.data.vertices.set(scene.hovered, 3);
-      historyAction.data.vertices.set(scene.hovered, 6);
-      historyAction.data.vertices.set(scene.hovered, 9);
+      emit('toolactive', rectangle);
 
       historyAction.append(
-        ({ model, vertices, normals }) => {
-          model.appendBufferData(vertices, 'vertex');
-          model.appendBufferData(vertices, 'lineVertex');
-          model.appendBufferData(normals, 'normal');
-          model.appendBufferData(colors, 'color');
-          model.appendBufferData(index, 'index');
-          model.appendBufferData(lineIndex, 'lineIndex');
-          emit('scenechange');
+        (data) => {
+          data.sketch.addElement(data.lineOriginHorizontal);
+          data.sketch.addElement(data.lineOriginVertical);
+          data.sketch.addElement(data.lineCoordHorizontal);
+          data.sketch.addElement(data.lineCoordVertical);
         },
-        ({ model }) => {
-          model.truncateBuffer('vertex', 12);
-          model.truncateBuffer('lineVertex', 12);
-          model.truncateBuffer('normal', 12);
-          model.truncateBuffer('color', 12);
-          model.truncateBuffer('index', 6);
-          model.truncateBuffer('lineIndex', 8);
-          emit('scenechange');
+        (data) => {
+          data.sketch.deleteElement(data.lineOriginHorizontal);
+          data.sketch.deleteElement(data.lineOriginVertical);
+          data.sketch.deleteElement(data.lineCoordHorizontal);
+          data.sketch.deleteElement(data.lineCoordVertical);
         },
       );
-
-      emit('toolactive', rectangle);
     },
     update() {
       if (!historyAction) return;
 
-      const { model, vertices, normals } = historyAction.data;
+      const {
+        sketch,
+        lineCoordHorizontal,
+        lineCoordVertical,
+        lineOriginHorizontal,
+        lineOriginVertical,
+      } = historyAction.data;
 
-      hovered[0] = 1;
-      hovered[1] = 1;
-      hovered[2] = 1;
+      vec3.transformMat4(coord, scene.hovered, transformation);
 
-      vec3.multiply(edge1, scene.axisNormal, vertices);
+      lineCoordVertical.data[0] = coord[0];
+      lineCoordVertical.data[2] = coord[0];
+      lineCoordHorizontal.data[2] = coord[0];
+      lineOriginHorizontal.data[2] = coord[0];
 
-      vec3.subtract(hovered, hovered, scene.axisNormal);
-      vec3.multiply(hovered, hovered, scene.hovered);
-      vec3.add(edge1, edge1, hovered);
+      lineCoordHorizontal.data[1] = coord[1];
+      lineCoordHorizontal.data[3] = coord[1];
+      lineCoordVertical.data[3] = coord[1];
+      lineOriginVertical.data[3] = coord[1];
 
-      vec3.copy(edge2, edge1);
-      vec3.copy(edge3, edge1);
-
-      const i1 = scene.axisNormal[0] ? 1 : 0;
-      const i2 = i1 ? 2 : scene.axisNormal[1] + 1;
-
-      edge2[i2] = vertices[i2];
-      edge3[i1] = vertices[i1];
-
-      vertices.set(edge1, 6);
-      vertices.set(edge2, 3);
-      vertices.set(edge3, 9);
-
-      model.updateBufferEnd(vertices, 'lineVertex');
-      model.updateBufferEnd(vertices, 'vertex');
-
-      normals.set(scene.axisNormal);
-      normals.set(scene.axisNormal, 3);
-      normals.set(scene.axisNormal, 6);
-      normals.set(scene.axisNormal, 9);
-      model.updateBufferEnd(normals, 'normal');
-
-      emit('scenechange');
+      sketch.update();
     },
     end() {
-      if (!this.distance?.every(v => v >= 0.1)) return;
-      historyAction?.commit();
+      if (!historyAction || !this.distance?.every(v => v >= 0.1)) return;
+      historyAction.commit();
     },
     abort() {
-      if (engine.tools.selected.type === 'orbit') return;
-
-      historyAction?.discard();
+      if (!historyAction || engine.tools.selected.type === 'orbit') return;
+      historyAction.discard();
     },
   };
 

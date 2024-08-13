@@ -63,7 +63,33 @@ export const implement = (traits, Base) => {
   };
 };
 
+/**
+ * @template {object} T
+ * @param {T} obj
+ * @param {...(keyof T)} keys
+ */
+export const bindMethods = (obj, ...keys) => {
+  keys.forEach(key => {
+    const descriptor = Object.getOwnPropertyDescriptor(obj, key);
+    if (key === 'constructor' || descriptor?.get) return;
+
+    const prop = obj[key];
+    if (typeof prop === 'function') obj[key] = prop.bind(obj);
+  });
+};
+
+/** @typedef {import("./events-types").AnyEvent} AnyEvent */
+
+/**
+ * @template {AnyEvent} [Events=never]
+ */
 export default class Base {
+  /** @typedef {import("./events-types").BasedEvents<Events>} Event */
+  /** @typedef {{ event: string, handler: Event[string]["callback"], once: boolean }} EventHandlerData */
+
+  /** @type {EventHandlerData[]} */
+  #handlers = [];
+
   /**
    * @template {Mapping} T
    * @param {T} traits
@@ -74,14 +100,17 @@ export default class Base {
   }
 
   constructor() {
-    /** @type {(keyof this)[]} */ (Object.getOwnPropertyNames(Object.getPrototypeOf(this)))
-      .forEach(key => {
-        const descriptor = Object.getOwnPropertyDescriptor(Object.getPrototypeOf(this), key);
-        if (key === 'constructor' || descriptor?.get) return;
+    bindMethods(this, 'emit', 'on');
+  }
 
-        const prop = this[key];
-        if (typeof prop === 'function') this[key] = prop.bind(this);
-      });
+  /**
+   * @param {EventHandlerData[]} handlersToRemove
+   */
+  #removeHandlers(handlersToRemove) {
+    for (const handler of handlersToRemove) {
+      const index = this.#handlers.indexOf(handler);
+      this.#handlers.splice(index, 1);
+    }
   }
 
   /**
@@ -94,5 +123,67 @@ export default class Base {
       throw new Error(`Property "${String(key)}" uninitialized`);
     }
     return this[key];
+  }
+
+  /**
+   * @template {keyof Event} T
+   * @param {T} event
+   * @param {Event[T]["callback"]} handler
+   * @param {boolean} [once]
+   */
+  on(event, handler, once = false) {
+    this.#handlers.push({ event, handler, once });
+  }
+
+  /**
+   * @template {keyof Event} T
+   * @param {T} event
+   * @param {Event[T]["params"]} args
+   */
+  emit(event, ...args) {
+    /** @type {EventHandlerData[]} */
+    const handlersToRemove = [];
+
+    for (const handler of this.#handlers) {
+      if (handler.event !== event) continue;
+      try {
+        handler.handler(.../** @type {Parameters<Event[T]["callback"]>} */ (args));
+      } catch (e) {
+        // avoid infinite recursion
+        if (event === 'error') {
+          const error = new Error('fatal error');
+          error.stack = [
+            'fatal error',
+            `Original Error: ${args[0]} ${/** @type {Error} */ (args[1])?.stack ?? args[1]}`,
+            `Caused error inside error handler: ${/** @type {Error} */ (e)?.stack ?? e}`,
+            `Caused ${error.stack}`,
+          ].join('\n\n');
+          throw error;
+        }
+        this.emit('error', `Caught inside handler for "${event}":`, e);
+      }
+      if (handler.once) handlersToRemove.push(handler);
+    }
+
+    if (handlersToRemove.length) this.#removeHandlers(handlersToRemove);
+  }
+
+  /**
+   * @template {keyof Event} T
+   * @param {T} event
+   * @param {Event[T]["callback"]} handler
+   */
+  off(event, handler) {
+    const handlersToRemove = this.#handlers.filter(h => h.event === event && h.handler === handler);
+    if (handlersToRemove.length) this.#removeHandlers(handlersToRemove);
+  }
+
+  /**
+   * @template {keyof Event} T
+   * @param {T} event
+   * @returns {Event[T]["handler"][]}
+   */
+  list(event) {
+    return this.#handlers.filter(h => h.event === event).map(h => h.handler);
   }
 }

@@ -1,10 +1,6 @@
-import { Setting, BooleanSetting, NumberSetting, StringSetting } from './config.js';
-import type { EventType, MergedEvent } from './events-types';
+import { Setting } from './config.js';
+import type { Event } from './general/events-types';
 
-type SettingEventType<T extends Setting> = EventType<'settingchange', [setting: T, current: T['value'], previous: T['value']]>;
+type SettingChangeEvent = Event<'settingchange', [setting: Setting, current: Setting['value'], previous: Setting['value']]>;
 
-export type ConfigEvent = MergedEvent<
-  SettingEventType<BooleanSetting>
-  | SettingEventType<StringSetting>
-  | SettingEventType<NumberSetting>
->;
+export type ConfigEvent = SettingChangeEvent;

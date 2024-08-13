@@ -1,8 +1,11 @@
+import Body from '../engine/cad/body.js';
+
 /** @type {RenderingPass} */
 export default (engine) => {
   const {
     driver: { ctx, makeProgram, vert, frag, UNSIGNED_INDEX_TYPE },
     camera,
+    entities,
     scene,
     tools,
   } = engine;
@@ -66,9 +69,10 @@ export default (engine) => {
       // Geometry
       ctx.uniform1f(program.uLoc.u_isLine, 0);
 
-      for (const model of scene.models) {
+      const bodies = entities.values(Body);
+      for (const { currentModel: model, instances } of bodies) {
         // Prevent self-picking when editing
-        if (drawing && scene.currentInstance?.model === model) continue;
+        if (!model || (drawing && scene.currentInstance.body.currentModel === model)) continue;
 
         ctx.bindBuffer(ctx.ELEMENT_ARRAY_BUFFER, model.buffer.index);
 
@@ -78,8 +82,8 @@ export default (engine) => {
 
         ctx.uniformMatrix4fv(program.uLoc.u_viewProjection, false, camera.frustum);
 
-        for (const instance of model.instances) {
-          ctx.uniformMatrix4fv(program.uLoc.u_trs, false, instance.globalTrs);
+        for (const instance of instances) {
+          ctx.uniformMatrix4fv(program.uLoc.u_trs, false, instance.Placement.trs);
           ctx.uniform4fv(program.uLoc.u_instanceId, instance.Id.vec4);
 
           ctx.drawElements(ctx.TRIANGLES, model.data.index.length, UNSIGNED_INDEX_TYPE, 0);
@@ -90,20 +94,20 @@ export default (engine) => {
       ctx.uniform1f(program.uLoc.u_isLine, 1);
 
       ctx.lineWidth(5);
-      for (const model of scene.models) {
+      for (const { currentModel: model, instances } of bodies) {
         // Prevent self-picking when editing
-        if (drawing && scene.currentInstance?.model === model) continue;
+        if (!model || (drawing && scene.currentInstance.body.currentModel === model)) continue;
 
         ctx.bindBuffer(ctx.ELEMENT_ARRAY_BUFFER, model.buffer.lineIndex);
 
-        ctx.bindBuffer(ctx.ARRAY_BUFFER, model.buffer.lineVertex);
+        ctx.bindBuffer(ctx.ARRAY_BUFFER, model.buffer.vertex);
         ctx.enableVertexAttribArray(program.aLoc.a_position);
         ctx.vertexAttribPointer(program.aLoc.a_position, 3, ctx.FLOAT, false, 0, 0);
 
         ctx.uniformMatrix4fv(program.uLoc.u_viewProjection, false, camera.frustum);
 
-        for (const instance of model.instances) {
-          ctx.uniformMatrix4fv(program.uLoc.u_trs, false, instance.globalTrs);
+        for (const instance of instances) {
+          ctx.uniformMatrix4fv(program.uLoc.u_trs, false, instance.Placement.trs);
           ctx.uniform4fv(program.uLoc.u_instanceId, instance.Id.vec4);
 
           ctx.drawElements(ctx.LINES, model.data.lineIndex.length, UNSIGNED_INDEX_TYPE, 0);

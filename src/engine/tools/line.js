@@ -1,24 +1,29 @@
-const { vec3 } = glMatrix;
+import Sketch from '../cad/sketch.js';
+
+const { vec3, mat4 } = glMatrix;
+
+/** @typedef {import("../cad/sketch").LineConstructionElement} Line */
+
+/**
+ * @typedef LineData
+ * @property {Sketch} sketch
+ * @property {Line} line
+ */
 
 /** @type {(engine: Engine) => Tool} */
 export default (engine) => {
-  const { driver: { UintIndexArray }, history, scene, emit } = engine;
-
-  /**
-   * @typedef LineData
-   * @property {Model} model
-   * @property {vec3} origin
-   * @property {vec3} coord
-   */
+  const { history, scene, emit } = engine;
 
   /** @type {import("../history").HistoryAction<LineData>|undefined} */
   let historyAction;
 
   // cached structures
-  const lineIndex = new UintIndexArray([0, 1]);
+  const transformation = mat4.create();
+  const origin = vec3.create();
+  const coord = vec3.create();
 
-  /** @type {Omit<Tool, 'start'> & { start: (startCoord?: vec3, currentModel? : Model) => void }} */
-  const line = {
+  /** @type {Omit<Tool, "start"> & { start: (sketch?: Sketch) => void }} */
+  const lineTool = {
     type: 'line',
     name: 'Line/Arc',
     shortcut: 'l',
@@ -28,68 +33,74 @@ export default (engine) => {
       return !!historyAction;
     },
     get distance() {
-      return historyAction ? [vec3.distance(historyAction.data.origin, historyAction.data.coord)] : undefined;
+      return historyAction ? [vec3.distance(origin, coord)] : undefined;
     },
     setDistance([distance]) {
       if (!historyAction) return;
-      const { model, coord, origin } = historyAction.data;
+      const { sketch, line } = historyAction.data;
 
-      vec3.subtract(coord, origin, scene.hovered);
+      vec3.subtract(coord, origin, coord);
       vec3.normalize(coord, coord);
       vec3.scale(coord, coord, -distance);
       vec3.add(coord, coord, origin);
 
-      model.updateBufferEnd(coord, 'lineVertex');
-      emit('scenechange');
+      line.data[2] = coord[0];
+      line.data[3] = coord[1];
+      sketch.update();
 
       this.end();
     },
-    start(startCoord = scene.hovered, currentModel = undefined) {
-      currentModel ??= scene.currentInstance?.model ?? scene.instanceEmptyModel().model;
+    start(sketch) {
+      if (!sketch) {
+        const instance = scene.enteredInstance ?? scene.hoveredInstance ?? scene.currentInstance;
+        const normal = vec3.create();
+        vec3.transformQuat(normal, scene.axisNormal, instance.Placement.inverseRotation);
+        sketch = instance.body.createStep(Sketch, {
+          attachment: {
+            type: 'plane',
+            normal: /** @type {PlainVec3} */ ([...normal]),
+          },
+        });
+
+        mat4.multiply(transformation, instance.Placement.inverseTrs, sketch.toSketch);
+        vec3.transformMat4(origin, scene.hovered, transformation);
+        vec3.copy(coord, origin);
+      }
 
       historyAction = history.createAction('Draw line segment', {
-        origin: vec3.clone(startCoord),
-        coord: vec3.clone(startCoord),
-        model: currentModel,
+        sketch,
+        line: Sketch.makeConstructionElement('line', [origin[0], origin[1], origin[0], origin[1]]),
       }, () => {
         historyAction = undefined;
-        emit('toolinactive', line);
+        emit('toolinactive', lineTool);
       });
       if (!historyAction) return;
 
-      emit('toolactive', line);
+      emit('toolactive', lineTool);
 
       historyAction.append(
-        ({ origin, coord, model }) => {
-          model.appendBufferData(origin, 'lineVertex');
-          model.appendBufferData(coord, 'lineVertex');
-          model.appendBufferData(lineIndex, 'lineIndex');
-          emit('scenechange');
-        },
-        ({ model }) => {
-          model.truncateBuffer('lineVertex', 6);
-          model.truncateBuffer('lineIndex', 2);
-          emit('scenechange');
-        },
+        (data) => data.sketch.addElement(data.line),
+        (data) => data.sketch.deleteElement(data.line),
       );
     },
     update() {
       if (!historyAction) return;
-      const { model, coord } = historyAction.data;
+      const { sketch, line } = historyAction.data;
 
-      vec3.multiply(coord, scene.axisNormal, model.data.lineVertex);
-      vec3.add(coord, coord, scene.hovered);
+      vec3.transformMat4(coord, scene.hovered, transformation);
 
-      model.updateBufferEnd(coord, 'lineVertex');
-
-      emit('scenechange');
+      line.data[2] = coord[0];
+      line.data[3] = coord[1];
+      sketch.update();
     },
     end() {
       if (!historyAction || !this.distance?.every(v => v >= 0.1)) return;
 
-      const { coord, model } = historyAction.data;
+      const { sketch } = historyAction.data;
+
       historyAction.commit();
-      this.start(coord, model);
+      vec3.copy(origin, coord);
+      this.start(sketch);
     },
     abort() {
       if (engine.tools.selected.type === 'orbit') return;
@@ -98,5 +109,5 @@ export default (engine) => {
     },
   };
 
-  return line;
+  return lineTool;
 };

@@ -1,3 +1,5 @@
+import SubInstance from '../cad/subinstance.js';
+
 /** @type {(engine: Engine) => Tool} */
 export default (engine) => {
   const { config, scene } = engine;
@@ -19,32 +21,34 @@ export default (engine) => {
       const doubleClicked = now - lastClick < doubleClickDelay.value;
       lastClick = now;
 
-      const { currentInstance } = scene;
-      let clickedInstance = scene.hoveredInstance;
-      while (clickedInstance && clickedInstance !== currentInstance && clickedInstance.parent !== currentInstance) {
-        clickedInstance = clickedInstance.parent;
+      const { enteredInstance, selectedInstance } = scene;
+      let clicked = scene.hoveredInstance;
+      let parent = clicked ? SubInstance.getParent(clicked) : undefined;
+      while (clicked && clicked !== enteredInstance && (parent?.instance ?? null) !== enteredInstance) {
+        clicked = parent?.instance ?? null;
+        parent = clicked ? SubInstance.getParent(clicked) : undefined;
       }
 
-      if (doubleClicked && clickedInstance === scene.selectedInstance) {
+      if (doubleClicked && clicked === selectedInstance) {
         scene.setSelectedInstance(null);
-        scene.setCurrentInstance(clickedInstance);
+        scene.setEnteredInstance(clicked);
         return;
       }
-      if (scene.selectedInstance && clickedInstance === scene.selectedInstance) return;
-      const clickedOwn = clickedInstance?.belongsTo(currentInstance);
+      if (selectedInstance && clicked === selectedInstance) return;
+      const clickedOwn = SubInstance.belongsTo(clicked, enteredInstance);
 
-      if (clickedInstance === currentInstance) scene.setSelectedInstance(null);
-      else if (clickedOwn) scene.setSelectedInstance(clickedInstance);
-      else if (scene.selectedInstance) scene.setSelectedInstance(null);
-      else scene.setCurrentInstance(currentInstance?.parent ?? null);
+      if (clicked === enteredInstance) scene.setSelectedInstance(null);
+      else if (clickedOwn) scene.setSelectedInstance(clicked);
+      else if (selectedInstance) scene.setSelectedInstance(null);
+      else scene.setEnteredInstance(enteredInstance ? SubInstance.getParent(enteredInstance)?.instance ?? null : null);
     },
     abort() {
       if (engine.tools.selected !== this) return;
 
       if (scene.selectedInstance) {
         scene.setSelectedInstance(null);
-      } else if (scene.currentInstance) {
-        scene.setCurrentInstance(scene.currentInstance.parent ?? null);
+      } else if (scene.enteredInstance) {
+        scene.setEnteredInstance(SubInstance.getParent(scene.enteredInstance)?.instance ?? null);
       }
     },
   };

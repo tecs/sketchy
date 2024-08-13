@@ -1,35 +1,26 @@
-import Model from './model.js';
-import SubModel from './submodel.js';
-import Id from '../Id.js';
+import Instance from './instance.js';
+import Base from '../general/base.js';
+import Id from '../general/id.js';
+import Body from '../cad/body.js';
+import SubInstance from '../cad/subinstance.js';
 
-const { vec3, mat4 } = glMatrix;
+const { vec3 } = glMatrix;
 
 /**
- * @typedef SubModelState
- * @property {string} name
- * @property {number[]} trs
- *
- * @typedef ModelState
- * @property {string} name
- * @property {import('./model.js').PlainModelData} data
- * @property {SubModelState[]} children
- *
  * @typedef SceneState
- * @property {ModelState[]} models
+ * @property {import("../cad/body.js").BodyState[]} bodies
+ * @property {import("./instance.js").InstanceState[]} instances
  */
 
-export default class Scene {
+export default class Scene extends Base {
   /** @type {Engine} */
   #engine;
 
-  /** @type {Map<number, Instance>} */
-  #instanceById = new Map();
-
-  /** @type {Model[]} */
-  models = [];
+  /** @type {Instance} */
+  currentInstance;
 
   /** @type {Instance | null} */
-  currentInstance = null;
+  enteredInstance = null;
 
   /** @type {Instance | null} */
   selectedInstance = null;
@@ -46,9 +37,13 @@ export default class Scene {
    * @param {Engine} engine
    */
   constructor(engine) {
+    super();
+
     this.#engine = engine;
 
     this.reset();
+
+    this.currentInstance = this.assertProperty('currentInstance');
 
     engine.on('mousedown', (button) => {
       if (button === 'left' && !engine.tools.selected.active) engine.tools.selected.start();
@@ -71,17 +66,63 @@ export default class Scene {
       else if (key.toLowerCase() === 'z' && engine.input.ctrl && engine.input.shift) engine.history.redo();
       else if (key === 'z' && engine.input.ctrl) engine.history.undo();
     });
+    engine.on('entityadded', (entity) => {
+      if (entity instanceof Instance) {
+        this.#engine.emit('scenechange');
+      }
+    });
+    engine.on('entityremoved', (entity) => {
+      if (!(entity instanceof Instance)) return;
+
+      if (SubInstance.belongsTo(this.selectedInstance, entity)) {
+        this.setSelectedInstance(null);
+      }
+
+      if (SubInstance.belongsTo(this.enteredInstance, entity)) {
+        this.setEnteredInstance(SubInstance.getParent(entity)?.instance ?? null);
+      }
+
+      if (SubInstance.belongsTo(this.currentInstance, entity)) {
+        const parent = SubInstance.getParent(this.currentInstance)?.instance;
+        if (parent) {
+          this.setCurrentInstance(parent);
+        } else {
+          this.#autoSetCurrentInstance();
+        }
+      }
+
+      this.#engine.emit('scenechange');
+    });
   }
 
-  reset() {
-    this.#instanceById.clear();
-    this.models.splice(0);
+  #autoSetCurrentInstance() {
+    const bodies = this.#engine.entities.values(Body);
+    if (bodies.some(({ instances }) => instances.includes(this.currentInstance))) return;
+
+    for (const body of bodies) {
+      if (body.instances.length) {
+        this.setCurrentInstance(body.instances[0]);
+        return;
+      }
+    }
+
+    const newBody = this.createBody();
+    this.setCurrentInstance(newBody.instantiate());
+  }
+
+  /**
+   * @param {boolean} [shouldInstantiateEmptyBody]
+   */
+  reset(shouldInstantiateEmptyBody = true) {
+    this.#engine.entities.clear();
 
     vec3.set(this.axisNormal, 0, 1, 0);
     vec3.zero(this.hovered);
     vec3.zero(this.hoveredView);
 
-    this.currentInstance = null;
+    if (shouldInstantiateEmptyBody) this.#autoSetCurrentInstance();
+
+    this.enteredInstance = null;
     this.selectedInstance = null;
     this.hoveredInstance = null;
 
@@ -90,40 +131,13 @@ export default class Scene {
   }
 
   /**
-   * @param {Model} model
-   * @param {Readonly<mat4>} trs
-   * @returns {Instance}
+   * @param {Partial<import("../cad/body.js").BodyState>} [state]
+   * @returns {Body}
    */
-  instanceModel(model, trs) {
-    if (this.currentInstance && model.getAllModels().includes(this.currentInstance.model)) {
-      const message = 'Cannot add model to itself';
-      this.#engine.emit('usererror', message);
-      throw new Error(message);
-    }
-
-    if (!this.models.includes(model)) {
-      this.models.push(model);
-    }
-
-    const subModel = new SubModel(model, trs);
-    const instances = this.currentInstance?.model.adopt(subModel) ?? subModel.instantiate(null);
-
-    let index = -1;
-    for (let i = 0; i < instances.length; ++i) {
-      this.#instanceById.set(instances[i].Id.int, instances[i]);
-      if (instances[i].parent === this.currentInstance) index = i;
-    }
-
-    this.#engine.emit('scenechange');
-
-    return instances[index];
-  }
-
-  /**
-   * @returns {Instance}
-   */
-  instanceEmptyModel() {
-    return this.instanceModel(new Model('', {}, this.#engine), mat4.create());
+  createBody(state) {
+    const body = new Body(this.#engine, state);
+    this.#engine.entities.set(body);
+    return body;
   }
 
   /**
@@ -132,35 +146,24 @@ export default class Scene {
   deleteInstance(instance) {
     if (!instance) return;
 
-    const { parent, subModel } = instance;
+    const entity = SubInstance.getParent(instance)?.subInstance ?? instance;
+    const body = entity.body;
+
     const action = this.#engine.history.createAction(
-      `Delete instance #${instance.Id.int} from model "${parent?.model.name ?? '[[root]]'}"`,
-      {
-        instances: /** @type {Instance[]} */ ([]),
-      },
+      `Delete instance of "${instance.body.name}"${entity instanceof SubInstance ? ` from "${body.name}"` : ''}`,
+      { entity },
     );
     if (!action) return;
 
     action.append(
       (data) => {
-        data.instances = parent?.model.disown(subModel) ?? subModel.cleanup(null);
-        for (const deletedInstance of data.instances) {
-          if (this.selectedInstance === deletedInstance) {
-            this.setSelectedInstance(null);
-          }
-          this.#instanceById.delete(deletedInstance.Id.int);
-        }
-
-        this.#engine.emit('scenechange');
+        if (data.entity instanceof SubInstance) body.removeStep(data.entity);
+        else body.uninstantiate(data.entity);
       },
-      ({ instances }) => {
-        if (parent) parent?.model.adopt(subModel, instances.slice());
-        else subModel.instantiate(null, instances.slice());
-        for (const restoredInstance of instances) {
-          this.#instanceById.set(restoredInstance.Id.int, restoredInstance);
-        }
-
-        this.#engine.emit('scenechange');
+      (data) => {
+        data.entity = data.entity instanceof SubInstance
+          ? body.createStep(SubInstance, data.entity.State.export().data)
+          : body.instantiate(data.entity.State.export());
       },
     );
     action.commit();
@@ -178,7 +181,7 @@ export default class Scene {
   }
 
   /**
-   * @param {Instance | null} newInstance
+   * @param {Instance} newInstance
    */
   setCurrentInstance(newInstance) {
     if (newInstance !== this.currentInstance) {
@@ -189,13 +192,26 @@ export default class Scene {
   }
 
   /**
+   * @param {Instance | null} newInstance
+   */
+  setEnteredInstance(newInstance) {
+    if (newInstance !== this.enteredInstance) {
+      const previous = this.enteredInstance;
+      this.enteredInstance = newInstance;
+      this.#engine.emit('currentchange', newInstance, previous);
+    }
+
+    if (newInstance) this.setCurrentInstance(newInstance);
+  }
+
+  /**
    * @param {Readonly<Uint8Array>} id4u
    */
   hoverOver(id4u) {
     const id = Id.uuuuToInt(id4u);
     if ((!id && !this.hoveredInstance) || id === this.hoveredInstance?.Id.int) return;
 
-    this.hoveredInstance = id ? this.#engine.entities.getByType(Instance, id) ?? null : null;
+    this.hoveredInstance = id ? this.#engine.entities.getFirstByTypeAndIntId(Instance, id) ?? null : null;
   }
 
   /**
@@ -219,24 +235,26 @@ export default class Scene {
    * @returns {string}
    */
   export() {
+    /** @type {Body[]} */
+    const orderedBodies = [];
+    const bodies = this.#engine.entities.values(Body);
+
+    /**
+     * @param {Body} body
+     */
+    const addBody = (body) => {
+      if (orderedBodies.includes(body)) return;
+      body.listSteps(SubInstance).forEach(({ subBody }) => addBody(subBody));
+      orderedBodies.push(body);
+    };
+
+    bodies.forEach(addBody);
+
     /** @type {SceneState} */
     const state = {
-      models: this.models.map(model => ({
-        name: model.name,
-        data: {
-          vertex: [...model.data.vertex],
-          lineVertex: [...model.data.lineVertex],
-          normal: [...model.data.normal],
-          color: [...model.data.color],
-          index: [...model.data.index],
-          lineIndex: [...model.data.lineIndex],
-          boundingBoxVertex: [...model.data.boundingBoxVertex],
-        },
-        children: model.subModels.map(subModel => ({
-          name: subModel.model.name,
-          trs: [...subModel.trs],
-        })),
-      })),
+      bodies: orderedBodies.map(body => body.State.export()),
+      instances: this.#engine.entities.values(Instance)
+        .filter(instance => !SubInstance.getParent(instance)).map(instance => instance.State.export()),
     };
 
     return JSON.stringify(state);
@@ -249,23 +267,20 @@ export default class Scene {
     /** @type {SceneState} */
     const state = JSON.parse(sceneData);
 
-    this.reset();
+    this.reset(false);
 
-    /** @type {Record<string, Model>} */
-    const models = {};
+    /** @type {Record<string, Body>} */
+    const bodies = {};
 
-    for (const { name, data } of state.models) {
-      models[name] = new Model(name, data, this.#engine);
+    for (const bodyState of state.bodies) {
+      bodies[bodyState.id] = this.createBody(bodyState);
     }
 
-    for (const modelState of state.models) {
-      this.setCurrentInstance(models[modelState.name].instances[0]);
-      for (const child of modelState.children) {
-        this.instanceModel(models[child.name], new Float32Array(child.trs));
-      }
+    for (const instance of state.instances) {
+      bodies[instance.bodyId].instantiate(instance);
     }
 
-    this.setCurrentInstance(null);
+    this.#autoSetCurrentInstance();
     this.#engine.emit('scenechange');
   }
 }

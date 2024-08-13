@@ -1,4 +1,4 @@
-import Base from './general/base.js';
+import Base, { bindMethods } from './general/base.js';
 
 const { vec3 } = glMatrix;
 
@@ -46,6 +46,8 @@ export default class Driver extends Base {
    */
   constructor(engine, canvas) {
     super();
+
+    bindMethods(this, 'vert', 'frag', 'makeProgram');
 
     this.#engine = engine;
     this.canvas = canvas;

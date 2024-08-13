@@ -67,26 +67,35 @@ export default (engine) => {
     vec3.fromValues(0, -1, 0),
     vec3.fromValues(0, 0, -1),
   ];
+  const tempNormal = vec3.create();
 
   return {
     program,
     render(_, extract) {
       if (!extract || tools.isActive('orbit')) return;
 
-      if (!scene.hoveredInstance) {
+      const model = scene.hoveredInstance?.body.currentModel;
 
+      if (!model) {
+        const { axisNormal, currentInstance: { Placement: placement }} = scene;
+        const { eye, eyeNormal } = camera;
         let dot = 0;
-        let normal = scene.axisNormal;
+        let normal = axisNormal;
+        vec3.transformQuat(tempNormal, camera.eyeNormal, placement.inverseRotation);
         for (const plane of planes) {
-          const planeDot = vec3.dot(camera.eyeNormal, plane);
-          if (dot >= planeDot) continue;
+          const planeDot = vec3.dot(tempNormal, plane);
+          if (planeDot >= dot) continue;
           dot = planeDot;
           normal = plane;
         }
-        scene.setAxis(normal);
+        if (normal !== axisNormal) {
+          vec3.transformQuat(tempNormal, normal, placement.rotation);
+          scene.setAxis(tempNormal);
+        }
 
-        const distanceToPlane = -vec3.dot(normal, camera.eye) / dot;
-        vec3.scaleAndAdd(coords, camera.eye, camera.eyeNormal, distanceToPlane);
+        const offsetAlongPlaneNormal = vec3.dot(placement.translation, axisNormal);
+        const distanceToPlane = -(vec3.dot(axisNormal, eye) - offsetAlongPlaneNormal) / dot;
+        vec3.scaleAndAdd(coords, eye, eyeNormal, distanceToPlane);
         scene.hover(coords);
         return;
       }
@@ -95,17 +104,16 @@ export default (engine) => {
       ctx.clear(ctx.COLOR_BUFFER_BIT | ctx.DEPTH_BUFFER_BIT);
 
       ctx.enableVertexAttribArray(program.aLoc.a_position);
-      ctx.uniformMatrix4fv(program.uLoc.u_trs, false, scene.hoveredInstance.globalTrs);
+      ctx.uniformMatrix4fv(program.uLoc.u_trs, false, scene.hoveredInstance.Placement.trs);
       ctx.uniformMatrix4fv(program.uLoc.u_viewProjection, false, camera.viewProjection);
       ctx.uniformMatrix4fv(program.uLoc.u_frustum, false, camera.frustum);
 
-      const { model } = scene.hoveredInstance;
       ctx.bindBuffer(ctx.ARRAY_BUFFER, model.buffer.vertex);
       ctx.vertexAttribPointer(program.aLoc.a_position, 3, ctx.FLOAT, false, 0, 0);
       ctx.bindBuffer(ctx.ELEMENT_ARRAY_BUFFER, model.buffer.index);
       ctx.drawElements(ctx.TRIANGLES, model.data.index.length, UNSIGNED_INDEX_TYPE, 0);
 
-      ctx.bindBuffer(ctx.ARRAY_BUFFER, model.buffer.lineVertex);
+      ctx.bindBuffer(ctx.ARRAY_BUFFER, model.buffer.vertex);
       ctx.vertexAttribPointer(program.aLoc.a_position, 3, ctx.FLOAT, false, 0, 0);
       ctx.bindBuffer(ctx.ELEMENT_ARRAY_BUFFER, model.buffer.lineIndex);
       ctx.lineWidth(5);

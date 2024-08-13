@@ -1,5 +1,6 @@
 import Base from './general/base.js';
 
+import Entities from './entities.js';
 import Config from './config.js';
 import History from './history.js';
 import Driver from './driver.js';
@@ -16,12 +17,27 @@ import renderLines from '../passes/lines.js';
 import extractId from '../passes/extractId.js';
 import extractPosition from '../passes/extractPosition.js';
 
-/** @typedef {import('./events-types').EngineEvent} EngineEvent */
-/** @typedef {{ event: EngineEvent["type"], handler: Function, once: boolean }} EventHandlerData */
+import Body from './cad/body.js';
+import Sketch from './cad/sketch.js';
+import SubInstance from './cad/subinstance.js';
 
+/** @typedef {import("./3d/bounding-box-types").BoundingBoxEvent} BoundingBoxEv */
+/** @typedef {import("./3d/camera-types").CameraEvent} CameraEv */
+/** @typedef {import("./config-types").ConfigEvent} ConfigEv */
+/** @typedef {import("./entities-types").EntitiesEvent} EntitiesEv */
+/** @typedef {import("./history-types").HistoryEvent} HistoryEv */
+/** @typedef {import("./input-types").InputEvent} InputEv */
+/** @typedef {import("./scene/types").SceneEvent} SceneEv */
+/** @typedef {import("./tools/types").ToolEvent} ToolEv */
+/** @typedef {import('./scene/intance-types.js').InstanceEvent} InstanceEv */
+/** @typedef {BoundingBoxEv|CameraEv|ConfigEv|EntitiesEv|HistoryEv|InputEv|SceneEv|ToolEv|InstanceEv} EngineEvent */
+
+/**
+ * @augments Base<EngineEvent>
+ */
 export default class Engine extends Base {
-  /** @type {EventHandlerData[]} */
-  #handlers = [];
+  /** @type {Readonly<Entities>} */
+  entities;
 
   /** @type {Readonly<Config>} */
   config;
@@ -53,6 +69,7 @@ export default class Engine extends Base {
   constructor(canvas) {
     super();
 
+    this.entities = new Entities(this);
     this.config = new Config(this);
     this.driver = new Driver(this, canvas);
     this.history = new History(this);
@@ -68,66 +85,8 @@ export default class Engine extends Base {
     this.renderer.addToPipeline(extractId);
     this.renderer.addToPipeline(extractPosition);
     this.renderer.addToPipeline(renderAxis);
-  }
 
-  /**
-   * @param {EventHandlerData[]} handlersToRemove
-   */
-  #removeHandlers(handlersToRemove) {
-    for (const handler of handlersToRemove) {
-      const index = this.#handlers.indexOf(handler);
-      this.#handlers.splice(index, 1);
-    }
-  }
-
-  /** @type {EngineEvent["handler"]} */
-  on = (event, handler, once = false) => {
-    this.#handlers.push({ event, handler, once });
-  };
-
-  /** @type {EngineEvent["emitter"]} */
-  emit = (event, ...args) => {
-    /** @type {EventHandlerData[]} */
-    const handlersToRemove = [];
-
-    for (const handler of this.#handlers) {
-      if (handler.event !== event) continue;
-      try {
-        handler.handler(...args);
-      } catch (e) {
-        // avoid infinite recursion
-        if (event === 'error') {
-          const error = new Error('fatal error');
-          error.stack = [
-            'fatal error',
-            `Original Error: ${args[0]} ${/** @type {Error} */ (args[1])?.stack ?? args[1]}`,
-            `Caused error inside error handler: ${/** @type {Error} */ (e)?.stack ?? e}`,
-            `Caused ${error.stack}`,
-          ].join('\n\n');
-          throw error;
-        }
-        this.emit('error', `Caught inside handler for "${event}":`, e);
-      }
-      if (handler.once) handlersToRemove.push(handler);
-    }
-
-    if (handlersToRemove.length) this.#removeHandlers(handlersToRemove);
-  };
-
-  /**
-   * @param {EngineEvent["type"]} event
-   * @param {Function} handler
-   */
-  off(event, handler) {
-    const handlersToRemove = this.#handlers.filter(h => h.event === event && h.handler === handler);
-    if (handlersToRemove.length) this.#removeHandlers(handlersToRemove);
-  }
-
-  /**
-   * @param {EngineEvent["type"]} event
-   * @returns {Function[]}
-   */
-  list(event) {
-    return this.#handlers.filter(h => h.event === event).map(h => h.handler);
+    Body.registerStep(Sketch, this);
+    Body.registerStep(SubInstance, this);
   }
 }

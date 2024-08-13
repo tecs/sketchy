@@ -1,6 +1,6 @@
-import type { EventType, MergedEvent } from '../events-types';
+import type { Event } from '../general/events-types';
 
-export type CameraEvent = MergedEvent<
-  EventType<'viewportresize', [current: ReadonlyVec3, previous: ReadonlyVec3]>
-  | EventType<'camerachange', []>
->;
+type ViewportResizeEvent = Event<'viewportresize', [current: ReadonlyVec3, previous: ReadonlyVec3]>;
+type CameraChangeEvent = Event<'camerachange', []>;
+
+export type CameraEvent = ViewportResizeEvent | CameraChangeEvent;

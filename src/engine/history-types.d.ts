@@ -1,3 +1,3 @@
-import type { EventType } from './events-types';
+import type { Event } from './general/events-types';
 
-export type HistoryEvent = EventType<'historychange', []>;
+export type HistoryEvent = Event<'historychange', []>;

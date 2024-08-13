@@ -1,101 +1,78 @@
 import { implement } from '../general/base.js';
 import Id from '../general/id.js';
+import State from '../general/state.js';
+import Placement, { defaultTrs } from '../3d/placement.js';
 
-const { mat4, vec3 } = glMatrix;
+/** @typedef {import("../cad/body").default} Body */
 
-// cached structures
-const origin = vec3.create();
-const relative = vec3.create();
-const translate = mat4.create();
+/**
+ * @typedef InstanceState
+ * @property {string} id
+ * @property {import('../entities.js').Key} bodyId
+ * @property {PlainMat4} trs
+ */
 
-export default class Instance extends implement({ Id }) {
+export default class Instance extends implement({
+  Id,
+  Placement,
+  State: State.withDefaults(/** @type {InstanceState} */ ({
+    id: '',
+    bodyId: '',
+    trs: defaultTrs,
+  })),
+}) {
+  /** @type {Body} */
+  body;
 
-
-  /** @type {Model} */
-  model;
-
-  /** @type {import("./submodel").default} */
-  subModel;
-
-  /** @type {Instance | null} */
-  parent;
-
-  /** @type {Instance[]} */
-  children = [];
-
-  globalTrs = mat4.create();
-  inverseGlobalTrs = mat4.create();
+  /** @type {Engine} */
+  engine;
 
   /**
-   * @param {Instance["subModel"]} subModel
-   * @param {Instance | null} parent
+   * @param {Instance["body"]} body
+   * @param {Instance["engine"]} engine
+   * @param {Partial<InstanceState>} [state]
    */
-  constructor(subModel, parent) {
-    super({});
-    this.subModel = subModel;
-    this.model = subModel.model;
-    this.parent = parent;
+  constructor(body, engine, state) {
+    super({
+      Id: [state?.id],
+      State: [
+        undefined,
+        {
+          onExport: () => ({
+            ...this.State,
+            ...this.Placement.State.export(),
+          }),
+          onImport: ({ trs }) => {
+            this.Placement.set(trs);
+            engine.emit('instancetransformed', this, this.Placement.trs);
+          },
+        },
+      ],
+    });
 
+    this.State.import({
+      id: this.Id.str,
+      bodyId: body.Id.str,
+      trs: state?.trs ?? this.Placement.State.export().trs,
+    }, !!state?.trs);
 
-    this.recalculateGlobalTrs();
-  }
-
-  recalculateGlobalTrs() {
-    if (this.parent) mat4.multiply(this.globalTrs, this.parent.globalTrs, this.subModel.trs);
-    else mat4.copy(this.globalTrs, this.subModel.trs);
-    mat4.invert(this.inverseGlobalTrs, this.globalTrs);
-
-    for (const child of this.children) child.recalculateGlobalTrs();
+    this.body = body;
+    this.engine = engine;
   }
 
   /**
-   * @param {Instance | null} instance
-   * @returns {boolean}
+   * @param {ReadonlyMat4} transformation
    */
-  belongsTo(instance) {
-    if (!instance) return true;
-
-    /** @type {Instance | null} */
-    let potentialChild = this;
-
-    while (potentialChild) {
-      if (instance === potentialChild) return true;
-      potentialChild = potentialChild.parent;
-    }
-
-    return false;
+  transformGlobal(transformation) {
+    this.Placement.transformGlobal(transformation);
+    this.engine.emit('instancetransformed', this, transformation);
   }
 
   /**
-   * @param {vec3} out
-   * @param {Readonly<vec3>} globalCoords
-   * @returns {vec3}
-   */
-  toLocalCoords(out, globalCoords) {
-    return vec3.transformMat4(out, globalCoords, this.inverseGlobalTrs);
-  }
-
-  /**
-   * @param {vec3} out
-   * @param {Readonly<vec3>} globalRelativeCoords
-   * @returns {vec3}
-   */
-  toLocalRelativeCoords(out, globalRelativeCoords) {
-    vec3.transformMat4(out, globalRelativeCoords, this.inverseGlobalTrs);
-    mat4.getTranslation(origin, this.inverseGlobalTrs);
-    return vec3.subtract(out, out, origin);
-  }
-
-  /**
-   * @param {vec3} translation
+   * @param {ReadonlyVec3} translation
    */
   translateGlobal(translation) {
-    this.toLocalRelativeCoords(relative, translation);
-    mat4.fromTranslation(translate, relative);
-
-    mat4.multiply(this.subModel.trs, this.subModel.trs, translate);
-    for (const sibling of this.subModel.children) sibling.recalculateGlobalTrs();
-
-    this.parent?.model.recalculateBoundingBox();
+    this.Placement.translateGlobal(translation);
+    this.engine.emit('instancetranslated', this, translation);
   }
 }
