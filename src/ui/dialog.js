@@ -1,36 +1,34 @@
-import $, { UIElement } from './element.js';
+import $, { UIContainer } from './element.js';
 
-/** @augments UIElement<HTMLDialogElement> */
-export default class UIDialog extends UIElement {
-  element = $('dialog');
-
+/** @augments UIContainer<HTMLDialogElement,HTMLParagraphElement> */
+export default class UIDialog extends UIContainer {
   /**
    * @param {import('./element.js').AnyParent} [parent]
    */
   constructor(parent = null) {
-    super($('dialog'), parent);
+    const p = $('p', { className: 'dialogBody' });
+
+    super($('dialog', { className: 'error', innerHTML: '' }, [
+      p,
+      ['button', { className: 'dialogClose button', innerText: '⨯', onclick: () => this.hide() }],
+      ['div', { className: 'dialogButtonWrapper' }, [
+        ['button', { className: 'dialogConfirm button', innerText: 'OK', onclick: () => this.hide() }],
+        ['button', { className: 'dialogCancel button', onclick: () => this.hide() }],
+      ]],
+    ]), parent);
+
+    this.container = p;
   }
 
   /**
    * @param {string} message
    */
   error(message) {
-    const onclick = () => this.hide();
-
-    $(this.element, { className: 'error', innerHTML: '' }, [
-      ['p', { className: 'dialogBody', innerText: message }],
-      ['button', { className: 'dialogClose button', innerText: '⨯', onclick }],
-      ['div', { className: 'dialogButtonWrapper' }, [
-        ['button', { className: 'dialogConfirm button', innerText: 'OK', onclick }],
-        ['button', { className: 'dialogCancel button', onclick }],
-      ]],
-    ]);
-
+    this.$container({ innerText: message });
     this.element.showModal();
   }
 
   hide() {
     this.element.close();
-    this.element.childNodes.forEach(child => this.element.removeChild(child));
   }
 }

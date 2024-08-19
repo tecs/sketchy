@@ -50,22 +50,18 @@ export class UIElement {
   }
 
   /**
-   * @template {keyof HTMLElementTagNameMap} T
-   * @template {keyof HTMLElementEventMap} E
-   * @param {Partial<this["element"]>} [attributes]
-   * @param {(HTMLElement | Opts<T, E>)[]} [children]
-   * @returns {this["element"]}
+   * @template {keyof HTMLElementTagNameMap} TM
+   * @template {keyof HTMLElementEventMap} EM
+   * @param {Partial<E>} [attributes]
+   * @param {(HTMLElement | Opts<TM, EM>)[]} [children]
+   * @returns {E}
    */
   $element(attributes = {}, children = []) {
-    return /** @type {this["element"]} */ ($(this.element, attributes, children));
+    return /** @type {E} */ ($(this.element, attributes, children));
   }
 
   remove() {
-    this.parent?.children.forEach((child, id) => {
-      if (child === this) {
-        this.parent?.removeChild(id);
-      }
-    });
+    this.parent?.removeChild(this);
   }
 }
 
@@ -117,13 +113,14 @@ export class UIInput extends UIElement {
 
 /**
  * @template {HTMLElement} E
+ * @template {HTMLElement} [C=E]
  * @augments UIElement<E>
  */
 export class UIContainer extends UIElement {
-  /** @type {Map<string, UIElement<HTMLElement>>} */
-  children = new Map();
+  /** @type {Set<UIElement<HTMLElement>>} */
+  children = new Set();
 
-  /** @type {HTMLElement} */
+  /** @type {C} */
   container;
 
   /**
@@ -132,87 +129,79 @@ export class UIContainer extends UIElement {
    */
   constructor(element, parent) {
     super(element, parent);
-    this.container = element;
+    this.container = /** @type {C} */ ( /** @type {HTMLElement} */ (element));
   }
 
   /**
-   * @template {keyof HTMLElementTagNameMap} T
-   * @template {keyof HTMLElementEventMap} E
-   * @param {Partial<this["container"]>} [attributes]
-   * @param {(HTMLElement | Opts<T, E>)[]} [children]
-   * @returns {this["container"]}
+   * @template {keyof HTMLElementTagNameMap} TM
+   * @template {keyof HTMLElementEventMap} EM
+   * @param {Partial<C>} [attributes]
+   * @param {(HTMLElement | Opts<TM, EM>)[]} [children]
+   * @returns {C}
    */
   $container(attributes = {}, children = []) {
-    return /** @type {this["container"]} */ ($(this.container, attributes, children));
+    return /** @type {C} */ ($(this.container, attributes, children));
   }
 
   /**
    * @template {UIElement<HTMLElement>} E
-   * @param {string} id
    * @param {E} child
    * @returns {E}
    */
-  addChild(id, child) {
-    if (child.parent) {
-      child.parent.removeChild(id);
-    }
+  addChild(child) {
+    child.remove();
     child.parent = this;
     this.container.appendChild(child.element);
-    this.children.set(id, child);
+    this.children.add(child);
     return child;
   }
 
   /**
-   * @param {string} id
-   * @returns {UIElement<HTMLElement> | undefined}
+   * @param {UIElement<HTMLElement>} child
+   * @returns {boolean}
    */
-  removeChild(id) {
-    const child = this.children.get(id);
-    if (child) {
+  removeChild(child) {
+    if (this.children.delete(child)) {
       child.parent = null;
       child.element.remove();
-      this.children.delete(id);
+      return true;
     }
-    return child;
+    return false;
   }
 
   /**
-   * @param {string} id
    * @param {string} label
    * @param {() => void} onClick
    * @param {Partial<HTMLElementTagNameMap["button"]>} [options]
    * @returns {UIButton}
    */
-  addButton(id, label, onClick, options) {
-    return this.addChild(id, new UIButton(label, onClick, options));
+  addButton(label, onClick, options) {
+    return this.addChild(new UIButton(label, onClick, options));
   }
 
   /**
-   * @param {string} id
    * @param {string} label
    * @returns {UILabel}
    */
-  addLabel(id, label) {
-    return this.addChild(id, new UILabel(label));
+  addLabel(label) {
+    return this.addChild(new UILabel(label));
   }
 
   /**
-   * @param {string} id
    * @param {string} value
    * @param {Partial<HTMLElementTagNameMap["input"]>} [options]
    * @returns {UIInput}
    */
-  addInput(id, value, options) {
-    return this.addChild(id, new UIInput(value, options));
+  addInput(value, options) {
+    return this.addChild(new UIInput(value, options));
   }
 
   /**
-   * @param {string} id
    * @returns {UIContainer<HTMLDivElement>}
    * @param {Partial<HTMLElementTagNameMap["div"]>} [options]
    */
-  addContainer(id, options) {
-    const container = this.addChild(id, new UIContainer($('div')));
+  addContainer(options) {
+    const container = this.addChild(new UIContainer($('div')));
     if (options) {
       $(container.element, options);
     }

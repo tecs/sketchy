@@ -1,6 +1,6 @@
 import $, { UIContainer } from './element.js';
 
-/** @augments UIContainer<HTMLButtonElement> */
+/** @augments UIContainer<HTMLButtonElement,HTMLDivElement> */
 class UITab extends UIContainer {
   /**
    * @param {HTMLButtonElement} button
@@ -16,7 +16,7 @@ export default class UITabs extends UIContainer {
   /** @type {UIContainer<HTMLDivElement>} */
   contents;
 
-  /** @type {string | null} */
+  /** @type {UITab | null} */
   selected = null;
 
   /**
@@ -32,64 +32,58 @@ export default class UITabs extends UIContainer {
   }
 
   /**
-   * @param {string | null} id
+   * @param {UITab | null} tab
    */
-  #unselect(id) {
-    if (id === null || id !== this.selected) return;
+  #unselect(tab) {
+    if (!tab || tab !== this.selected) return;
 
-    const tab = this.children.get(id);
-    if (tab instanceof UITab) {
-      this.selected = null;
-      tab.container.remove();
-      tab.element.classList.toggle('selected', false);
-    }
+    this.selected = null;
+    tab.container.remove();
+    tab.element.classList.toggle('selected', false);
   }
 
   /**
-   * @param {string} id
    * @param {string} name
    * @returns {UITab}
    */
-  addTab(id, name) {
-    const tab = this.addChild(id, new UITab($('button', { innerText: name, onclick: () => this.select(id) })));
+  addTab(name) {
+    const tab = this.addChild(new UITab($('button', { innerText: name, onclick: () => this.select(tab) })));
 
-    if (this.selected === null) {
-      this.select(id);
+    if (!this.selected) {
+      this.select(tab);
     }
 
     return tab;
   }
 
   /**
-   * @param {string} id
+   * @param {UITab} tab
    */
-  select(id) {
-    if (id === this.selected) return;
+  select(tab) {
+    if (tab === this.selected) return;
 
-    const tab = this.children.get(id);
-    if (tab instanceof UITab) {
+    if (this.children.has(tab)) {
       this.#unselect(this.selected);
-      this.selected = id;
+      this.selected = tab;
       tab.element.classList.toggle('selected', true);
       this.contents.container.appendChild(tab.container);
     }
   }
 
   /**
-   * @param {string} id
-   * @returns {import('./element.js').UIElement<any> | undefined}
+   * @param {import('./element.js').UIElement<HTMLElement>} child
+   * @returns {boolean}
    */
-  removeChild(id) {
-    const child = super.removeChild(id);
+  removeChild(child) {
+    const hadChild = super.removeChild(child);
     if (child instanceof UITab) {
-      this.#unselect(id);
+      this.#unselect(child);
 
-      this.children.forEach((newChild, newId) => {
-        if (this.selected === null && newChild instanceof UITab) {
-          this.select(newId);
-        }
-      });
+      for (const newChild of this.children) {
+        if (this.selected) break;
+        if (newChild instanceof UITab) this.select(newChild);
+      }
     }
-    return child;
+    return hadChild;
   }
 }

@@ -1,5 +1,6 @@
 import $, { UIContainer } from './element.js';
 
+/** @typedef {import('./element.js').UIButton} UIButton */
 /**
  * @typedef Options
  * @property {"top"|"left"|"right"|"bottom"} position
@@ -7,7 +8,7 @@ import $, { UIContainer } from './element.js';
 
 /** @augments UIContainer<HTMLDivElement> */
 export default class UIMenu extends UIContainer {
-  /** @type {string | null} */
+  /** @type {UIButton | null} */
   selected = null;
 
   /**
@@ -19,15 +20,14 @@ export default class UIMenu extends UIContainer {
   }
 
   /**
-   * @param {string} id
    * @param {string} label
    * @param {() => void} onClick
    * @param {string} [title]
-   * @returns {import('./element.js').UIButton}
+   * @returns {UIButton}
    */
-  addButton(id, label, onClick, title = label) {
-    const button = super.addButton(id, label, () => {
-      if (this.selected !== id && !button.disabled) {
+  addButton(label, onClick, title = label) {
+    const button = super.addButton(label, () => {
+      if (this.selected !== button && !button.disabled) {
         onClick();
       }
     });
@@ -36,14 +36,13 @@ export default class UIMenu extends UIContainer {
   }
 
   /**
-   * @param {string} id
+   * @param {UIButton} button
    */
-  select(id) {
-    const previousItem = this.selected ? this.children.get(this.selected) : undefined;
-    const item = this.children.get(id);
-    if (item && item !== previousItem) {
-      this.selected = id;
-      item.element.classList.add('selected');
+  select(button) {
+    const previousItem = this.selected;
+    if (button !== previousItem && this.children.has(button)) {
+      this.selected = button;
+      button.element.classList.add('selected');
       previousItem?.element.classList.remove('selected');
     }
   }

@@ -33,10 +33,10 @@ export default class UI extends UIContainer {
 
     appContainer.appendChild(this.canvas);
 
-    this.dialog = this.addChild('dialog', new UIDialog());
-    this.topMenu = this.addChild('topMenu', new UIMenu({ position: 'top' }));
-    this.leftMenu = this.addChild('leftMenu', new UIMenu({ position: 'left' }));
-    this.bottomMenu = this.addChild('bottomMenu', new UIMenu({ position: 'bottom' }));
-    this.windows = this.addChild('window', new UIWindows());
+    this.dialog = this.addChild(new UIDialog());
+    this.topMenu = this.addChild(new UIMenu({ position: 'top' }));
+    this.leftMenu = this.addChild(new UIMenu({ position: 'left' }));
+    this.bottomMenu = this.addChild(new UIMenu({ position: 'bottom' }));
+    this.windows = this.addChild(new UIWindows());
   }
 }

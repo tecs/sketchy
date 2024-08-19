@@ -1,6 +1,6 @@
 import UI from './ui/index.js';
 import Engine from './engine/index.js';
-import $, { UIContainer } from './ui/element.js';
+import $ from './ui/element.js';
 import UITabs from './ui/tabs.js';
 
 window.addEventListener('load', () => {
@@ -10,22 +10,24 @@ window.addEventListener('load', () => {
   window.addEventListener('resize', engine.driver.resize);
   engine.driver.resize();
 
+  /** @type {Record<string, import('./ui/element.js').UIButton>} */
+  const toolMap = {};
   for (const tool of engine.tools.tools) {
-    leftMenu.addButton(tool.type, tool.icon, () => engine.tools.setTool(tool), tool.name);
+    toolMap[tool.type] = leftMenu.addButton(tool.icon, () => engine.tools.setTool(tool), tool.name);
   }
-  leftMenu.select(engine.tools.selected.type);
+  leftMenu.select(toolMap[engine.tools.selected.type]);
   engine.on('toolchange', (current) => {
     canvas.style.cursor = current.cursor ?? 'default';
-    leftMenu.select(current.type);
+    leftMenu.select(toolMap[current.type]);
   });
 
-  topMenu.addButton('new', '🗋', () => engine.scene.reset(), 'New file');
-  topMenu.addButton('save', '🖫', () => {
+  topMenu.addButton('🗋', () => engine.scene.reset(), 'New file');
+  topMenu.addButton('🖫', () => {
     const json = engine.scene.export();
     const data = btoa(unescape(encodeURIComponent(json)));
     $('a', { href: `data:text/plain;charset=utf8,${encodeURIComponent(data)}`, download: 'Untitled.scene' }).click();
   }, 'Save file');
-  topMenu.addButton('load', '🖿', () => {
+  topMenu.addButton('🖿', () => {
     $('input', {
       type: 'file',
       accept: '.scene',
@@ -41,8 +43,8 @@ window.addEventListener('load', () => {
     }).click();
   }, 'Load file');
 
-  const undoButton = topMenu.addButton('undo', '↶', () => engine.history.undo(), 'Undo');
-  const redoButton = topMenu.addButton('redo', '↷', () => engine.history.redo(), 'Redo');
+  const undoButton = topMenu.addButton('↶', () => engine.history.undo(), 'Undo');
+  const redoButton = topMenu.addButton('↷', () => engine.history.redo(), 'Redo');
   undoButton.toggleDisabled();
   redoButton.toggleDisabled();
 
@@ -51,10 +53,11 @@ window.addEventListener('load', () => {
     redoButton.toggleDisabled(!engine.history.canRedo);
   });
 
-  topMenu.addButton('settings', '⚙', () => {
-    const settingsWindowContents = windows.addWindow('settings', 'Settings').addContainer('settings');
+  topMenu.addButton('⚙', () => {
+    const settingsWindow = windows.addWindow('Settings');
+    const settingsWindowContents = settingsWindow.addContainer();
 
-    const tabs = settingsWindowContents.addChild('tabs', new UITabs('settingsContents'));
+    const tabs = settingsWindowContents.addChild(new UITabs('settingsContents'));
     tabs.$element({ className: 'settings' });
     tabs.$container({ className: 'settingsCategories' });
 
@@ -65,6 +68,9 @@ window.addEventListener('load', () => {
       toggle: 'checkbox',
     };
 
+    /** @type {Record<string, import('./ui/element.js').AnyParent>} */
+    const tabMap = {};
+
     /** @type {(el: HTMLElement) => boolean} */
     const forceChange = (el) => el.dispatchEvent(new Event('change'));
 
@@ -73,8 +79,8 @@ window.addEventListener('load', () => {
       const originalValue = String(setting.value);
 
       const [category] = setting.id.split('.');
-      const tab = tabs.children.get(category);
-      (tab instanceof UIContainer ? tab : tabs.addTab(category, category)).$container({}, [el]);
+      tabMap[category] ??= tabs.addTab(category);
+      tabMap[category].$container({}, [el]);
 
       const input = $('input', {
         type: InputTypeMap[setting.type],
@@ -124,8 +130,8 @@ window.addEventListener('load', () => {
       return { setting, originalValue, input };
     });
 
-    const buttons = settingsWindowContents.addContainer('buttons', { className: 'settingsButtons' });
-    buttons.addButton('save', 'save', () => {
+    const buttons = settingsWindowContents.addContainer({ className: 'settingsButtons' });
+    buttons.addButton('save', () => {
       for (const { input, originalValue, setting } of settingsItems) {
         if ((setting.type === 'toggle' ? String(input.checked) : input.value) === originalValue) continue;
 
@@ -133,13 +139,13 @@ window.addEventListener('load', () => {
         else if (setting.type === 'key') setting.set(input.value);
         else setting.set(input.checked);
       }
-      windows.removeChild('settings');
+      settingsWindow.remove();
     }, { className: 'button' });
-    buttons.addButton('close', 'close', () => windows.removeChild('settings'), { className: 'button' });
+    buttons.addButton('close', () => settingsWindow.remove(), { className: 'button' });
   }, 'Settings');
 
-  bottomMenu.addLabel('measurements', 'Measurements');
-  const measurementsInput = bottomMenu.addInput('measurements-input', '', { disabled: true }).element;
+  bottomMenu.addLabel('Measurements');
+  const measurementsInput = bottomMenu.addInput('', { disabled: true }).element;
 
   engine.on('toolactive', () => {
     measurementsInput.disabled = !engine.tools.selected.setDistance;

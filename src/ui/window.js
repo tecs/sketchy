@@ -1,18 +1,18 @@
 import $, { UIContainer } from './element.js';
 
-/** @augments UIContainer<HTMLDialogElement> */
+/** @augments UIContainer<HTMLDialogElement,HTMLDivElement> */
 class UIWindow extends UIContainer {
   /** @type {Function | undefined} */
   onClose;
 
   /**
    * @param {string} title
-   * @param {() => void} [onClose]
+   * @param {Function} [onClose]
    */
   constructor(title, onClose) {
     super($('dialog', {}, [
       ['div', { className: 'windowTitle', innerText: title }, [
-        ['button', { className: 'dialogClose button', innerText: '⨯', onclick: onClose }],
+        ['button', { className: 'dialogClose button', innerText: '⨯', onclick: () => this.remove() }],
       ]],
     ]));
 
@@ -33,26 +33,25 @@ export default class UIWindows extends UIContainer {
   }
 
   /**
-   * @param {string} id
    * @param {string} title
    * @param {Function} [onClose]
    * @returns {UIWindow}
    */
-  addWindow(id, title, onClose) {
-    const window = this.addChild(id, new UIWindow(title, () => { this.removeChild(id); onClose?.(); }));
+  addWindow(title, onClose) {
+    const window = this.addChild(new UIWindow(title, onClose));
     window.element.showModal();
     return window;
   }
 
   /**
-   * @param {string} id
-   * @returns {import('./element.js').UIElement<HTMLElement> | undefined}
+   * @param {import('./element.js').UIElement<HTMLElement>} child
+   * @returns {boolean}
    */
-  removeChild(id) {
-    const child = super.removeChild(id);
-    if (child instanceof UIWindow) {
+  removeChild(child) {
+    const hadChild = super.removeChild(child);
+    if (hadChild && child instanceof UIWindow) {
       child.onClose?.();
     }
-    return child;
+    return hadChild;
   }
 }
