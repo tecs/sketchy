@@ -1,99 +1,52 @@
-import $ from './element.js';
+import $, { UIContainer } from './element.js';
 
 /**
  * @typedef Options
  * @property {"top"|"left"|"right"|"bottom"} position
  */
 
-export default class Menu {
-  /** @type {HTMLElement} */
-  element;
-
-  /** @type {Map<string, HTMLElement>} */
-  items = new Map();
-
+/**
+ * @augments UIContainer<HTMLDivElement>
+ */
+export default class UIMenu extends UIContainer {
   /** @type {string | null} */
   selected = null;
 
   /**
-   * @param {HTMLElement} parent
-   * @param {Partial<Options>} options
+   * @param {Partial<Options>} [options]
+   * @param {import('./element.js').AnyParent} [parent]
    */
-  constructor(parent, options = {}) {
-    this.element = $('div', { className: `menu ${options.position ?? 'left'}` });
-    parent.appendChild(this.element);
-  }
-
-  /**
-   * @template {keyof HTMLElementTagNameMap} T
-   * @param {string} id
-   * @param {T | HTMLElement} tag
-   * @param {Partial<HTMLElementTagNameMap[T]>} options
-   * @returns {HTMLElementTagNameMap[T]}
-   */
-  addElement(id, tag, options) {
-    const element = $(tag, options);
-    this.element.appendChild(element);
-    this.items.set(id, element);
-    return /** @type {HTMLElementTagNameMap[T]} */ (element);
+  constructor(options = {}, parent = null) {
+    super($('div', { className: `menu ${options.position ?? 'left'}` }), parent);
   }
 
   /**
    * @param {string} id
-   * @param {string} name
-   * @param {string} icon
-   * @param {Function} onSelect
+   * @param {string} label
+   * @param {() => void} onClick
+   * @param {string} [title]
+   * @returns {import('./element.js').UIButton}
    */
-  addItem(id, name, icon, onSelect) {
-    const element = this.addElement(id, 'div', {
-      className: 'menuItem',
-      title: name,
-      innerText: icon,
-      onclick: () => {
-        if (this.selected !== id && !element.classList.contains('disabled')) {
-          onSelect();
-        }
-      },
+  addButton(id, label, onClick, title = label) {
+    const button = super.addButton(id, label, () => {
+      if (this.selected !== id && !button.disabled) {
+        onClick();
+      }
     });
-  }
-
-  /**
-   * @param {string} id
-   * @param {string} text
-   * @returns {HTMLDivElement}
-   */
-  addLabel(id, text) {
-    return this.addElement(id, 'div', { className: 'menuLabel', innerText: text });
-  }
-
-  /**
-   * @param {string} id
-   * @param {string} value
-   * @param {Partial<HTMLElementTagNameMap["input"]>} [options]
-   * @returns {HTMLInputElement}
-   */
-  addInput(id, value, options = {}) {
-    return this.addElement(id, 'input', { className: 'menuInput', value, ...options });
+    button.$element({ title });
+    return button;
   }
 
   /**
    * @param {string} id
    */
   select(id) {
-    const previousItem = this.selected ? this.items.get(this.selected) : undefined;
-    const item = this.items.get(id);
+    const previousItem = this.selected ? this.children.get(this.selected) : undefined;
+    const item = this.children.get(id);
     if (item && item !== previousItem) {
       this.selected = id;
-      item.classList.add('selected');
-      previousItem?.classList.remove('selected');
+      item.element.classList.add('selected');
+      previousItem?.element.classList.remove('selected');
     }
-  }
-
-  /**
-   * @param {string} id
-   * @param {boolean} [disabled]
-   */
-  toggleDisabled(id, disabled = true) {
-    this.items.get(id)?.classList.toggle('disabled', disabled);
   }
 }

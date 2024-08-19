@@ -1,40 +1,42 @@
-import $ from './element.js';
-import Dialog from './dialog.js';
-import Menu from './menu.js';
-import Window from './window.js';
+import $, { UIContainer } from './element.js';
+import UIDialog from './dialog.js';
+import UIMenu from './menu.js';
+import UIWindows from './window.js';
 
-export default class Ui {
-  /** @type {HTMLElement} */
-  appContainer;
-
-  /** @type {Menu} */
+/**
+ * @template {HTMLElement} E
+ * @augments UIContainer<E>
+ */
+export default class UI extends UIContainer {
+  /** @type {UIMenu} */
   topMenu;
 
-  /** @type {Menu} */
-  sideMenu;
+  /** @type {UIMenu} */
+  leftMenu;
 
-  /** @type {Menu} */
+  /** @type {UIMenu} */
   bottomMenu;
 
-  /** @type {Dialog} */
+  /** @type {UIDialog} */
   dialog;
 
-  /** @type {Window} */
-  window;
+  /** @type {UIWindows} */
+  windows;
 
   canvas = $('canvas');
 
   /**
-   * @param {HTMLElement} appContainer
+   * @param {E} appContainer
    */
   constructor(appContainer) {
+    super(appContainer);
+
     appContainer.appendChild(this.canvas);
 
-    this.appContainer = appContainer;
-    this.dialog = new Dialog(appContainer);
-    this.topMenu = new Menu(appContainer, { position: 'top' });
-    this.sideMenu = new Menu(appContainer, { position: 'left' });
-    this.bottomMenu = new Menu(appContainer, { position: 'bottom' });
-    this.window = new Window(appContainer);
+    this.dialog = this.addChild('dialog', new UIDialog());
+    this.topMenu = this.addChild('topMenu', new UIMenu({ position: 'top' }));
+    this.leftMenu = this.addChild('leftMenu', new UIMenu({ position: 'left' }));
+    this.bottomMenu = this.addChild('bottomMenu', new UIMenu({ position: 'bottom' }));
+    this.windows = this.addChild('window', new UIWindows());
   }
 }

@@ -1,32 +1,30 @@
-import Ui from './ui/index.js';
+import UI from './ui/index.js';
 import Engine from './engine/index.js';
 import $ from './ui/element.js';
 
 window.addEventListener('load', () => {
-  const ui = new Ui(document.body);
-
-  const { canvas } = ui;
+  const { canvas, dialog, windows, topMenu, leftMenu, bottomMenu } = new UI(document.body);
   const engine = new Engine(canvas);
 
   window.addEventListener('resize', engine.driver.resize);
   engine.driver.resize();
 
   for (const tool of engine.tools.tools) {
-    ui.sideMenu.addItem(tool.type, tool.name, tool.icon, () => engine.tools.setTool(tool));
+    leftMenu.addButton(tool.type, tool.icon, () => engine.tools.setTool(tool), tool.name);
   }
-  ui.sideMenu.select(engine.tools.selected.type);
+  leftMenu.select(engine.tools.selected.type);
   engine.on('toolchange', (current) => {
-    ui.canvas.style.cursor = current.cursor ?? 'default';
-    ui.sideMenu.select(current.type);
+    canvas.style.cursor = current.cursor ?? 'default';
+    leftMenu.select(current.type);
   });
 
-  ui.topMenu.addItem('new', 'New file', '🗋', () => engine.scene.reset());
-  ui.topMenu.addItem('save', 'Save file', '🖫', () => {
+  topMenu.addButton('new', '🗋', () => engine.scene.reset(), 'New file');
+  topMenu.addButton('save', '🖫', () => {
     const json = engine.scene.export();
     const data = btoa(unescape(encodeURIComponent(json)));
     $('a', { href: `data:text/plain;charset=utf8,${encodeURIComponent(data)}`, download: 'Untitled.scene' }).click();
-  });
-  ui.topMenu.addItem('load', 'Load file', '🖿', () => {
+  }, 'Save file');
+  topMenu.addButton('load', '🖿', () => {
     $('input', {
       type: 'file',
       accept: '.scene',
@@ -40,19 +38,20 @@ window.addEventListener('load', () => {
         reader.readAsText(el.files[0]);
       },
     }).click();
-  });
+  }, 'Load file');
 
-  ui.topMenu.addItem('undo', 'Undo', '↶', () => engine.history.undo());
-  ui.topMenu.addItem('redo', 'Redo', '↷', () => engine.history.redo());
-  ui.topMenu.toggleDisabled('undo');
-  ui.topMenu.toggleDisabled('redo');
+  const undoButton = topMenu.addButton('undo', '↶', () => engine.history.undo(), 'Undo');
+  const redoButton = topMenu.addButton('redo', '↷', () => engine.history.redo(), 'Redo');
+  undoButton.toggleDisabled();
+  redoButton.toggleDisabled();
 
   engine.on('historychange', () => {
-    ui.topMenu.toggleDisabled('undo', !engine.history.canUndo);
-    ui.topMenu.toggleDisabled('redo', !engine.history.canRedo);
+    undoButton.toggleDisabled(!engine.history.canUndo);
+    redoButton.toggleDisabled(!engine.history.canRedo);
   });
 
-  ui.topMenu.addItem('settings', 'Settings', '⚙', () => {
+  topMenu.addButton('settings', '⚙', () => {
+    const settingsWindowContents = windows.addWindow('settings', 'Settings').addContainer('settings');
     const settings = engine.config.list();
 
     /** @type {Record<typeof settings[number]["type"], string>} */
@@ -158,25 +157,21 @@ window.addEventListener('load', () => {
             else if (setting.type === 'key') setting.set(input.value);
             else setting.set(input.checked);
           }
-          ui.window.remove('settings');
+          windows.removeChild('settings');
         },
       }],
       ['button', {
         className: 'button',
         innerText: 'close',
-        onclick: () => ui.window.remove('settings'),
+        onclick: () => windows.removeChild('settings'),
       }],
     ]);
 
-    ui.window.add({
-      id: 'settings',
-      title: 'Settings',
-      contents: [$('div', { className: 'settings' }, [categoriesList, categoryContents, buttons])],
-    });
-  });
+    settingsWindowContents.$container({ className: 'settings' }, [categoriesList, categoryContents, buttons]);
+  }, 'Settings');
 
-  ui.bottomMenu.addLabel('measurements', 'Measurements');
-  const measurementsInput = ui.bottomMenu.addInput('measurements-input', '', { disabled: true });
+  bottomMenu.addLabel('measurements', 'Measurements');
+  const measurementsInput = bottomMenu.addInput('measurements-input', '', { disabled: true }).element;
 
   engine.on('toolactive', () => {
     measurementsInput.disabled = !engine.tools.selected.setDistance;
@@ -218,7 +213,7 @@ window.addEventListener('load', () => {
     measurementsInput.setAttribute('x-changed', 'true');
   });
 
-  engine.on('usererror', (message) => ui.dialog.error(message));
+  engine.on('usererror', (message) => dialog.error(message));
   // eslint-disable-next-line no-console
   engine.on('error', console.error);
 

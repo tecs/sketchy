@@ -100,15 +100,18 @@ html, body, canvas {
   right: 0;
 }
 
-.menuItem {
+.menu > button {
   width: var(--iconSize);
   height: var(--iconSize);
   cursor: pointer;
   line-height: var(--iconSize);
   text-align: center;
+  display: block;
+  background: none;
+  border: 1px transparent;
 }
 
-.menuItem.selected {
+.menu > button.selected {
   background: var(--lightenColor);
   border: 1px solid;
   border-top-color: var(--borderShadowColor);
@@ -117,17 +120,17 @@ html, body, canvas {
   border-bottom-color: var(--borderHighlightColor);
 }
 
-.menuItem.disabled {
+.menu > button.disabled {
   background-color: var(--darkenColor);
   color: var(--disabledTextColor);
   cursor: initial;
 }
 
-.top > *, .bottom > * {
+.top > button, .bottom > button {
   display: inline-block;
 }
 
-.menuLabel {
+.menu > label {
   padding: 0.25em;
 }
 

@@ -1,13 +1,16 @@
-import $ from './element.js';
+import $, { UIElement } from './element.js';
 
-export default class Dialog {
+/**
+ * @augments UIElement<HTMLDialogElement>
+ */
+export default class UIDialog extends UIElement {
   element = $('dialog');
 
   /**
-   * @param {HTMLElement} parent
+   * @param {import('./element.js').AnyParent} [parent]
    */
-  constructor(parent) {
-    parent.appendChild(this.element);
+  constructor(parent = null) {
+    super($('dialog'), parent);
   }
 
   /**
