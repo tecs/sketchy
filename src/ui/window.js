@@ -1,8 +1,6 @@
 import $, { UIContainer } from './element.js';
 
-/**
- * @augments UIContainer<HTMLDialogElement>
- */
+/** @augments UIContainer<HTMLDialogElement> */
 class UIWindow extends UIContainer {
   /** @type {Function | undefined} */
   onClose;
@@ -25,9 +23,7 @@ class UIWindow extends UIContainer {
   }
 }
 
-/**
- * @augments UIContainer<HTMLDivElement>
- */
+/** @augments UIContainer<HTMLDivElement> */
 export default class UIWindows extends UIContainer {
   /**
    * @param {import('./element.js').AnyParent} [parent]

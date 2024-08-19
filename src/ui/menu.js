@@ -5,9 +5,7 @@ import $, { UIContainer } from './element.js';
  * @property {"top"|"left"|"right"|"bottom"} position
  */
 
-/**
- * @augments UIContainer<HTMLDivElement>
- */
+/** @augments UIContainer<HTMLDivElement> */
 export default class UIMenu extends UIContainer {
   /** @type {string | null} */
   selected = null;

@@ -1,6 +1,7 @@
 import UI from './ui/index.js';
 import Engine from './engine/index.js';
-import $ from './ui/element.js';
+import $, { UIContainer } from './ui/element.js';
+import UITabs from './ui/tabs.js';
 
 window.addEventListener('load', () => {
   const { canvas, dialog, windows, topMenu, leftMenu, bottomMenu } = new UI(document.body);
@@ -52,9 +53,12 @@ window.addEventListener('load', () => {
 
   topMenu.addButton('settings', '⚙', () => {
     const settingsWindowContents = windows.addWindow('settings', 'Settings').addContainer('settings');
-    const settings = engine.config.list();
 
-    /** @type {Record<typeof settings[number]["type"], string>} */
+    const tabs = settingsWindowContents.addChild('tabs', new UITabs('settingsContents'));
+    tabs.$element({ className: 'settings' });
+    tabs.$container({ className: 'settingsCategories' });
+
+    /** @type {Record<import('./engine/config.js').Setting["type"], string>} */
     const InputTypeMap = {
       int: 'number',
       key: 'text',
@@ -64,9 +68,13 @@ window.addEventListener('load', () => {
     /** @type {(el: HTMLElement) => boolean} */
     const forceChange = (el) => el.dispatchEvent(new Event('change'));
 
-    const settingsItems = settings.map(setting => {
+    const settingsItems = engine.config.list().map(setting => {
       const el = $('div', { className: 'setting' });
       const originalValue = String(setting.value);
+
+      const [category] = setting.id.split('.');
+      const tab = tabs.children.get(category);
+      (tab instanceof UIContainer ? tab : tabs.addTab(category, category)).$container({}, [el]);
 
       const input = $('input', {
         type: InputTypeMap[setting.type],
@@ -100,74 +108,34 @@ window.addEventListener('load', () => {
         },
       });
 
-      return { setting, originalValue, input, el };
-    });
-
-    const categories = Object.entries(settingsItems.sort((a, b) => {
-      // make sure settings under the "general" namespace appear first
-      if (a.setting.id.startsWith('general.')) return -1;
-      if (b.setting.id.startsWith('general.')) return 1;
-      return settingsItems.indexOf(a) - settingsItems.indexOf(b);
-    }).reduce((o, item) => {
-      const path = item.setting.id.split('.');
-      const category = path.length < 2 ? 'general' : path[0];
-      o[category] ??= [];
-
-      const categoryContents = $(item.el, {}, [
-        ['label', {}, [['span', { innerText: item.setting.name }], item.input]],
+      $(el, {}, [
+        ['label', {}, [['span', { innerText: setting.name }], input]],
         ['div', {
           className: 'button reset',
           innerText: '⟲',
           onclick() {
-            item.input.value = item.originalValue;
-            item.input.checked = item.originalValue === 'true';
-            forceChange(item.input);
+            input.value = originalValue;
+            input.checked = originalValue === 'true';
+            forceChange(input);
           },
         }],
       ]);
 
-      o[category].push(categoryContents);
-      return o;
-    }, /** @type {Record<string, HTMLElement[]>} */({})));
+      return { setting, originalValue, input };
+    });
 
-    const categoryContents = $('div', { className: 'settingsContents' }, categories[0][1]);
+    const buttons = settingsWindowContents.addContainer('buttons', { className: 'settingsButtons' });
+    buttons.addButton('save', 'save', () => {
+      for (const { input, originalValue, setting } of settingsItems) {
+        if ((setting.type === 'toggle' ? String(input.checked) : input.value) === originalValue) continue;
 
-    const categoriesList = $('div', { className: 'settingsCategories' }, categories.map(([innerText, contents], i) => {
-      const menuItem = $('div', {
-        innerText,
-        className: `settingCategory ${i ? '' : 'selected'}`,
-        onclick() {
-          $(categoryContents, { innerHTML: '' }, contents);
-          categoriesList.querySelectorAll('.settingCategory')
-            .forEach(category => category.classList.toggle('selected', category === menuItem));
-        },
-      });
-      return menuItem;
-    }));
-
-    const buttons = $('div', { className: 'settingsButtons' }, [
-      ['button', {
-        className: 'button',
-        innerText: 'save',
-        onclick() {
-          for (const { input, originalValue, setting } of settingsItems) {
-            if ((setting.type === 'toggle' ? String(input.checked) : input.value) === originalValue) continue;
-
-            if (setting.type === 'int') setting.set(parseInt(input.value, 10));
-            else if (setting.type === 'key') setting.set(input.value);
-            else setting.set(input.checked);
-          }
-          windows.removeChild('settings');
-        },
-      }],
-      ['button', {
-        className: 'button',
-        innerText: 'close',
-        onclick: () => windows.removeChild('settings'),
-      }],
-    ]);
-
-    settingsWindowContents.$container({ className: 'settings' }, [categoriesList, categoryContents, buttons]);
+        if (setting.type === 'int') setting.set(parseInt(input.value, 10));
+        else if (setting.type === 'key') setting.set(input.value);
+        else setting.set(input.checked);
+      }
+      windows.removeChild('settings');
+    }, { className: 'button' });
+    buttons.addButton('close', 'close', () => windows.removeChild('settings'), { className: 'button' });
   }, 'Settings');
 
   bottomMenu.addLabel('measurements', 'Measurements');

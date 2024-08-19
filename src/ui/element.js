@@ -59,6 +59,14 @@ export class UIElement {
   $element(attributes = {}, children = []) {
     return /** @type {this["element"]} */ ($(this.element, attributes, children));
   }
+
+  remove() {
+    this.parent?.children.forEach((child, id) => {
+      if (child === this) {
+        this.parent?.removeChild(id);
+      }
+    });
+  }
 }
 
 /** @augments UIElement<HTMLButtonElement> */
@@ -70,10 +78,11 @@ export class UIButton extends UIElement {
 
   /**
    * @param {string} label
-   * @param {() => void} [onClick]
+   * @param {() => void} onClick
+   * @param {Partial<HTMLElementTagNameMap["button"]>} [options]
    */
-  constructor(label, onClick) {
-    super($('button', { innerText: label, onclick: onClick }));
+  constructor(label, onClick, options = {}) {
+    super($('button', { ...options, innerText: label, onclick: onClick }));
   }
 
   /**
@@ -170,11 +179,12 @@ export class UIContainer extends UIElement {
   /**
    * @param {string} id
    * @param {string} label
-   * @param {() => void} [onClick]
+   * @param {() => void} onClick
+   * @param {Partial<HTMLElementTagNameMap["button"]>} [options]
    * @returns {UIButton}
    */
-  addButton(id, label, onClick) {
-    return this.addChild(id, new UIButton(label, onClick));
+  addButton(id, label, onClick, options) {
+    return this.addChild(id, new UIButton(label, onClick, options));
   }
 
   /**
@@ -199,8 +209,13 @@ export class UIContainer extends UIElement {
   /**
    * @param {string} id
    * @returns {UIContainer<HTMLDivElement>}
+   * @param {Partial<HTMLElementTagNameMap["div"]>} [options]
    */
-  addContainer(id) {
-    return this.addChild(id, new UIContainer($('div')));
+  addContainer(id, options) {
+    const container = this.addChild(id, new UIContainer($('div')));
+    if (options) {
+      $(container.element, options);
+    }
+    return container;
   }
 }

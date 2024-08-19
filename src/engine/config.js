@@ -28,8 +28,8 @@ export default class Config {
   /** @type {Engine} */
   #engine;
 
-  /** @type {Record<string, Readonly<Setting>>} */
-  #settings = {};
+  /** @type {Setting[]} */
+  #settings = [];
 
   /**
    * @param {Engine} engine
@@ -47,7 +47,9 @@ export default class Config {
    * @returns {Readonly<T>}
    */
   #create(id, name, type, value) {
-    if (this.#settings[id]) throw new Error(`Setting "${id}" already exists`);
+    if (!id.includes('.')) id = `general.${id}`;
+
+    if (this.#settings.some(setting => setting.id === id)) throw new Error(`Setting "${id}" already exists`);
 
     const setting = /** @type {T} */ ({
       id,
@@ -71,7 +73,7 @@ export default class Config {
       },
     });
 
-    this.#settings[id] = setting;
+    this.#settings.push(setting);
 
     return setting;
   }
@@ -110,9 +112,14 @@ export default class Config {
   }
 
   /**
-   * @returns {Readonly<Setting>[]}
+   * @returns {Setting[]}
    */
   list() {
-    return Object.values(this.#settings);
+    return this.#settings.toSorted((a, b) => {
+      // make sure settings under the "general" namespace appear first
+      if (a.id.startsWith('general.')) return -1;
+      if (b.id.startsWith('general.')) return 1;
+      return this.#settings.indexOf(a) - this.#settings.indexOf(b);
+    });
   }
 }

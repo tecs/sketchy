@@ -1,8 +1,6 @@
 import $, { UIElement } from './element.js';
 
-/**
- * @augments UIElement<HTMLDialogElement>
- */
+/** @augments UIElement<HTMLDialogElement> */
 export default class UIDialog extends UIElement {
   element = $('dialog');
 

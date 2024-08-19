@@ -187,8 +187,7 @@ dialog::backdrop {
 
 .settings {
   display: grid;
-  grid-template-areas: 'menu   contents'
-                       'buttons buttons';
+  grid-template-areas: 'menu contents';
   column-gap: 1em;
   margin: -1em 0 0 -1em;
 }
@@ -199,11 +198,17 @@ dialog::backdrop {
   padding: 1em 0;
 }
 
-.settingCategory {
+.settingsCategories > button {
+  background-color: transparent;
   cursor: pointer;
   padding: 0.5em;
+  display: block;
+  border: none;
+  width: 100%;
+  font-size: inherit;
+  text-align: left;
 }
-.settingCategory.selected {
+.settingsCategories > button.selected {
   background-color: var(--backgroundColor);
   cursor: initial;
 }
@@ -233,7 +238,6 @@ dialog::backdrop {
 }
 
 .settingsButtons {
-  grid-area: buttons;
   padding-top: 1em;
   border-top: 1px solid var(--darkenColor);
   text-align: right;
