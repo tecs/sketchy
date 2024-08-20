@@ -34,6 +34,8 @@ export default $;
  * @template {HTMLElement} E
  */
 export class UIElement {
+  #previousDisplay = '';
+
   /** @type {E} */
   element;
 
@@ -62,6 +64,29 @@ export class UIElement {
 
   remove() {
     this.parent?.removeChild(this);
+  }
+
+  /**
+   * @returns {boolean}
+   */
+  hide() {
+    if (this.element.style.display !== 'none') {
+      this.#previousDisplay = this.element.style.display;
+      this.element.style.display = 'none';
+      return true;
+    }
+    return false;
+  }
+
+  /**
+   * @returns {boolean}
+   */
+  show() {
+    if (this.element.style.display === 'none') {
+      this.element.style.display = this.#previousDisplay;
+      return true;
+    }
+    return false;
   }
 }
 

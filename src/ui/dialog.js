@@ -30,5 +30,6 @@ export default class UIDialog extends UIContainer {
 
   hide() {
     this.element.close();
+    return true;
   }
 }
