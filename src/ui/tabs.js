@@ -9,6 +9,26 @@ class UITab extends UIContainer {
     super(button);
     this.container = $('div');
   }
+
+  hide() {
+    const hidden = super.hide();
+    if (hidden && this.parent instanceof UITabs) {
+      this.parent.autoselect(this);
+    }
+    return hidden;
+  }
+
+  /**
+   * @param {boolean} [reselect]
+   * @returns {boolean}
+   */
+  show(reselect = false) {
+    const shown = super.show();
+    if (shown && reselect && this.parent instanceof UITabs) {
+      this.parent.select(this);
+    }
+    return shown;
+  }
 }
 
 /** @augments UIContainer<HTMLDivElement> */
@@ -32,28 +52,35 @@ export default class UITabs extends UIContainer {
   }
 
   /**
-   * @param {UITab | null} tab
-   */
-  #unselect(tab) {
-    if (!tab || tab !== this.selected) return;
-
-    this.selected = null;
-    tab.container.remove();
-    tab.element.classList.toggle('selected', false);
-  }
-
-  /**
    * @param {string} name
    * @returns {UITab}
    */
   addTab(name) {
     const tab = this.addChild(new UITab($('button', { innerText: name, onclick: () => this.select(tab) })));
-
-    if (!this.selected) {
-      this.select(tab);
-    }
-
+    this.autoselect();
     return tab;
+  }
+
+  /**
+   * @param {UITab | null} [omitTab]
+   */
+  autoselect(omitTab) {
+    if (omitTab === this.selected) this.unselect(this.selected);
+    for (const child of this.children) {
+      if (this.selected) break;
+      if (child instanceof UITab && child !== omitTab) this.select(child);
+    }
+  }
+
+  /**
+   * @param {UITab | null} tab
+   */
+  unselect(tab) {
+    if (!tab || tab !== this.selected) return;
+
+    this.selected = null;
+    tab.container.remove();
+    tab.element.classList.toggle('selected', false);
   }
 
   /**
@@ -63,7 +90,7 @@ export default class UITabs extends UIContainer {
     if (tab === this.selected) return;
 
     if (this.children.has(tab)) {
-      this.#unselect(this.selected);
+      this.unselect(this.selected);
       this.selected = tab;
       tab.element.classList.toggle('selected', true);
       this.contents.container.appendChild(tab.container);
@@ -76,14 +103,7 @@ export default class UITabs extends UIContainer {
    */
   removeChild(child) {
     const hadChild = super.removeChild(child);
-    if (child instanceof UITab) {
-      this.#unselect(child);
-
-      for (const newChild of this.children) {
-        if (this.selected) break;
-        if (newChild instanceof UITab) this.select(newChild);
-      }
-    }
+    if (child instanceof UITab) this.autoselect(child);
     return hadChild;
   }
 }
