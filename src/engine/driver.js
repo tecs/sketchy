@@ -47,7 +47,7 @@ export default class Driver extends Base {
   constructor(engine, canvas) {
     super();
 
-    bindMethods(this, 'vert', 'frag', 'makeProgram');
+    bindMethods(this, 'vert', 'frag', 'makeProgram', 'resize');
 
     this.#engine = engine;
     this.canvas = canvas;
