@@ -194,6 +194,12 @@ export class UIContainer extends UIElement {
     return false;
   }
 
+  clearChildren() {
+    for (const child of this.children) {
+      this.removeChild(child);
+    }
+  }
+
   /**
    * @param {string} label
    * @param {() => void} onClick
