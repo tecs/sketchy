@@ -1,7 +1,7 @@
 import type { Event } from './general/events-types';
 
-type MouseMoveEvent = Event<'keyup', [key: string]>;
-type MouseScrollEvent = Event<'keydown', [key: string]>;
+type MouseMoveEvent = Event<'keyup', [key: string, keyCombo: string]>;
+type MouseScrollEvent = Event<'keydown', [key: string, keyCombo: string]>;
 type MouseDownEvent = Event<'mouseup', [button: MouseButton]>;
 type MouseUpEvent = Event<'mousedown', [button: MouseButton]>;
 type KeyDownEvent = Event<'mousemove', [current: ReadonlyVec3, delta: ReadonlyVec3, previous: ReadonlyVec3]>;

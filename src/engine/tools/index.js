@@ -55,8 +55,8 @@ export default class Tools {
       shortcut,
     ));
 
-    engine.on('keyup', (key) => {
-      const index = shortcuts.findIndex(({ value }) => value === key);
+    engine.on('keyup', (_, keyCombo) => {
+      const index = shortcuts.findIndex(({ value }) => value === keyCombo);
       if (index > -1) this.setTool(this.tools[index]);
     });
   }

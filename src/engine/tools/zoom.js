@@ -39,8 +39,8 @@ export default (engine) => {
     }
   });
 
-  engine.on('keydown', (key) => {
-    switch (key) {
+  engine.on('keydown', (_, keyCombo) => {
+    switch (keyCombo) {
       case zoomInKey.value:
         camera.zoom(-1, neutralZoomOrigin);
         return;

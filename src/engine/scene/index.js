@@ -60,11 +60,11 @@ export default class Scene extends Base {
     engine.on('toolchange', (_, tool) => {
       if (tool.active !== false) tool.abort();
     });
-    engine.on('keyup', (key) => {
-      if (key === 'Escape' && engine.tools.selected.active !== false) engine.tools.selected.abort();
-      else if (key === 'Delete') this.deleteInstance(this.selectedInstance);
-      else if (key.toLowerCase() === 'z' && engine.input.ctrl && engine.input.shift) engine.history.redo();
-      else if (key === 'z' && engine.input.ctrl) engine.history.undo();
+    engine.on('keyup', (_, keyCombo) => {
+      if (keyCombo === 'Escape' && engine.tools.selected.active !== false) engine.tools.selected.abort();
+      else if (keyCombo === 'Delete') this.deleteInstance(this.selectedInstance);
+      else if (keyCombo.toLowerCase() === 'control + shift + z') engine.history.redo();
+      else if (keyCombo.toLowerCase() === 'control + z') engine.history.undo();
     });
     engine.on('entityadded', (entity) => {
       if (entity instanceof Instance) {

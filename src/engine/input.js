@@ -73,6 +73,9 @@ export default class Input {
    * @param {boolean} down
    */
   setKey(key, down) {
+    /** @type {string[]} */
+    const combo = [];
+
     if (key === 'GroupNext') {
       key = this.shift === down ? 'Alt' : 'Shift';
     }
@@ -85,10 +88,18 @@ export default class Input {
         break;
       case 'Shift': this.shift = down; break;
       case 'Control': this.ctrl = down; break;
+      default: combo.push(key);
     }
+
     this.key = key;
-    if (down) this.#engine.emit('keydown', key);
-    else this.#engine.emit('keyup', key);
+
+    if (this.shift || key === 'Shift') combo.unshift('Shift');
+    if (this.alt || key === 'Alt') combo.unshift('Alt');
+    if (this.ctrl || key === 'Control') combo.unshift('Control');
+    const keyCombo = combo.join(' + ');
+
+    if (down) this.#engine.emit('keydown', key, keyCombo);
+    else this.#engine.emit('keyup', key, keyCombo);
   }
 
   /**
