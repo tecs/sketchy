@@ -10,6 +10,13 @@ class UITab extends UIContainer {
     this.container = $('div');
   }
 
+  /**
+   * @param {string} name
+   */
+  rename(name) {
+    this.element.innerText = name;
+  }
+
   hide() {
     const hidden = super.hide();
     if (hidden && this.parent instanceof UITabs) {
@@ -42,7 +49,7 @@ export default class UITabs extends UIContainer {
   /**
    * @param {string} [contentsClass]
    */
-  constructor(contentsClass) {
+  constructor(contentsClass = '') {
     super($('div'));
     this.container = $('div');
     this.contents = new UIContainer($('div'));

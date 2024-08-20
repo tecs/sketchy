@@ -163,7 +163,7 @@ dialog::backdrop {
   display: none;
 }
 
-/** Windows */
+/* Windows */
 
 .windowTitle {
   padding: inherit;
@@ -183,7 +183,7 @@ dialog::backdrop {
   margin: 0 -1em -1em;
 }
 
-/** Settings */
+/* Settings */
 
 .settings {
   display: grid;
