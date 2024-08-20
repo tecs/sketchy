@@ -15,6 +15,9 @@ export default class UI extends UIContainer {
   leftMenu;
 
   /** @type {UIMenu} */
+  rightMenu;
+
+  /** @type {UIMenu} */
   bottomMenu;
 
   /** @type {UIDialog} */
@@ -36,6 +39,7 @@ export default class UI extends UIContainer {
     this.dialog = this.addChild(new UIDialog());
     this.topMenu = this.addChild(new UIMenu({ position: 'top' }));
     this.leftMenu = this.addChild(new UIMenu({ position: 'left' }));
+    this.rightMenu = this.addChild(new UIMenu({ position: 'right' }));
     this.bottomMenu = this.addChild(new UIMenu({ position: 'bottom' }));
     this.windows = this.addChild(new UIWindows());
   }

@@ -2,9 +2,10 @@ import UI from './ui/index.js';
 import Engine from './engine/index.js';
 import $ from './ui/element.js';
 import UITabs from './ui/tabs.js';
+import Body from './engine/cad/body.js';
 
 window.addEventListener('load', () => {
-  const { canvas, dialog, windows, topMenu, leftMenu, bottomMenu } = new UI(document.body);
+  const { canvas, dialog, windows, topMenu, leftMenu, rightMenu, bottomMenu } = new UI(document.body);
   const engine = new Engine(canvas);
 
   window.addEventListener('resize', engine.driver.resize);
@@ -146,6 +147,54 @@ window.addEventListener('load', () => {
 
   bottomMenu.addLabel('Measurements');
   const measurementsInput = bottomMenu.addInput('', { disabled: true }).element;
+
+  const browser = rightMenu.addChild(new UITabs('tabContents'));
+  const stepsTab = browser.addTab('');
+  const bodyTab = browser.addTab('Bodies');
+
+  browser.$container({ className: 'tabContainer' });
+
+  const repopulateStepsMenu = () => {
+    const instance = engine.scene.enteredInstance;
+    if (!instance) {
+      stepsTab.hide();
+      return;
+    }
+    stepsTab.show(true);
+    stepsTab.clearChildren();
+    stepsTab.rename(`Steps (${instance.body.name})`);
+    const currentStep = instance.body.step;
+    for (const step of instance.body.listSteps()) {
+      const stepContainer = stepsTab.addContainer();
+      const label = stepContainer.addLabel(step.name);
+      if (step === currentStep) {
+        label.element.style.fontWeight = 'bold';
+      }
+    }
+  };
+
+  const repopulateEntitiesMenu = () => {
+    const bodies = engine.entities.values(Body);
+    bodyTab.clearChildren();
+    const currentBody = engine.scene.enteredInstance?.body;
+    for (const body of bodies) {
+      const bodyContainer = bodyTab.addContainer();
+      const label = bodyContainer.addLabel(body.name);
+      if (body === currentBody) {
+        label.element.style.fontWeight = 'bold';
+      }
+    }
+  };
+
+  repopulateStepsMenu();
+  repopulateEntitiesMenu();
+
+  engine.on('currentchange', repopulateStepsMenu);
+  engine.on('scenechange', repopulateStepsMenu);
+
+  engine.on('entityadded', repopulateEntitiesMenu);
+  engine.on('entityremoved', repopulateEntitiesMenu);
+  engine.on('currentchange', repopulateEntitiesMenu);
 
   engine.on('toolactive', () => {
     measurementsInput.disabled = !engine.tools.selected.setDistance;

@@ -242,3 +242,28 @@ dialog::backdrop {
   border-top: 1px solid var(--darkenColor);
   text-align: right;
 }
+
+/* Tabs */
+.tabContainer {
+  background-color: var(--darkenColor);
+}
+
+.tabContainer > button {
+  padding: 0.25em;
+  margin: 0.25em 0.25em 0;
+  border: none;
+  border-radius: 0.25em;
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+  background-color: var(--borderShadowColor);
+  cursor: pointer;
+}
+
+.tabContainer > button.selected {
+  background-color: var(--backgroundColor);
+  cursor: initial;
+}
+
+.tabContents {
+  padding: 1em;
+}
