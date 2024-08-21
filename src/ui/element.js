@@ -123,10 +123,22 @@ export class UILabel extends UIElement {
   constructor(label) {
     super($('label', { innerText: label }));
   }
+
+  /**
+   * @param {string} label
+   */
+  text(label) {
+    this.$element({ innerText: label });
+  }
 }
 
 /** @augments UIElement<HTMLInputElement> */
 export class UIInput extends UIElement {
+  /** @type {string} */
+  get value() {
+    return this.element.value;
+  }
+
   /**
    * @param {string} value
    * @param {Partial<HTMLElementTagNameMap["input"]>} [options]
