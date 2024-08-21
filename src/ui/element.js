@@ -240,6 +240,14 @@ export class UIContainer extends UIElement {
   }
 
   /**
+   * @param {string} name
+   * @returns {UIGroup}
+   */
+  addGroup(name) {
+    return this.addChild(new UIGroup(name));
+  }
+
+  /**
    * @returns {UIContainer<HTMLDivElement>}
    * @param {Partial<HTMLElementTagNameMap["div"]>} [options]
    */
@@ -249,5 +257,26 @@ export class UIContainer extends UIElement {
       $(container.element, options);
     }
     return container;
+  }
+}
+
+/** @augments UIContainer<HTMLFieldSetElement> */
+export class UIGroup extends UIContainer {
+  #legend = $('legend');
+
+  /**
+   * @param {string} name
+   */
+  constructor(name) {
+    super($('fieldset'));
+    this.$element({ }, [this.#legend]);
+    this.rename(name);
+  }
+
+  /**
+   * @param {string} name
+   */
+  rename(name) {
+    this.#legend.innerText = name;
   }
 }

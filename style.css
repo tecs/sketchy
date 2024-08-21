@@ -244,6 +244,7 @@ dialog::backdrop {
 }
 
 /* Tabs */
+
 .tabContainer {
   background-color: var(--darkenColor);
 }
@@ -266,4 +267,11 @@ dialog::backdrop {
 
 .tabContents {
   padding: 1em;
+}
+
+/* Groups */
+
+fieldset {
+  border: 1px solid var(--borderColor);
+  margin-bottom: 1em;
 }
