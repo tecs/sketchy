@@ -3,6 +3,10 @@ import Engine from './engine/index.js';
 import $ from './ui/element.js';
 import UITabs from './ui/tabs.js';
 import Body from './engine/cad/body.js';
+import SubInstance from './engine/cad/subinstance.js';
+import UITable from './ui/table.js';
+
+const { vec3, quat } = glMatrix;
 
 window.addEventListener('load', () => {
   const { canvas, dialog, windows, topMenu, leftMenu, rightMenu, bottomMenu } = new UI(document.body);
@@ -187,6 +191,60 @@ window.addEventListener('load', () => {
 
   repopulateStepsMenu();
   repopulateEntitiesMenu();
+
+  const selected = rightMenu.addChild(new UITabs('tabContents'));
+  selected.$container({ className: 'tabContainer' });
+  selected.hide();
+
+  /**
+   * @param {Iterable<number>} f
+   * @returns {string}
+   */
+  const stringifyFloat32 = (f) => `[${[...f].map(v => v.toFixed(3)).join(', ')}]`;
+
+  const infoTab = selected.addTab('Info');
+  /**
+   * @param {import('./engine/3d/placement.js').default} placement
+   * @param {import('./ui/element.js').UIContainer<any>} container
+   */
+  const describePlacement = (placement, container) => {
+    const axis = vec3.create();
+    const angle = quat.getAxisAngle(axis, placement.rotation);
+
+    const table = container.addChild(new UITable(2));
+    table.addRow('Position', stringifyFloat32(placement.translation));
+    table.addRow('Axis', stringifyFloat32(axis));
+    table.addRow('Angle', `${(angle * 180 / Math.PI).toFixed(3)}°`);
+  };
+  const repopulateSelectedMenu = () => {
+    const instance = engine.scene.selectedInstance ?? engine.scene.enteredInstance;
+    if (!instance) {
+      selected.hide();
+      return;
+    }
+
+    infoTab.rename(engine.scene.selectedInstance ? 'Selected instance' : 'Active instance');
+
+    selected.show();
+    infoTab.clearChildren();
+    const general = infoTab.addGroup('General');
+    const generalProps = general.addChild(new UITable(2));
+    generalProps.addRow('Id', instance.Id.str);
+    generalProps.addRow('Body', instance.body.name);
+
+    const parent = SubInstance.getParent(instance);
+    if (parent) {
+      generalProps.addRow('Parent', parent.body.name);
+      describePlacement(parent.subInstance.placement, infoTab.addGroup('Placement'));
+    }
+    describePlacement(instance.Placement, infoTab.addGroup(parent ? 'Global placement' : 'Placement'));
+
+    const tip = instance.body.step?.State;
+    generalProps.addRow('Tip', tip ? `${tip.name} (${tip.type})` : '<none>');
+  };
+
+  engine.on('selectionchange', repopulateSelectedMenu);
+  engine.on('currentchange', repopulateSelectedMenu);
 
   engine.on('currentchange', repopulateStepsMenu);
   engine.on('scenechange', repopulateStepsMenu);
