@@ -149,11 +149,9 @@ window.addEventListener('load', () => {
   const measurementsInput = bottomMenu.addInput('', { disabled: true }).element;
 
   const browser = rightMenu.addChild(new UITabs('tabContents'));
-  const stepsTab = browser.addTab('');
-  const bodyTab = browser.addTab('Bodies');
-
   browser.$container({ className: 'tabContainer' });
 
+  const stepsTab = browser.addTab('');
   const repopulateStepsMenu = () => {
     const instance = engine.scene.enteredInstance;
     if (!instance) {
@@ -173,6 +171,7 @@ window.addEventListener('load', () => {
     }
   };
 
+  const bodyTab = browser.addTab('Bodies');
   const repopulateEntitiesMenu = () => {
     const bodies = engine.entities.values(Body);
     bodyTab.clearChildren();

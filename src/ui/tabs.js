@@ -3,10 +3,12 @@ import $, { UIContainer } from './element.js';
 /** @augments UIContainer<HTMLButtonElement,HTMLDivElement> */
 class UITab extends UIContainer {
   /**
-   * @param {HTMLButtonElement} button
+   * @param {string} name
+   * @param {() => void} onClick
    */
-  constructor(button) {
-    super(button);
+  constructor(name, onClick) {
+    super($('button', { onclick: onClick }));
+    this.rename(name);
     this.container = $('div');
   }
 
@@ -63,7 +65,7 @@ export default class UITabs extends UIContainer {
    * @returns {UITab}
    */
   addTab(name) {
-    const tab = this.addChild(new UITab($('button', { innerText: name, onclick: () => this.select(tab) })));
+    const tab = this.addChild(new UITab(name, () => this.select(tab)));
     this.autoselect();
     return tab;
   }
