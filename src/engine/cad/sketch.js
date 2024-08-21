@@ -10,7 +10,7 @@ const { vec3, mat4, quat } = glMatrix;
  * @template {number} S
  * @typedef ConstructionElement
  * @property {T} type
- * @property {FixedNumberArray<S>} data
+ * @property {Tuple<number, S>} data
  */
 
 /** @typedef {ConstructionElement<"line", 4>} LineConstructionElement */

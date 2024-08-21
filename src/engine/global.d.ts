@@ -7,3 +7,5 @@ type Instance = import('./scene/instance').default;
 type RenderingPass = import('./renderer').RenderingPass;
 type Engine = import('.').default;
 type Entities = import('./entities').default;
+type Tuple<T, N extends number, A extends T[] = []> = A['length'] extends N ? A : Tuple<T, N, [...A, T]>;
+type OptionalTuple<T, N extends number, A extends T[] = []> = A['length'] extends N ? A : A | OptionalTuple<T, N, [...A, T]>;

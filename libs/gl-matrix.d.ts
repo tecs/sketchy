@@ -1,41 +1,40 @@
-type FixedNumberArray<N extends number, A extends number[] = []> = A['length'] extends N ? A : FixedNumberArray<N, [...A, number]>;
 interface FixedFloat32Array<N extends number> extends Float32Array {  readonly length: N; }
 
 type vec2 = FixedFloat32Array<2>;
 type ReadonlyVec2 = Readonly<vec2>;
-type PlainVec2 = FixedNumberArray<2>;
+type PlainVec2 = Tuple<number, 2>;
 
 type vec3 = FixedFloat32Array<3>;
 type ReadonlyVec3 = Readonly<vec3>;
-type PlainVec3 = FixedNumberArray<3>;
+type PlainVec3 = Tuple<number, 3>;
 
 type vec4 = FixedFloat32Array<4>;
 type ReadonlyVec4 = Readonly<vec4>;
-type PlainVec4 = FixedNumberArray<4>;
+type PlainVec4 = Tuple<number, 4>;
 
 type mat2 = FixedFloat32Array<4>;
 type ReadonlyMat2 = Readonly<mat2>;
-type PlainMat2 = FixedNumberArray<4>;
+type PlainMat2 = Tuple<number, 4>;
 
 type mat2d = FixedFloat32Array<6>;
 type ReadonlyMat2d = Readonly<mat2d>;
-type PlainMat2d = FixedNumberArray<6>;
+type PlainMat2d = Tuple<number, 6>;
 
 type mat3 = FixedFloat32Array<9>;
 type ReadonlyMat3 = Readonly<mat3>;
-type PlainMat3 = FixedNumberArray<9>;
+type PlainMat3 = Tuple<number, 9>;
 
 type mat4 = FixedFloat32Array<16>;
 type ReadonlyMat4 = Readonly<mat4>;
-type PlainMat4 = FixedNumberArray<16>;
+type PlainMat4 = Tuple<number, 16>;
 
 type quat = FixedFloat32Array<4>;
 type ReadonlyQuat = Readonly<quat>;
-type PlainQuat = FixedNumberArray<4>;
+type PlainQuat = Tuple<number, 4>;
 
 type quat2 = FixedFloat32Array<8>;
 type ReadonlyQuat2 = Readonly<quat2>;
-type PlainQuat2 = FixedNumberArray<8>;
+type PlainQuat2 = Tuple<number, 8>;
 
 type GlmBase<T extends Float32Array, ReadonlyT> = {
     create: () => T;
