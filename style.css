@@ -269,6 +269,23 @@ dialog::backdrop {
   padding: 1em;
 }
 
+/* Tables */
+
+table {
+  border-collapse: collapse;
+  border-style: hidden;
+  width: 100%;
+}
+
+td, th {
+  border: 1px solid var(--borderColor);
+  padding: 0.25rem;
+}
+
+thead > *, th {
+  font-weight: bold;
+}
+
 /* Groups */
 
 fieldset {
