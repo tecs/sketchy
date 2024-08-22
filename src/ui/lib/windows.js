@@ -1,4 +1,5 @@
-import $, { UIContainer } from './element.js';
+import UIContainer from './container.js';
+import { $ } from './element.js';
 
 /** @augments UIContainer<HTMLDialogElement,HTMLDivElement> */
 class UIWindow extends UIContainer {
@@ -25,11 +26,8 @@ class UIWindow extends UIContainer {
 
 /** @augments UIContainer<HTMLDivElement> */
 export default class UIWindows extends UIContainer {
-  /**
-   * @param {import('./element.js').AnyParent} [parent]
-   */
-  constructor(parent) {
-    super($('div'), parent);
+  constructor() {
+    super($('div'));
   }
 
   /**
@@ -44,7 +42,7 @@ export default class UIWindows extends UIContainer {
   }
 
   /**
-   * @param {import('./element.js').UIElement<HTMLElement>} child
+   * @param {import('./index.js').UIElement<HTMLElement>} child
    * @returns {boolean}
    */
   removeChild(child) {

@@ -32,9 +32,7 @@ import SubInstance from './cad/subinstance.js';
 /** @typedef {import('./scene/intance-types.js').InstanceEvent} InstanceEv */
 /** @typedef {BoundingBoxEv|CameraEv|ConfigEv|EntitiesEv|HistoryEv|InputEv|SceneEv|ToolEv|InstanceEv} EngineEvent */
 
-/**
- * @augments Base<EngineEvent>
- */
+/** @augments Base<EngineEvent> */
 export default class Engine extends Base {
   /** @type {Readonly<Entities>} */
   entities;

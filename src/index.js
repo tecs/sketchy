@@ -1,10 +1,8 @@
+import { $ } from './ui/lib/index.js';
 import UI from './ui/index.js';
 import Engine from './engine/index.js';
-import $ from './ui/element.js';
-import UITabs from './ui/tabs.js';
 import Body from './engine/cad/body.js';
 import SubInstance from './engine/cad/subinstance.js';
-import UITable from './ui/table.js';
 
 const { vec3, quat } = glMatrix;
 
@@ -15,7 +13,7 @@ window.addEventListener('load', () => {
   window.addEventListener('resize', engine.driver.resize);
   engine.driver.resize();
 
-  /** @type {Record<string, import('./ui/element.js').UIButton>} */
+  /** @type {Record<string, import('./ui/lib').UIButton>} */
   const toolMap = {};
   for (const tool of engine.tools.tools) {
     toolMap[tool.type] = leftMenu.addButton(tool.icon, () => engine.tools.setTool(tool), tool.name);
@@ -62,7 +60,7 @@ window.addEventListener('load', () => {
     const settingsWindow = windows.addWindow('Settings');
     const settingsWindowContents = settingsWindow.addContainer();
 
-    const tabs = settingsWindowContents.addChild(new UITabs('settingsContents'));
+    const tabs = settingsWindowContents.addTabs('settingsContents');
     tabs.$element({ className: 'settings' });
     tabs.$container({ className: 'settingsCategories' });
 
@@ -73,7 +71,7 @@ window.addEventListener('load', () => {
       toggle: 'checkbox',
     };
 
-    /** @type {Record<string, import('./ui/element.js').AnyParent>} */
+    /** @type {Record<string, import('./ui/lib').AnyParent>} */
     const tabMap = {};
 
     /** @type {(el: HTMLElement) => boolean} */
@@ -152,7 +150,7 @@ window.addEventListener('load', () => {
   bottomMenu.addLabel('Measurements');
   const measurementsInput = bottomMenu.addInput('', { disabled: true }).element;
 
-  const browser = rightMenu.addChild(new UITabs('tabContents'));
+  const browser = rightMenu.addTabs('tabContents');
   browser.$container({ className: 'tabContainer' });
 
   const stepsTab = browser.addTab('');
@@ -192,7 +190,7 @@ window.addEventListener('load', () => {
   repopulateStepsMenu();
   repopulateEntitiesMenu();
 
-  const selected = rightMenu.addChild(new UITabs('tabContents'));
+  const selected = rightMenu.addTabs('tabContents');
   selected.$container({ className: 'tabContainer' });
   selected.hide();
 
@@ -205,13 +203,13 @@ window.addEventListener('load', () => {
   const infoTab = selected.addTab('Info');
   /**
    * @param {import('./engine/3d/placement.js').default} placement
-   * @param {import('./ui/element.js').UIContainer<any>} container
+   * @param {import('./ui/lib').UIContainer<any>} container
    */
   const describePlacement = (placement, container) => {
     const axis = vec3.create();
     const angle = quat.getAxisAngle(axis, placement.rotation);
 
-    const table = container.addChild(new UITable(2));
+    const table = container.addTable(2);
     table.addRow('Position', stringifyFloat32(placement.translation));
     table.addRow('Axis', stringifyFloat32(axis));
     table.addRow('Angle', `${(angle * 180 / Math.PI).toFixed(3)}°`);
@@ -228,7 +226,7 @@ window.addEventListener('load', () => {
     selected.show();
     infoTab.clearChildren();
     const general = infoTab.addGroup('General');
-    const generalProps = general.addChild(new UITable(2));
+    const generalProps = general.addTable(2);
     generalProps.addRow('Id', instance.Id.str);
     generalProps.addRow('Body', instance.body.name);
 

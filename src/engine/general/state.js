@@ -84,9 +84,7 @@ export default class State {
    * @returns {DefaultStateConstructor<T1>}
    */
   static withDefaults(defaultState) {
-    /**
-     * @augments State<T1>
-     */
+    /** @augments State<T1> */
     class DefaultState extends State {
       /**
        * @param {T1} [initialState]

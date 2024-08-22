@@ -1,29 +1,26 @@
-import $, { UIContainer } from './element.js';
-import UIDialog from './dialog.js';
-import UIMenu from './menu.js';
-import UIWindows from './window.js';
+import { $, UIContainer } from './lib/index.js';
 
 /**
  * @template {HTMLElement} E
  * @augments UIContainer<E>
  */
 export default class UI extends UIContainer {
-  /** @type {UIMenu} */
+  /** @type {import('./lib').UIMenu} */
   topMenu;
 
-  /** @type {UIMenu} */
+  /** @type {import('./lib').UIMenu} */
   leftMenu;
 
-  /** @type {UIMenu} */
+  /** @type {import('./lib').UIMenu} */
   rightMenu;
 
-  /** @type {UIMenu} */
+  /** @type {import('./lib').UIMenu} */
   bottomMenu;
 
-  /** @type {UIDialog} */
+  /** @type {import('./lib').UIDialog} */
   dialog;
 
-  /** @type {UIWindows} */
+  /** @type {import("./lib").UIWindows} */
   windows;
 
   canvas = $('canvas');
@@ -36,11 +33,11 @@ export default class UI extends UIContainer {
 
     appContainer.appendChild(this.canvas);
 
-    this.dialog = this.addChild(new UIDialog());
-    this.topMenu = this.addChild(new UIMenu({ position: 'top' }));
-    this.leftMenu = this.addChild(new UIMenu({ position: 'left' }));
-    this.rightMenu = this.addChild(new UIMenu({ position: 'right' }));
-    this.bottomMenu = this.addChild(new UIMenu({ position: 'bottom' }));
-    this.windows = this.addChild(new UIWindows());
+    this.dialog = this.addDialog();
+    this.topMenu = this.addMenu({ position: 'top' });
+    this.leftMenu = this.addMenu({ position: 'left' });
+    this.rightMenu = this.addMenu({ position: 'right' });
+    this.bottomMenu = this.addMenu({ position: 'bottom' });
+    this.windows = this.addWindows();
   }
 }

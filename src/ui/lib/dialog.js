@@ -1,11 +1,9 @@
-import $, { UIContainer } from './element.js';
+import UIContainer from './container.js';
+import { $ } from './element.js';
 
 /** @augments UIContainer<HTMLDialogElement,HTMLParagraphElement> */
 export default class UIDialog extends UIContainer {
-  /**
-   * @param {import('./element.js').AnyParent} [parent]
-   */
-  constructor(parent = null) {
+  constructor() {
     const p = $('p', { className: 'dialogBody' });
 
     super($('dialog', { className: 'error', innerHTML: '' }, [
@@ -15,7 +13,7 @@ export default class UIDialog extends UIContainer {
         ['button', { className: 'dialogConfirm button', innerText: 'OK', onclick: () => this.hide() }],
         ['button', { className: 'dialogCancel button', onclick: () => this.hide() }],
       ]],
-    ]), parent);
+    ]));
 
     this.container = p;
   }

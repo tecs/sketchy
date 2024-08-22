@@ -1,4 +1,5 @@
-import $, { UIContainer } from './element.js';
+import UIContainer from './container.js';
+import { $ } from './element.js';
 
 /** @augments UIContainer<HTMLButtonElement,HTMLDivElement> */
 class UITab extends UIContainer {
@@ -107,7 +108,7 @@ export default class UITabs extends UIContainer {
   }
 
   /**
-   * @param {import('./element.js').UIElement<HTMLElement>} child
+   * @param {import('.').UIElement<HTMLElement>} child
    * @returns {boolean}
    */
   removeChild(child) {

@@ -1,4 +1,5 @@
-import $, { UIContainer } from './element.js';
+import UIContainer from './container.js';
+import { $ } from './element.js';
 
 /** @augments UIContainer<HTMLTableCellElement> */
 class UICell extends UIContainer {
@@ -16,11 +17,11 @@ class UIRow extends UIContainer {
   cells;
 
   /**
-   * @param {S} size
+   * @param {S} cols
    */
-  constructor(size) {
+  constructor(cols) {
     super($('tr'));
-    this.cells = /** @type {Tuple<UICell, S>} */ ([...Array(size)].map(() => this.addChild(new UICell())));
+    this.cells = /** @type {Tuple<UICell, S>} */ ([...Array(cols)].map(() => this.addChild(new UICell())));
   }
 }
 
@@ -30,14 +31,14 @@ class UIRow extends UIContainer {
  */
 export default class UITable extends UIContainer {
   /** @type {S} */
-  #size;
+  #cols;
 
   /**
-   * @param {S} size
+   * @param {S} cols
    */
-  constructor(size) {
+  constructor(cols) {
     super($('table'));
-    this.#size = size;
+    this.#cols = cols;
   }
 
   /**
@@ -45,7 +46,7 @@ export default class UITable extends UIContainer {
    * @returns {UIRow<S>}
    */
   addRow(...labels) {
-    const row = this.addChild(new UIRow(this.#size));
+    const row = this.addChild(new UIRow(this.#cols));
     for (const cell of /** @type {UICell[]} */ (row.cells)) {
       const label = /** @type {string[]} */ (labels).shift();
       if (label === undefined) break;

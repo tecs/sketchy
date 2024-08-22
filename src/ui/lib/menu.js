@@ -1,6 +1,8 @@
-import $, { UIContainer } from './element.js';
+import UIContainer from './container.js';
+import { $ } from './element.js';
 
-/** @typedef {import('./element.js').UIButton} UIButton */
+/** @typedef {import('.').UIButton} UIButton */
+
 /**
  * @typedef Options
  * @property {"top"|"left"|"right"|"bottom"} position
@@ -13,10 +15,9 @@ export default class UIMenu extends UIContainer {
 
   /**
    * @param {Partial<Options>} [options]
-   * @param {import('./element.js').AnyParent} [parent]
    */
-  constructor(options = {}, parent = null) {
-    super($('div', { className: `menu ${options.position ?? 'left'}` }), parent);
+  constructor(options = {}) {
+    super($('div', { className: `menu ${options.position ?? 'left'}` }));
   }
 
   /**
@@ -26,7 +27,7 @@ export default class UIMenu extends UIContainer {
    * @returns {UIButton}
    */
   addButton(label, onClick, title = label) {
-    const button = super.addButton(label, () => {
+    const button = this.addButton(label, () => {
       if (this.selected !== button && !button.disabled) {
         onClick();
       }
