@@ -18,3 +18,4 @@ type ReadonlyKeys<T> = {
   [P in keyof T]-?: IfEquals<{ [Q in P]: T[P] }, { -readonly [Q in P]: T[P] }, never, P>
 }[keyof T];
 type Filter<T, F> = { [K in keyof T as T[K] extends F ? K : never]: T[K] };
+type KeyFor<T, V> = { [K in keyof T]: T[K] extends V ? K : never}[keyof T];

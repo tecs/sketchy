@@ -123,7 +123,7 @@ window.addEventListener('load', () => {
         ['div', {
           className: 'button reset',
           innerText: '⟲',
-          onclick() {
+          onclick: () => {
             input.value = originalValue;
             input.checked = originalValue === 'true';
             forceChange(input);

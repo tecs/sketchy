@@ -34,7 +34,7 @@ export { default as UITabs } from './tabs.js';
 export { default as UIMenu } from './menu.js';
 export { default as UIWindows } from './windows.js';
 
-/** @typedef {import('./element.js').default<HTMLElement>} AnyUIElement */
+/** @typedef {import("./element.js").default<HTMLElement>} AnyUIElement */
 /** @typedef {UIContainer<HTMLElement>} AnyUIContainer */
 /** @typedef {AnyUIContainer | null | undefined} AnyUIParent */
 /** @typedef {UITable<number>} AnyUITable */

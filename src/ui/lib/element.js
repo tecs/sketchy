@@ -1,26 +1,36 @@
 /** @typedef {import(".").AnyUIParent} AnyUIParent */
 /** @typedef {Extract<WritableKeys<Filter<CSSStyleDeclaration, string>>, string>} WritableCSSProps */
+/** @typedef {Partial<Record<WritableCSSProps, string>>} WritableCSSDeclaration */
+/** @typedef {HTMLElement | keyof HTMLElementTagNameMap} HTMLElementRepresentation */
 
 /**
- * @template {HTMLElement} E
- * @typedef {Partial<Omit<E, "style">> & { style?: Partial<Record<WritableCSSProps, string>> }} HTMLElementProps
+ * @template {HTMLElementRepresentation} E
+ * @typedef {Partial<Omit<ConcreteHTMLElement<E>, "style">> & { style?: WritableCSSDeclaration }} HTMLElementProps
+ */
+
+/* eslint-disable jsdoc/valid-types */
+/**
+ * @template {HTMLElementRepresentation} T
+ * @typedef {T extends keyof HTMLElementTagNameMap ? HTMLElementTagNameMap[T] : T} ConcreteHTMLElement
  */
 
 /**
- * @template {keyof HTMLElementTagNameMap} T
- * @typedef {[T, HTMLElementProps<HTMLElementTagNameMap[T]>?, (HTMLElement | Opts<T>)[]?]} Opts
+ * @template {HTMLElementRepresentation} [T=HTMLElementRepresentation]
+ * @template {HTMLElementRepresentation} [T2=HTMLElementRepresentation]
+ * @typedef {[T, HTMLElementProps<T>?, (T2 extends HTMLElement ? T2 : Opts<T2>)[]?]} Opts
  */
+/* eslint-enable jsdoc/valid-types */
 
 /**
- * @template {keyof HTMLElementTagNameMap} T
- * @template {keyof HTMLElementTagNameMap} T2
- * @param {T | HTMLElement} tag
- * @param {Opts<T>[1]} [attributes]
- * @param {Opts<T2>[2]} [children]
- * @returns {HTMLElementTagNameMap[T]}
+ * @template {HTMLElementRepresentation} T
+ * @template {HTMLElementRepresentation} T2
+ * @param {T} tag
+ * @param {Opts<T, T2>[1]} [attributes]
+ * @param {Opts<T, T2>[2]} [children]
+ * @returns {ConcreteHTMLElement<T>}
  */
 export const $ = (tag, attributes = {}, children = []) => {
-  const el = /** @type {HTMLElementTagNameMap[T]} */ (tag instanceof HTMLElement ? tag : document.createElement(tag));
+  const el = /** @type {ConcreteHTMLElement<T>} */ (tag instanceof HTMLElement ? tag : document.createElement(tag));
 
   for (const [attr, value] of /** @type {[keyof typeof el, any][]} */ (Object.entries(attributes))) {
     if (attr === 'style') {
@@ -32,7 +42,7 @@ export const $ = (tag, attributes = {}, children = []) => {
     }
   }
 
-  for (const child of children) {
+  for (const child of /** @type {(HTMLElement|Opts<T2>)[]} */ (children)) {
     el.appendChild(child instanceof HTMLElement ? child : $(...child));
   }
 
@@ -59,9 +69,9 @@ export default class UIElement {
   }
 
   /**
-   * @template {keyof HTMLElementTagNameMap} TM
-   * @param {HTMLElementProps<E>} [attributes]
-   * @param {(HTMLElement | Opts<TM>)[]} [children]
+   * @template {HTMLElementRepresentation} T
+   * @param {Opts<E, T>[1]} [attributes]
+   * @param {Opts<E, T>[2]} [children]
    * @returns {E}
    */
   $element(attributes = {}, children = []) {

@@ -9,7 +9,7 @@ export default class UIInput extends UIElement {
 
   /**
    * @param {string} value
-   * @param {import('./element.js').HTMLElementProps<HTMLInputElement>} [options]
+   * @param {import("./element.js").Opts<HTMLInputElement>[1]} [options]
    */
   constructor(value, options = {}) {
     super($('input', { value, ...options }));
