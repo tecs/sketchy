@@ -199,6 +199,7 @@ export default class Scene extends Base {
       const previous = this.enteredInstance;
       this.enteredInstance = newInstance;
       this.#engine.emit('currentchange', newInstance, previous);
+      this.setSelectedInstance(null);
     }
 
     if (newInstance) this.setCurrentInstance(newInstance);

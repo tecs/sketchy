@@ -28,6 +28,26 @@ html, body, canvas {
   color: var(--textColor);
 }
 
+table {
+  border-collapse: collapse;
+  border-style: hidden;
+  width: 100%;
+}
+
+td, th {
+  border: 1px solid var(--borderColor);
+  padding: 0.25rem;
+}
+
+thead > *, th {
+  font-weight: bold;
+}
+
+fieldset {
+  border: 1px solid var(--borderColor);
+  margin-bottom: 1em;
+}
+
 .button {
   cursor: pointer;
   border: 1px solid var(--borderColor);
@@ -56,6 +76,10 @@ html, body, canvas {
 }
 
 .button:active::after {
+  background-color: var(--darkenColor);
+}
+
+.selected {
   background-color: var(--darkenColor);
 }
 
@@ -267,30 +291,6 @@ dialog::backdrop {
 
 .tabContents {
   padding: 1em;
-}
-
-/* Tables */
-
-table {
-  border-collapse: collapse;
-  border-style: hidden;
-  width: 100%;
-}
-
-td, th {
-  border: 1px solid var(--borderColor);
-  padding: 0.25rem;
-}
-
-thead > *, th {
-  font-weight: bold;
-}
-
-/* Groups */
-
-fieldset {
-  border: 1px solid var(--borderColor);
-  margin-bottom: 1em;
 }
 
 /* Trees */

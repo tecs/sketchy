@@ -30,7 +30,6 @@ export default (engine) => {
       }
 
       if (doubleClicked && clicked === selectedInstance) {
-        scene.setSelectedInstance(null);
         scene.setEnteredInstance(clicked);
         return;
       }

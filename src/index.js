@@ -185,7 +185,14 @@ window.addEventListener('load', () => {
       const instanceContainer = parentContainer.addContainer({ className: 'tree' });
       instanceContainer.addLabel(instance.body.name).$element({
         ondblclick: () => engine.scene.setEnteredInstance(instance),
+        onclick: () => {
+          const { enteredInstance } = engine.scene;
+          if (instance !== enteredInstance && SubInstance.belongsTo(instance, enteredInstance)) {
+            engine.scene.setSelectedInstance(instance);
+          }
+        },
         style: { fontWeight: instance === currentInstance ? 'bold' : undefined },
+        className: instance === engine.scene.selectedInstance ? 'selected' : '',
       });
       instanceCache[instance.Id.str] = instanceContainer;
     }
@@ -269,6 +276,7 @@ window.addEventListener('load', () => {
   engine.on('entityadded', repopulateEntitiesMenu);
   engine.on('entityremoved', repopulateEntitiesMenu);
   engine.on('currentchange', repopulateEntitiesMenu);
+  engine.on('selectionchange', repopulateEntitiesMenu);
 
   engine.on('selectionchange', repopulateSelectedMenu);
   engine.on('currentchange', repopulateSelectedMenu);
