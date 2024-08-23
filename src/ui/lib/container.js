@@ -54,7 +54,7 @@ export default class UIContainer extends UIElement {
   /**
    * @template {keyof HTMLElementTagNameMap} TM
    * @template {keyof HTMLElementEventMap} EM
-   * @param {Partial<C>} [attributes]
+   * @param {import('./element.js').HTMLElementProps<C>} [attributes]
    * @param {(HTMLElement | import("./element.js").Opts<TM, EM>)[]} [children]
    * @returns {C}
    */

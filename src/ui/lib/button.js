@@ -10,7 +10,7 @@ export default class UIButton extends UIElement {
   /**
    * @param {string} label
    * @param {() => void} onClick
-   * @param {Partial<HTMLElementTagNameMap["button"]>} [options]
+   * @param {import('./element.js').HTMLElementProps<HTMLButtonElement>} [options]
    */
   constructor(label, onClick, options = {}) {
     super($('button', { ...options, innerText: label, onclick: onClick }));

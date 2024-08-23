@@ -1,9 +1,15 @@
 /** @typedef {import(".").AnyUIParent} AnyUIParent */
+/** @typedef {Extract<WritableKeys<Filter<CSSStyleDeclaration, string>>, string>} WritableCSSProps */
+
+/**
+ * @template {HTMLElement} E
+ * @typedef {Partial<Omit<E, "style">> & { style?: Partial<Record<WritableCSSProps, string>> }} HTMLElementProps
+ */
 
 /**
  * @template {keyof HTMLElementTagNameMap} T
  * @template {keyof HTMLElementEventMap} E
- * @typedef {[T, Partial<HTMLElementTagNameMap[T]>?, (HTMLElement | Opts<T, E>)[]?]} Opts
+ * @typedef {[T, HTMLElementProps<HTMLElementTagNameMap[T]>?, (HTMLElement | Opts<T, E>)[]?]} Opts
  */
 
 /**
@@ -17,8 +23,15 @@
  */
 export const $ = (tag, attributes = {}, children = []) => {
   const el = /** @type {HTMLElementTagNameMap[T]} */ (tag instanceof HTMLElement ? tag : document.createElement(tag));
-  for (const [attr, value] of /** @type {[keyof el, any][]} */ (Object.entries(attributes))) {
-    el[attr] = value;
+
+  for (const [attr, value] of /** @type {[keyof typeof el, any][]} */ (Object.entries(attributes))) {
+    if (attr === 'style') {
+      for (const [prop, style] of /** @type {[WritableCSSProps, string][]} */ (Object.entries(value))) {
+        el.style[prop] = style;
+      }
+    } else {
+      el[attr] = value;
+    }
   }
 
   for (const child of children) {
@@ -50,7 +63,7 @@ export default class UIElement {
   /**
    * @template {keyof HTMLElementTagNameMap} TM
    * @template {keyof HTMLElementEventMap} EM
-   * @param {Partial<E>} [attributes]
+   * @param {HTMLElementProps<E>} [attributes]
    * @param {(HTMLElement | Opts<TM, EM>)[]} [children]
    * @returns {E}
    */
