@@ -253,8 +253,15 @@ window.addEventListener('load', () => {
     generalProps.addRow('Tip', tip ? `${tip.name} (${tip.type})` : '<none>');
   };
 
-  engine.on('selectionchange', repopulateSelectedMenu);
-  engine.on('currentchange', repopulateSelectedMenu);
+  /**
+   * @param {Instance} changedInstance
+   */
+  const repopulateSelectedMenuOnInstanceChange = (changedInstance) => {
+    const selectedInstance = engine.scene.selectedInstance ?? engine.scene.enteredInstance;
+    if (changedInstance === selectedInstance) {
+      repopulateSelectedMenu();
+    }
+  };
 
   engine.on('currentchange', repopulateStepsMenu);
   engine.on('scenechange', repopulateStepsMenu);
@@ -262,6 +269,11 @@ window.addEventListener('load', () => {
   engine.on('entityadded', repopulateEntitiesMenu);
   engine.on('entityremoved', repopulateEntitiesMenu);
   engine.on('currentchange', repopulateEntitiesMenu);
+
+  engine.on('selectionchange', repopulateSelectedMenu);
+  engine.on('currentchange', repopulateSelectedMenu);
+  engine.on('instancetransformed', repopulateSelectedMenuOnInstanceChange);
+  engine.on('instancetranslated', repopulateSelectedMenuOnInstanceChange);
 
   engine.on('toolactive', () => {
     measurementsInput.disabled = !engine.tools.selected.setDistance;
