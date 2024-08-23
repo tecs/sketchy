@@ -27,7 +27,7 @@ export default class UIMenu extends UIContainer {
    * @returns {UIButton}
    */
   addButton(label, onClick, title = label) {
-    const button = this.addButton(label, () => {
+    const button = super.addButton(label, () => {
       if (this.selected !== button && !button.disabled) {
         onClick();
       }
