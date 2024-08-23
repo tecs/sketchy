@@ -8,7 +8,7 @@ import Placement, { defaultTrs } from '../3d/placement.js';
 /**
  * @typedef InstanceState
  * @property {string} id
- * @property {import('../entities.js').Key} bodyId
+ * @property {import("../entities.js").Key} bodyId
  * @property {PlainMat4} trs
  */
 

@@ -4,21 +4,21 @@ import UIElement, { $ } from './element.js';
 
 /**
  * @template {number} S
- * @typedef {typeof import('.').UITable<S>} UITable
+ * @typedef {typeof import(".").UITable<S>} UITable
  */
 
 /**
  * @typedef UITypes
- * @property {typeof import('.').UILabel} UILabel
- * @property {typeof import('.').UIButton} UIButton
- * @property {typeof import('.').UIInput} UIInput
- * @property {typeof import('.').UIPlainContainer} UIPlainContainer
- * @property {typeof import('.').UIGroup} UIGroup
- * @property {typeof import('.').UITable} UITable
- * @property {typeof import('.').UIDialog} UIDialog
- * @property {typeof import('.').UITabs} UITabs
- * @property {typeof import('.').UIMenu} UIMenu
- * @property {typeof import('.').UIWindows} UIWindows
+ * @property {typeof import(".").UILabel} UILabel
+ * @property {typeof import(".").UIButton} UIButton
+ * @property {typeof import(".").UIInput} UIInput
+ * @property {typeof import(".").UIPlainContainer} UIPlainContainer
+ * @property {typeof import(".").UIGroup} UIGroup
+ * @property {typeof import(".").UITable} UITable
+ * @property {typeof import(".").UIDialog} UIDialog
+ * @property {typeof import(".").UITabs} UITabs
+ * @property {typeof import(".").UIMenu} UIMenu
+ * @property {typeof import(".").UIWindows} UIWindows
  */
 
 /**
@@ -55,7 +55,7 @@ export default class UIContainer extends UIElement {
    * @template {keyof HTMLElementTagNameMap} TM
    * @template {keyof HTMLElementEventMap} EM
    * @param {Partial<C>} [attributes]
-   * @param {(HTMLElement | import('./element.js').Opts<TM, EM>)[]} [children]
+   * @param {(HTMLElement | import("./element.js").Opts<TM, EM>)[]} [children]
    * @returns {C}
    */
   $container(attributes = {}, children = []) {

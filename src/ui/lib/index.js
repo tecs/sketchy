@@ -34,4 +34,4 @@ export { default as UITabs } from './tabs.js';
 export { default as UIMenu } from './menu.js';
 export { default as UIWindows } from './windows.js';
 
-/** @typedef {import('./element.js').AnyParent} AnyParent */
+/** @typedef {import("./element.js").AnyParent} AnyParent */

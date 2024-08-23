@@ -29,7 +29,7 @@ import SubInstance from './cad/subinstance.js';
 /** @typedef {import("./input-types").InputEvent} InputEv */
 /** @typedef {import("./scene/types").SceneEvent} SceneEv */
 /** @typedef {import("./tools/types").ToolEvent} ToolEv */
-/** @typedef {import('./scene/intance-types.js').InstanceEvent} InstanceEv */
+/** @typedef {import("./scene/intance-types.js").InstanceEvent} InstanceEv */
 /** @typedef {BoundingBoxEv|CameraEv|ConfigEv|EntitiesEv|HistoryEv|InputEv|SceneEv|ToolEv|InstanceEv} EngineEvent */
 
 /** @augments Base<EngineEvent> */

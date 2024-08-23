@@ -12,7 +12,7 @@ import State from '../general/state.js';
 /**
  * @typedef BodyState
  * @property {string} name
- * @property {import('../entities.js').Key} id
+ * @property {import("../entities.js").Key} id
  * @property {import("./step.js").StepState<any>[]} stack
  */
 
@@ -140,7 +140,7 @@ export default class Body extends Base.implement({
   }
 
   /**
-   * @param {Partial<import('../scene/instance.js').InstanceState>} [state]
+   * @param {Partial<import("../scene/instance.js").InstanceState>} [state]
    * @returns {Instance}
    */
   instantiate(state) {

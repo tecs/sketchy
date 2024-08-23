@@ -1,6 +1,6 @@
 import Step from './step.js';
 
-/** @typedef {import('../general/state.js').Value} Value */
+/** @typedef {import("../general/state.js").Value} Value */
 
 /**
  * @param {string} type

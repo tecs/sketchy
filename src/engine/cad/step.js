@@ -29,7 +29,7 @@ import State from '../general/state.js';
 export default class Step extends Base {
   static registered = false;
 
-  /** @type {import('../general/state.js').StateType<StepState<T>>} */
+  /** @type {import("../general/state.js").StateType<StepState<T>>} */
   State;
 
   /** @type {Model} */
@@ -62,7 +62,7 @@ export default class Step extends Base {
     const [data, name, body, engine] = args;
 
     super();
-    this.State = new /** @type {import('../general/state.js').StateConstructor<StepState<T>>} */ (State)({
+    this.State = new /** @type {import("../general/state.js").StateConstructor<StepState<T>>} */ (State)({
       name,
       type: /** @type {typeof Step<T>} */ (this.constructor).getType(),
       data,

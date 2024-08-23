@@ -1,4 +1,4 @@
-/** @typedef {import('.').UIContainer<HTMLElement> | null | undefined} AnyParent */
+/** @typedef {import(".").UIContainer<HTMLElement> | null | undefined} AnyParent */
 
 /**
  * @template {keyof HTMLElementTagNameMap} T

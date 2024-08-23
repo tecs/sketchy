@@ -6,7 +6,7 @@ import Step from './step.js';
 const { mat4, vec3 } = glMatrix;
 
 /**
- * @template {import('./step.js').Value} T
+ * @template {import("./step.js").Value} T
  * @typedef {import("./step.js").BaseParams<T>} BaseParamsT
  */
 

@@ -5,19 +5,19 @@ import { $, UIContainer } from './lib/index.js';
  * @augments UIContainer<E>
  */
 export default class UI extends UIContainer {
-  /** @type {import('./lib').UIMenu} */
+  /** @type {import("./lib").UIMenu} */
   topMenu;
 
-  /** @type {import('./lib').UIMenu} */
+  /** @type {import("./lib").UIMenu} */
   leftMenu;
 
-  /** @type {import('./lib').UIMenu} */
+  /** @type {import("./lib").UIMenu} */
   rightMenu;
 
-  /** @type {import('./lib').UIMenu} */
+  /** @type {import("./lib").UIMenu} */
   bottomMenu;
 
-  /** @type {import('./lib').UIDialog} */
+  /** @type {import("./lib").UIDialog} */
   dialog;
 
   /** @type {import("./lib").UIWindows} */

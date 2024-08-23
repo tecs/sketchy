@@ -13,7 +13,7 @@ window.addEventListener('load', () => {
   window.addEventListener('resize', engine.driver.resize);
   engine.driver.resize();
 
-  /** @type {Record<string, import('./ui/lib').UIButton>} */
+  /** @type {Record<string, import("./ui/lib").UIButton>} */
   const toolMap = {};
   for (const tool of engine.tools.tools) {
     toolMap[tool.type] = leftMenu.addButton(tool.icon, () => engine.tools.setTool(tool), tool.name);
@@ -64,14 +64,14 @@ window.addEventListener('load', () => {
     tabs.$element({ className: 'settings' });
     tabs.$container({ className: 'settingsCategories' });
 
-    /** @type {Record<import('./engine/config.js').Setting["type"], string>} */
+    /** @type {Record<import("./engine/config.js").Setting["type"], string>} */
     const InputTypeMap = {
       int: 'number',
       key: 'text',
       toggle: 'checkbox',
     };
 
-    /** @type {Record<string, import('./ui/lib').AnyParent>} */
+    /** @type {Record<string, import("./ui/lib").AnyParent>} */
     const tabMap = {};
 
     /** @type {(el: HTMLElement) => boolean} */
@@ -202,8 +202,8 @@ window.addEventListener('load', () => {
 
   const infoTab = selected.addTab('Info');
   /**
-   * @param {import('./engine/3d/placement.js').default} placement
-   * @param {import('./ui/lib').UIContainer<any>} container
+   * @param {import("./engine/3d/placement.js").default} placement
+   * @param {import("./ui/lib").UIContainer<any>} container
    */
   const describePlacement = (placement, container) => {
     const axis = vec3.create();

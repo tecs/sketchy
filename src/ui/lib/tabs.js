@@ -108,7 +108,7 @@ export default class UITabs extends UIContainer {
   }
 
   /**
-   * @param {import('.').UIElement<HTMLElement>} child
+   * @param {import(".").UIElement<HTMLElement>} child
    * @returns {boolean}
    */
   removeChild(child) {

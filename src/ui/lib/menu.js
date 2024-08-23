@@ -1,7 +1,7 @@
 import UIContainer from './container.js';
 import { $ } from './element.js';
 
-/** @typedef {import('.').UIButton} UIButton */
+/** @typedef {import(".").UIButton} UIButton */
 
 /**
  * @typedef Options

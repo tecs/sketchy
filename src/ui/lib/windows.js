@@ -42,7 +42,7 @@ export default class UIWindows extends UIContainer {
   }
 
   /**
-   * @param {import('./index.js').UIElement<HTMLElement>} child
+   * @param {import("./index.js").UIElement<HTMLElement>} child
    * @returns {boolean}
    */
   removeChild(child) {
