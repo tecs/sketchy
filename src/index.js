@@ -186,7 +186,9 @@ window.addEventListener('load', () => {
       const parent = SubInstance.getParent(instance)?.instance;
       const parentContainer = (parent ? instanceCache[parent.Id.str] : null) ?? sceneTab;
       const instanceContainer = parentContainer.addContainer({ className: 'tree' });
-      const label = instanceContainer.addLabel(instance.body.name);
+      const label = instanceContainer.addLabel(instance.body.name).$element({
+        ondblclick: () => engine.scene.setEnteredInstance(instance),
+      });
       instanceCache[instance.Id.str] = instanceContainer;
       if (instance === currentInstance) {
         label.element.style.fontWeight = 'bold';
