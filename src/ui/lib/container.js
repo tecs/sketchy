@@ -53,9 +53,8 @@ export default class UIContainer extends UIElement {
 
   /**
    * @template {keyof HTMLElementTagNameMap} TM
-   * @template {keyof HTMLElementEventMap} EM
    * @param {import('./element.js').HTMLElementProps<C>} [attributes]
-   * @param {(HTMLElement | import("./element.js").Opts<TM, EM>)[]} [children]
+   * @param {(HTMLElement | import("./element.js").Opts<TM>)[]} [children]
    * @returns {C}
    */
   $container(attributes = {}, children = []) {

@@ -8,17 +8,15 @@
 
 /**
  * @template {keyof HTMLElementTagNameMap} T
- * @template {keyof HTMLElementEventMap} E
- * @typedef {[T, HTMLElementProps<HTMLElementTagNameMap[T]>?, (HTMLElement | Opts<T, E>)[]?]} Opts
+ * @typedef {[T, HTMLElementProps<HTMLElementTagNameMap[T]>?, (HTMLElement | Opts<T>)[]?]} Opts
  */
 
 /**
  * @template {keyof HTMLElementTagNameMap} T
  * @template {keyof HTMLElementTagNameMap} T2
- * @template {keyof HTMLElementEventMap} E
  * @param {T | HTMLElement} tag
- * @param {Opts<T, E>[1]} [attributes]
- * @param {Opts<T2, E>[2]} [children]
+ * @param {Opts<T>[1]} [attributes]
+ * @param {Opts<T2>[2]} [children]
  * @returns {HTMLElementTagNameMap[T]}
  */
 export const $ = (tag, attributes = {}, children = []) => {
@@ -62,9 +60,8 @@ export default class UIElement {
 
   /**
    * @template {keyof HTMLElementTagNameMap} TM
-   * @template {keyof HTMLElementEventMap} EM
    * @param {HTMLElementProps<E>} [attributes]
-   * @param {(HTMLElement | Opts<TM, EM>)[]} [children]
+   * @param {(HTMLElement | Opts<TM>)[]} [children]
    * @returns {E}
    */
   $element(attributes = {}, children = []) {
