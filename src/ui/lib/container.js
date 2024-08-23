@@ -1,6 +1,6 @@
 import UIElement, { $ } from './element.js';
 
-/** @typedef {UIElement<HTMLElement>} AnyUIElement */
+/** @typedef {import(".").AnyUIElement} AnyUIElement */
 
 /**
  * @template {number} S

@@ -71,7 +71,7 @@ window.addEventListener('load', () => {
       toggle: 'checkbox',
     };
 
-    /** @type {Record<string, import("./ui/lib").AnyParent>} */
+    /** @type {Record<string, import("./ui/lib").AnyUIParent>} */
     const tabMap = {};
 
     /** @type {(el: HTMLElement) => boolean} */
@@ -203,7 +203,7 @@ window.addEventListener('load', () => {
   const infoTab = selected.addTab('Info');
   /**
    * @param {import("./engine/3d/placement.js").default} placement
-   * @param {import("./ui/lib").UIContainer<any>} container
+   * @param {import("./ui/lib").AnyUIContainer} container
    */
   const describePlacement = (placement, container) => {
     const axis = vec3.create();

@@ -1,4 +1,4 @@
-/** @typedef {import(".").UIContainer<HTMLElement> | null | undefined} AnyParent */
+/** @typedef {import(".").AnyUIParent} AnyUIParent */
 
 /**
  * @template {keyof HTMLElementTagNameMap} T
@@ -37,7 +37,7 @@ export default class UIElement {
   /** @type {E} */
   element;
 
-  /** @type {AnyParent | null} */
+  /** @type {AnyUIParent | null} */
   parent = null;
 
   /**
