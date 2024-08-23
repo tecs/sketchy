@@ -3,6 +3,7 @@ import UI from './ui/index.js';
 import Engine from './engine/index.js';
 import Body from './engine/cad/body.js';
 import SubInstance from './engine/cad/subinstance.js';
+import Instance from './engine/scene/instance.js';
 
 const { vec3, quat } = glMatrix;
 
@@ -173,11 +174,28 @@ window.addEventListener('load', () => {
     }
   };
 
+  const sceneTab = browser.addTab('Scene');
   const bodyTab = browser.addTab('Bodies');
   const repopulateEntitiesMenu = () => {
+    const instances = engine.entities.values(Instance);
+    /** @type {Record<string, import("./ui/lib").AnyUIParent>} */
+    const instanceCache = {};
+    const currentInstance = engine.scene.enteredInstance;
+    sceneTab.clearChildren();
+    for (const instance of instances) {
+      const parent = SubInstance.getParent(instance)?.instance;
+      const parentContainer = (parent ? instanceCache[parent.Id.str] : null) ?? sceneTab;
+      const instanceContainer = parentContainer.addContainer({ className: 'tree' });
+      const label = instanceContainer.addLabel(instance.body.name);
+      instanceCache[instance.Id.str] = instanceContainer;
+      if (instance === currentInstance) {
+        label.element.style.fontWeight = 'bold';
+      }
+    }
+
     const bodies = engine.entities.values(Body);
     bodyTab.clearChildren();
-    const currentBody = engine.scene.enteredInstance?.body;
+    const currentBody = currentInstance?.body;
     for (const body of bodies) {
       const bodyContainer = bodyTab.addContainer();
       const label = bodyContainer.addLabel(body.name);

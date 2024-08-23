@@ -292,3 +292,47 @@ fieldset {
   border: 1px solid var(--borderColor);
   margin-bottom: 1em;
 }
+
+/* Trees */
+
+.tree {
+  position: relative;
+}
+
+.tree .tree {
+  padding-left: 1em;
+}
+
+.tree .tree::before {
+  content: '';
+  position: absolute;
+  display: block;
+  top: 0;
+  left: 0.25em;
+  width: 0.5em;
+  height: 0.66em;
+  border-bottom: 2px solid var(--borderColor);
+}
+
+.tree .tree::after {
+  content: '';
+  position: absolute;
+  display: block;
+  top: -0.5em;
+  left: 0.25em;
+  bottom: 0.5em;
+  border-left: 2px solid var(--borderColor);
+}
+
+.tree .tree:first-of-type::after {
+  top: 0.1em;
+}
+
+.tree .tree:last-of-type::after {
+  height: 1.3em;
+  bottom: initial;
+}
+
+.tree .tree:first-of-type:last-of-type:after {
+  height: 0.6em;
+}
