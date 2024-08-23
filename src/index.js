@@ -166,11 +166,8 @@ window.addEventListener('load', () => {
     stepsTab.rename(`Steps (${instance.body.name})`);
     const currentStep = instance.body.step;
     for (const step of instance.body.listSteps()) {
-      const stepContainer = stepsTab.addContainer();
-      const label = stepContainer.addLabel(step.name);
-      if (step === currentStep) {
-        label.element.style.fontWeight = 'bold';
-      }
+      stepsTab.addContainer()
+        .addLabel(step.name).$element({ style: { fontWeight: step === currentStep ? 'bold' : undefined } });
     }
   };
 
@@ -186,24 +183,19 @@ window.addEventListener('load', () => {
       const parent = SubInstance.getParent(instance)?.instance;
       const parentContainer = (parent ? instanceCache[parent.Id.str] : null) ?? sceneTab;
       const instanceContainer = parentContainer.addContainer({ className: 'tree' });
-      const label = instanceContainer.addLabel(instance.body.name).$element({
+      instanceContainer.addLabel(instance.body.name).$element({
         ondblclick: () => engine.scene.setEnteredInstance(instance),
+        style: { fontWeight: instance === currentInstance ? 'bold' : undefined },
       });
       instanceCache[instance.Id.str] = instanceContainer;
-      if (instance === currentInstance) {
-        label.element.style.fontWeight = 'bold';
-      }
     }
 
     const bodies = engine.entities.values(Body);
     bodyTab.clearChildren();
     const currentBody = currentInstance?.body;
     for (const body of bodies) {
-      const bodyContainer = bodyTab.addContainer();
-      const label = bodyContainer.addLabel(body.name);
-      if (body === currentBody) {
-        label.element.style.fontWeight = 'bold';
-      }
+      bodyTab.addContainer()
+        .addLabel(body.name).$element({ style: { fontWeight: body === currentBody ? 'bold' : undefined } });
     }
   };
 
