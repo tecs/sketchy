@@ -1,9 +1,10 @@
 import Body from '../engine/cad/body.js';
+import Id from '../engine/general/id.js';
 
 /** @type {RenderingPass} */
 export default (engine) => {
   const {
-    driver: { ctx, makeProgram, vert, frag, UNSIGNED_INDEX_TYPE },
+    driver: { ctx, makeProgram, vert, frag, UNSIGNED_INDEX_TYPE, UNSIGNED_INDEX_SIZE },
     camera,
     entities,
     scene,
@@ -99,6 +100,44 @@ export default (engine) => {
 
       ctx.readPixels(0, 0, 1, 1, ctx.RGBA, ctx.UNSIGNED_BYTE, readData);
       scene.hoverOver(readData);
+
+      const instance = scene.hoveredInstance;
+      const model = instance?.body.currentModel;
+      if (!model || drawing) return;
+
+      ctx.clear(ctx.COLOR_BUFFER_BIT | ctx.DEPTH_BUFFER_BIT);
+
+      ctx.uniformMatrix4fv(program.uLoc.u_viewProjection, false, camera.frustum);
+      ctx.uniformMatrix4fv(program.uLoc.u_trs, false, instance.Placement.trs);
+
+      ctx.bindBuffer(ctx.ARRAY_BUFFER, model.buffer.vertex);
+      ctx.enableVertexAttribArray(program.aLoc.a_position);
+      ctx.vertexAttribPointer(program.aLoc.a_position, 3, ctx.FLOAT, false, 0, 0);
+
+      // Geometry
+      ctx.uniform1f(program.uLoc.u_isLine, 0);
+
+      ctx.bindBuffer(ctx.ELEMENT_ARRAY_BUFFER, model.buffer.index);
+      ctx.uniform4fv(program.uLoc.u_instanceId, Id.intToVec4(0));
+
+      ctx.drawElements(ctx.TRIANGLES, model.data.index.length, UNSIGNED_INDEX_TYPE, 0);
+
+      // Lines
+      ctx.uniform1f(program.uLoc.u_isLine, 1);
+
+      ctx.bindBuffer(ctx.ELEMENT_ARRAY_BUFFER, model.buffer.lineIndex);
+
+      ctx.uniformMatrix4fv(program.uLoc.u_trs, false, instance.Placement.trs);
+
+      ctx.lineWidth(5);
+      for (let i = 0; i < model.data.lineIndex.length / 2; ++i) {
+        ctx.uniform4fv(program.uLoc.u_instanceId, Id.intToVec4(i + 1));
+        ctx.drawElements(ctx.LINES, 2, UNSIGNED_INDEX_TYPE, i * UNSIGNED_INDEX_SIZE);
+      }
+      ctx.lineWidth(1);
+
+      ctx.readPixels(0, 0, 1, 1, ctx.RGBA, ctx.UNSIGNED_BYTE, readData);
+      scene.hoverLine(readData);
     },
   };
 };

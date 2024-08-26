@@ -40,6 +40,9 @@ export default class Driver extends Base {
   /** @type {5125 | 5123} */
   UNSIGNED_INDEX_TYPE;
 
+  /** @type {4 | 8} */
+  UNSIGNED_INDEX_SIZE;
+
   /**
    * @param {Engine} engine
    * @param {HTMLCanvasElement} canvas
@@ -64,6 +67,7 @@ export default class Driver extends Base {
     this.supportsUIntIndexes = !!ctx.getExtension('OES_element_index_uint');
     this.UintIndexArray = this.supportsUIntIndexes ? Uint32Array : Uint16Array;
     this.UNSIGNED_INDEX_TYPE = this.supportsUIntIndexes ? ctx.UNSIGNED_INT : ctx.UNSIGNED_SHORT;
+    this.UNSIGNED_INDEX_SIZE = this.supportsUIntIndexes ? 8 : 4;
   }
 
   /**

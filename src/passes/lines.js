@@ -4,7 +4,7 @@ import SubInstance from '../engine/cad/subinstance.js';
 /** @type {RenderingPass} */
 export default (engine) => {
   const {
-    driver: { ctx, makeProgram, vert, frag, UintIndexArray, UNSIGNED_INDEX_TYPE },
+    driver: { ctx, makeProgram, vert, frag, UintIndexArray, UNSIGNED_INDEX_TYPE, UNSIGNED_INDEX_SIZE },
     camera,
     entities,
     scene,
@@ -88,6 +88,7 @@ export default (engine) => {
         for (const instance of instances) {
           const isSelected = scene.selectedInstance && SubInstance.belongsTo(instance, scene.selectedInstance) ? 1 : 0;
           const isInShadow = !isSelected && !SubInstance.belongsTo(instance, scene.enteredInstance) ? 1 : 0;
+          const selectedLineIndex = scene.enteredInstance === instance ? scene.selectedLineIndex : 0;
 
           ctx.uniformMatrix4fv(program.uLoc.u_trs, false, instance.Placement.trs);
           ctx.uniform1f(program.uLoc.u_isSelected, isSelected);
@@ -95,7 +96,15 @@ export default (engine) => {
 
           if (isSelected) ctx.lineWidth(2);
 
-          ctx.drawElements(ctx.LINES, model.data.lineIndex.length, UNSIGNED_INDEX_TYPE, 0);
+          if (selectedLineIndex) {
+            for (let i = 0; i < model.data.lineIndex.length / 2; ++i) {
+              const segmentIsSelected = selectedLineIndex === i + 1 ? 1 : 0;
+              ctx.lineWidth(1 + segmentIsSelected);
+              ctx.uniform1f(program.uLoc.u_isSelected, segmentIsSelected);
+              ctx.drawElements(ctx.LINES, 2, UNSIGNED_INDEX_TYPE, i * UNSIGNED_INDEX_SIZE);
+            }
+          }
+          else ctx.drawElements(ctx.LINES, model.data.lineIndex.length, UNSIGNED_INDEX_TYPE, 0);
           ctx.lineWidth(1);
         }
       }

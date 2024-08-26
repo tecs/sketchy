@@ -36,7 +36,10 @@ export default (engine) => {
       if (selectedInstance && clicked === selectedInstance) return;
       const clickedOwn = SubInstance.belongsTo(clicked, enteredInstance);
 
-      if (clicked === enteredInstance) scene.setSelectedInstance(null);
+      if (clicked === enteredInstance) {
+        scene.setSelectedInstance(null);
+        scene.setSelectedLine(scene.hoveredLineIndex);
+      }
       else if (clickedOwn) scene.setSelectedInstance(clicked);
       else if (selectedInstance) scene.setSelectedInstance(null);
       else scene.setEnteredInstance(enteredInstance ? SubInstance.getParent(enteredInstance)?.instance ?? null : null);
