@@ -213,7 +213,11 @@ export default class Scene extends Base {
    * @param {import('../cad/body.js').AnyStep | null} step
    */
   setCurrentStep(step) {
-    this.currentStep = step;
+    if (step !== this.currentStep) {
+      const previous = this.currentStep;
+      this.currentStep = step;
+      this.#engine.emit('stepchange', step, previous);
+    }
   }
 
   /**

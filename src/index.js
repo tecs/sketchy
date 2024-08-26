@@ -167,7 +167,10 @@ window.addEventListener('load', () => {
     const currentStep = instance.body.step;
     for (const step of instance.body.listSteps()) {
       stepsTab.addContainer()
-        .addLabel(step.name).$element({ style: { fontWeight: step === currentStep ? 'bold' : undefined } });
+        .addLabel(`${step === currentStep ? '* ' : ''}${step.name}`).$element({
+          ondblclick: () => engine.scene.setCurrentStep(step),
+          style: { fontWeight: step === engine.scene.currentStep ? 'bold' : undefined },
+        });
     }
   };
 
@@ -272,6 +275,7 @@ window.addEventListener('load', () => {
 
   engine.on('currentchange', repopulateStepsMenu);
   engine.on('scenechange', repopulateStepsMenu);
+  engine.on('stepchange', repopulateStepsMenu);
 
   engine.on('entityadded', repopulateEntitiesMenu);
   engine.on('entityremoved', repopulateEntitiesMenu);
