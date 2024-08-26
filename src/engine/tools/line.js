@@ -22,7 +22,7 @@ export default (engine) => {
   const origin = vec3.create();
   const coord = vec3.create();
 
-  /** @type {Omit<Tool, "start"> & { start: (sketch?: Sketch) => void }} */
+  /** @type {Omit<Tool, "start"> & { start: (linkSegment?: boolean) => void }} */
   const lineTool = {
     type: 'line',
     name: 'Line/Arc',
@@ -50,25 +50,32 @@ export default (engine) => {
 
       this.end();
     },
-    start(sketch) {
-      if (!sketch) {
-        const instance = scene.enteredInstance ?? scene.hoveredInstance ?? scene.currentInstance;
+    start(linkSegment = false) {
+      const instance = scene.enteredInstance ?? scene.hoveredInstance ?? scene.currentInstance;
+
+      if (!(scene.currentStep instanceof Sketch)) {
         const normal = vec3.create();
         vec3.transformQuat(normal, scene.axisNormal, instance.Placement.inverseRotation);
-        sketch = instance.body.createStep(Sketch, {
+
+        const sketch = instance.body.createStep(Sketch, {
           attachment: {
             type: 'plane',
             normal: /** @type {PlainVec3} */ ([...normal]),
           },
         });
+        scene.setCurrentStep(sketch);
+      }
 
-        mat4.multiply(transformation, instance.Placement.inverseTrs, sketch.toSketch);
+      if (!(scene.currentStep instanceof Sketch)) return;
+
+      if (!linkSegment) {
+        mat4.multiply(transformation, instance.Placement.inverseTrs, scene.currentStep.toSketch);
         vec3.transformMat4(origin, scene.hovered, transformation);
         vec3.copy(coord, origin);
       }
 
       historyAction = history.createAction('Draw line segment', {
-        sketch,
+        sketch: scene.currentStep,
         line: Sketch.makeConstructionElement('line', [origin[0], origin[1], origin[0], origin[1]]),
       }, () => {
         historyAction = undefined;
@@ -96,11 +103,9 @@ export default (engine) => {
     end() {
       if (!historyAction || !this.distance?.every(v => v >= 0.1)) return;
 
-      const { sketch } = historyAction.data;
-
       historyAction.commit();
       vec3.copy(origin, coord);
-      this.start(sketch);
+      this.start(true);
     },
     abort() {
       if (engine.tools.selected.type === 'orbit') return;

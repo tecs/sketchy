@@ -28,6 +28,9 @@ export default class Scene extends Base {
   /** @type {Instance | null} */
   hoveredInstance = null;
 
+  /** @type {import('../cad/body.js').AnyStep | null} */
+  currentStep = null;
+
   /** @type {ReadonlyVec3} */
   axisNormal = vec3.create();
   hoveredView = vec3.create();
@@ -200,9 +203,17 @@ export default class Scene extends Base {
       this.enteredInstance = newInstance;
       this.#engine.emit('currentchange', newInstance, previous);
       this.setSelectedInstance(null);
+      this.setCurrentStep(null);
     }
 
     if (newInstance) this.setCurrentInstance(newInstance);
+  }
+
+  /**
+   * @param {import('../cad/body.js').AnyStep | null} step
+   */
+  setCurrentStep(step) {
+    this.currentStep = step;
   }
 
   /**

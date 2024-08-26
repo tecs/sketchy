@@ -76,24 +76,29 @@ export default (engine) => {
       this.end();
     },
     start() {
-      const instance = scene.currentInstance;
-      const normal = vec3.create();
-      vec3.transformQuat(normal, scene.axisNormal, instance.Placement.inverseRotation);
+      const instance = scene.enteredInstance ?? scene.hoveredInstance ?? scene.currentInstance;
+      if (!(scene.currentStep instanceof Sketch)) {
+        const normal = vec3.create();
+        vec3.transformQuat(normal, scene.axisNormal, instance.Placement.inverseRotation);
 
-      const sketch = instance.body.createStep(Sketch, {
-        attachment: {
-          type: 'plane',
-          normal: /** @type {PlainVec3} */ ([...normal]),
-        },
-      });
+        const sketch = instance.body.createStep(Sketch, {
+          attachment: {
+            type: 'plane',
+            normal: /** @type {PlainVec3} */ ([...normal]),
+          },
+        });
+        scene.setCurrentStep(sketch);
+      }
 
-      mat4.multiply(transformation, instance.Placement.inverseTrs, sketch.toSketch);
+      if (!(scene.currentStep instanceof Sketch)) return;
+
+      mat4.multiply(transformation, instance.Placement.inverseTrs, scene.currentStep.toSketch);
       vec3.transformMat4(origin, scene.hovered, transformation);
       vec3.copy(coord, origin);
 
       const lineOriginHorizontal = Sketch.makeConstructionElement('line', [origin[0], origin[1], origin[0], origin[1]]);
       historyAction = history.createAction('Draw rectangle', {
-        sketch,
+        sketch: scene.currentStep,
         lineOriginHorizontal,
         lineOriginVertical: Sketch.cloneConstructionElement(lineOriginHorizontal),
         lineCoordHorizontal: Sketch.cloneConstructionElement(lineOriginHorizontal),
