@@ -39,22 +39,18 @@ export default (engine) => {
   ctx.texParameteri(ctx.TEXTURE_2D, ctx.TEXTURE_MIN_FILTER, ctx.LINEAR);
   ctx.texParameteri(ctx.TEXTURE_2D, ctx.TEXTURE_WRAP_S, ctx.CLAMP_TO_EDGE);
   ctx.texParameteri(ctx.TEXTURE_2D, ctx.TEXTURE_WRAP_T, ctx.CLAMP_TO_EDGE);
+  ctx.texImage2D(ctx.TEXTURE_2D, 0, ctx.RGBA, 1, 1, 0, ctx.RGBA, ctx.UNSIGNED_BYTE, null);
 
   const renderbuffer = ctx.createRenderbuffer();
   ctx.bindRenderbuffer(ctx.RENDERBUFFER, renderbuffer);
+  ctx.renderbufferStorage(ctx.RENDERBUFFER, ctx.DEPTH_COMPONENT16, 1, 1);
 
   const framebuffer = ctx.createFramebuffer();
   ctx.bindFramebuffer(ctx.FRAMEBUFFER, framebuffer);
-
   ctx.framebufferTexture2D(ctx.FRAMEBUFFER, ctx.COLOR_ATTACHMENT0, ctx.TEXTURE_2D, texture, 0);
   ctx.framebufferRenderbuffer(ctx.FRAMEBUFFER, ctx.DEPTH_ATTACHMENT, ctx.RENDERBUFFER, renderbuffer);
 
   const readData = new Uint8Array(4);
-
-  ctx.bindTexture(ctx.TEXTURE_2D, texture);
-  ctx.texImage2D(ctx.TEXTURE_2D, 0, ctx.RGBA, 1, 1, 0, ctx.RGBA, ctx.UNSIGNED_BYTE, null);
-  ctx.bindRenderbuffer(ctx.RENDERBUFFER, renderbuffer);
-  ctx.renderbufferStorage(ctx.RENDERBUFFER, ctx.DEPTH_COMPONENT16, 1, 1);
 
   return {
     program,
@@ -65,9 +61,6 @@ export default (engine) => {
       ctx.clear(ctx.COLOR_BUFFER_BIT | ctx.DEPTH_BUFFER_BIT);
 
       const drawing = tools.isActive('line', 'rectangle');
-
-      // Geometry
-      ctx.uniform1f(program.uLoc.u_isLine, 0);
 
       const bodies = entities.values(Body);
       for (const { currentModel: model, instances } of bodies) {
@@ -82,38 +75,27 @@ export default (engine) => {
 
         ctx.uniformMatrix4fv(program.uLoc.u_viewProjection, false, camera.frustum);
 
+        // Geometry
+        ctx.uniform1f(program.uLoc.u_isLine, 0);
         for (const instance of instances) {
           ctx.uniformMatrix4fv(program.uLoc.u_trs, false, instance.Placement.trs);
           ctx.uniform4fv(program.uLoc.u_instanceId, instance.Id.vec4);
 
           ctx.drawElements(ctx.TRIANGLES, model.data.index.length, UNSIGNED_INDEX_TYPE, 0);
         }
-      }
 
-      // Lines
-      ctx.uniform1f(program.uLoc.u_isLine, 1);
-
-      ctx.lineWidth(5);
-      for (const { currentModel: model, instances } of bodies) {
-        // Prevent self-picking when editing
-        if (!model || (drawing && scene.currentInstance.body.currentModel === model)) continue;
-
+        // Lines
+        ctx.uniform1f(program.uLoc.u_isLine, 1);
         ctx.bindBuffer(ctx.ELEMENT_ARRAY_BUFFER, model.buffer.lineIndex);
-
-        ctx.bindBuffer(ctx.ARRAY_BUFFER, model.buffer.vertex);
-        ctx.enableVertexAttribArray(program.aLoc.a_position);
-        ctx.vertexAttribPointer(program.aLoc.a_position, 3, ctx.FLOAT, false, 0, 0);
-
-        ctx.uniformMatrix4fv(program.uLoc.u_viewProjection, false, camera.frustum);
-
+        ctx.lineWidth(5);
         for (const instance of instances) {
           ctx.uniformMatrix4fv(program.uLoc.u_trs, false, instance.Placement.trs);
           ctx.uniform4fv(program.uLoc.u_instanceId, instance.Id.vec4);
 
           ctx.drawElements(ctx.LINES, model.data.lineIndex.length, UNSIGNED_INDEX_TYPE, 0);
         }
+        ctx.lineWidth(1);
       }
-      ctx.lineWidth(1);
 
       ctx.readPixels(0, 0, 1, 1, ctx.RGBA, ctx.UNSIGNED_BYTE, readData);
       scene.hoverOver(readData);

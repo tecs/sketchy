@@ -40,20 +40,16 @@ export default (engine) => {
   ctx.texParameteri(ctx.TEXTURE_2D, ctx.TEXTURE_MIN_FILTER, ctx.LINEAR);
   ctx.texParameteri(ctx.TEXTURE_2D, ctx.TEXTURE_WRAP_S, ctx.CLAMP_TO_EDGE);
   ctx.texParameteri(ctx.TEXTURE_2D, ctx.TEXTURE_WRAP_T, ctx.CLAMP_TO_EDGE);
+  ctx.texImage2D(ctx.TEXTURE_2D, 0, ctx.RGBA, 1, 1, 0, ctx.RGBA, ctx.FLOAT, null);
 
   const renderbuffer = ctx.createRenderbuffer();
   ctx.bindRenderbuffer(ctx.RENDERBUFFER, renderbuffer);
+  ctx.renderbufferStorage(ctx.RENDERBUFFER, ctx.DEPTH_COMPONENT16, 1, 1);
 
   const framebuffer = ctx.createFramebuffer();
   ctx.bindFramebuffer(ctx.FRAMEBUFFER, framebuffer);
-
   ctx.framebufferTexture2D(ctx.FRAMEBUFFER, ctx.COLOR_ATTACHMENT0, ctx.TEXTURE_2D, texture, 0);
   ctx.framebufferRenderbuffer(ctx.FRAMEBUFFER, ctx.DEPTH_ATTACHMENT, ctx.RENDERBUFFER, renderbuffer);
-
-  ctx.bindTexture(ctx.TEXTURE_2D, texture);
-  ctx.texImage2D(ctx.TEXTURE_2D, 0, ctx.RGBA, 1, 1, 0, ctx.RGBA, ctx.FLOAT, null);
-  ctx.bindRenderbuffer(ctx.RENDERBUFFER, renderbuffer);
-  ctx.renderbufferStorage(ctx.RENDERBUFFER, ctx.DEPTH_COMPONENT16, 1, 1);
 
   // cached structures
   // this needs 1 extra component for the alpha channel when reading from the framebuffer,
