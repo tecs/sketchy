@@ -1,6 +1,6 @@
 import UIElement, { $ } from './element.js';
 
-/** @augments UIElement<HTMLButtonElement> */
+/** @augments UIElement<"button"> */
 export default class UIButton extends UIElement {
   /** @type {boolean} */
   get disabled() {
@@ -10,7 +10,7 @@ export default class UIButton extends UIElement {
   /**
    * @param {string} label
    * @param {() => void} onClick
-   * @param {import("./element.js").Opts<HTMLButtonElement>[1]} [options]
+   * @param {import("./element.js").Opts<"button">[1]} [options]
    */
   constructor(label, onClick, options = {}) {
     super($('button', { ...options, innerText: label, onclick: onClick }));

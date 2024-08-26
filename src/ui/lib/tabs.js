@@ -1,7 +1,7 @@
 import UIContainer from './container.js';
 import { $ } from './element.js';
 
-/** @augments UIContainer<HTMLButtonElement,HTMLDivElement> */
+/** @augments UIContainer<"button","div"> */
 class UITab extends UIContainer {
   /**
    * @param {string} name
@@ -41,9 +41,9 @@ class UITab extends UIContainer {
   }
 }
 
-/** @augments UIContainer<HTMLDivElement> */
+/** @augments UIContainer<"div"> */
 export default class UITabs extends UIContainer {
-  /** @type {UIContainer<HTMLDivElement>} */
+  /** @type {UIContainer<"div">} */
   contents;
 
   /** @type {UITab | null} */
@@ -54,11 +54,9 @@ export default class UITabs extends UIContainer {
    */
   constructor(contentsClass = '') {
     super($('div'));
-    this.container = $('div');
-    this.contents = new UIContainer($('div'));
-    this.contents.$container({ className: contentsClass });
-    this.element.appendChild(this.container);
-    this.element.appendChild(this.contents.container);
+    const { container } = this.addContainer();
+    this.contents = this.addContainer({ className: contentsClass });
+    this.container = container;
   }
 
   /**

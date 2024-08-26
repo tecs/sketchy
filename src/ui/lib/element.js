@@ -1,7 +1,8 @@
 /** @typedef {import(".").AnyUIParent} AnyUIParent */
+/** @typedef {import(".").HTMLTag} HTMLTag */
+/** @typedef {import(".").HTMLElementRepresentation} HTMLElementRepresentation */
 /** @typedef {Extract<WritableKeys<Filter<CSSStyleDeclaration, string>>, string>} WritableCSSProps */
 /** @typedef {Partial<Record<WritableCSSProps, string>>} WritableCSSDeclaration */
-/** @typedef {HTMLElement | keyof HTMLElementTagNameMap} HTMLElementRepresentation */
 
 /**
  * @template {HTMLElementRepresentation} E
@@ -11,7 +12,7 @@
 /* eslint-disable jsdoc/valid-types */
 /**
  * @template {HTMLElementRepresentation} T
- * @typedef {T extends keyof HTMLElementTagNameMap ? HTMLElementTagNameMap[T] : T} ConcreteHTMLElement
+ * @typedef {T extends HTMLTag ? HTMLElementTagNameMap[T] : T} ConcreteHTMLElement
  */
 
 /**
@@ -50,19 +51,19 @@ export const $ = (tag, attributes = {}, children = []) => {
 };
 
 /**
- * @template {HTMLElement} E
+ * @template {HTMLTag} E
  */
 export default class UIElement {
   #previousDisplay = '';
 
-  /** @type {E} */
+  /** @type {ConcreteHTMLElement<E>} */
   element;
 
   /** @type {AnyUIParent | null} */
   parent = null;
 
   /**
-   * @param {E} element
+   * @param {ConcreteHTMLElement<E>} element
    */
   constructor(element) {
     this.element = element;
@@ -70,12 +71,12 @@ export default class UIElement {
 
   /**
    * @template {HTMLElementRepresentation} T
-   * @param {Opts<E, T>[1]} [attributes]
+   * @param {Opts<ConcreteHTMLElement<E>, T>[1]} [attributes]
    * @param {Opts<E, T>[2]} [children]
-   * @returns {E}
+   * @returns {ConcreteHTMLElement<E>}
    */
   $element(attributes = {}, children = []) {
-    return /** @type {E} */ ($(this.element, attributes, children));
+    return /** @type {ConcreteHTMLElement<E>} */ ($(this.element, attributes, children));
   }
 
   remove() {

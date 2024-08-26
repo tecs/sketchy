@@ -1,6 +1,13 @@
 import UIElement, { $ } from './element.js';
 
 /** @typedef {import(".").AnyUIElement} AnyUIElement */
+/** @typedef {import(".").HTMLTag} HTMLTag */
+/** @typedef {import(".").HTMLElementRepresentation} HTMLElementRepresentation */
+
+/**
+ * @template {HTMLElementRepresentation} E
+ * @typedef {import("./element.js").ConcreteHTMLElement<E>} ConcreteHTMLElement
+ */
 
 /**
  * @template {number} S
@@ -22,26 +29,26 @@ import UIElement, { $ } from './element.js';
  */
 
 /**
- * @template {HTMLElement} E
- * @template {HTMLElement} [C=E]
+ * @template {HTMLTag} E
+ * @template {HTMLTag} [C=E]
  * @augments UIElement<E>
  */
 export default class UIContainer extends UIElement {
   /** @type {Set<AnyUIElement>} */
   children = new Set();
 
-  /** @type {C} */
+  /** @type {ConcreteHTMLElement<C>} */
   container;
 
   /** @type {UITypes} */
   static #typeMap;
 
   /**
-   * @param {E} element
+   * @param {ConcreteHTMLElement<E>} element
    */
   constructor(element) {
     super(element);
-    this.container = /** @type {C} */ ( /** @type {HTMLElement} */ (element));
+    this.container = /** @type {ConcreteHTMLElement<C>} */ ( /** @type {HTMLElement} */ (element));
   }
 
   /**
@@ -52,13 +59,13 @@ export default class UIContainer extends UIElement {
   }
 
   /**
-   * @template {import("./element.js").HTMLElementRepresentation} T
-   * @param {import("./element.js").Opts<C, T>[1]} [attributes]
-   * @param {import("./element.js").Opts<C, T>[2]} [children]
-   * @returns {C}
+   * @template {HTMLElementRepresentation} T
+   * @param {import("./element.js").Opts<ConcreteHTMLElement<C>, T>[1]} [attributes]
+   * @param {import("./element.js").Opts<ConcreteHTMLElement<C>, T>[2]} [children]
+   * @returns {ConcreteHTMLElement<C>}
    */
   $container(attributes = {}, children = []) {
-    return /** @type {C} */ ($(this.container, attributes, children));
+    return /** @type {ConcreteHTMLElement<C>} */ ($(this.container, attributes, children));
   }
 
   /**
@@ -175,7 +182,7 @@ export default class UIContainer extends UIElement {
   }
 }
 
-/** @augments UIContainer<HTMLDivElement> */
+/** @augments UIContainer<"div"> */
 export class UIPlainContainer extends UIContainer {
   /**
    * @param {Partial<HTMLDivElement>} [opts]

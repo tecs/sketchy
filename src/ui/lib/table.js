@@ -1,7 +1,7 @@
 import UIContainer from './container.js';
 import { $ } from './element.js';
 
-/** @augments UIContainer<HTMLTableCellElement> */
+/** @augments UIContainer<"td"> */
 class UICell extends UIContainer {
   constructor() {
     super($('td'));
@@ -10,7 +10,7 @@ class UICell extends UIContainer {
 
 /**
  * @template {number} S
- * @augments UIContainer<HTMLTableRowElement>
+ * @augments UIContainer<"tr">
  */
 class UIRow extends UIContainer {
   /** @type {Tuple<UICell, S>} */
@@ -27,7 +27,7 @@ class UIRow extends UIContainer {
 
 /**
  * @template {number} S
- * @augments UIContainer<HTMLTableElement>
+ * @augments UIContainer<"table">
  */
 export default class UITable extends UIContainer {
   /** @type {S} */

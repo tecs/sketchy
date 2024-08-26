@@ -1,7 +1,7 @@
 import UIContainer from './container.js';
 import { $ } from './element.js';
 
-/** @augments UIContainer<HTMLDialogElement,HTMLDivElement> */
+/** @augments UIContainer<"dialog","div"> */
 class UIWindow extends UIContainer {
   /** @type {Function | undefined} */
   onClose;
@@ -24,7 +24,7 @@ class UIWindow extends UIContainer {
   }
 }
 
-/** @augments UIContainer<HTMLDivElement> */
+/** @augments UIContainer<"div"> */
 export default class UIWindows extends UIContainer {
   constructor() {
     super($('div'));

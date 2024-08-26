@@ -8,7 +8,7 @@ import { $ } from './element.js';
  * @property {"top"|"left"|"right"|"bottom"} position
  */
 
-/** @augments UIContainer<HTMLDivElement> */
+/** @augments UIContainer<"div"> */
 export default class UIMenu extends UIContainer {
   /** @type {UIButton | null} */
   selected = null;

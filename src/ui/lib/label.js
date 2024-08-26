@@ -1,6 +1,6 @@
 import UIElement, { $ } from './element.js';
 
-/** @augments UIElement<HTMLLabelElement> */
+/** @augments UIElement<"label"> */
 export default class UILabel extends UIElement {
   /**
    * @param {string} label

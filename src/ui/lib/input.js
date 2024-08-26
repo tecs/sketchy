@@ -1,6 +1,6 @@
 import UIElement, { $ } from './element.js';
 
-/** @augments UIElement<HTMLInputElement> */
+/** @augments UIElement<"input"> */
 export default class UIInput extends UIElement {
   /** @type {string} */
   get value() {
@@ -9,7 +9,7 @@ export default class UIInput extends UIElement {
 
   /**
    * @param {string} value
-   * @param {import("./element.js").Opts<HTMLInputElement>[1]} [options]
+   * @param {import("./element.js").Opts<"input">[1]} [options]
    */
   constructor(value, options = {}) {
     super($('input', { value, ...options }));

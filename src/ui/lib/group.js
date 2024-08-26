@@ -1,7 +1,7 @@
 import UIContainer from './container.js';
 import { $ } from './element.js';
 
-/** @augments UIContainer<HTMLFieldSetElement> */
+/** @augments UIContainer<"fieldset"> */
 export default class UIGroup extends UIContainer {
   #legend = $('legend');
 

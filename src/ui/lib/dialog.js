@@ -1,7 +1,7 @@
 import UIContainer from './container.js';
 import { $ } from './element.js';
 
-/** @augments UIContainer<HTMLDialogElement,HTMLParagraphElement> */
+/** @augments UIContainer<"dialog","p"> */
 export default class UIDialog extends UIContainer {
   constructor() {
     const p = $('p', { className: 'dialogBody' });
