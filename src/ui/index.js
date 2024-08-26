@@ -1,7 +1,7 @@
 import { $, UIContainer } from './lib/index.js';
 
 /**
- * @template {HTMLElement} E
+ * @template {import("./lib").HTMLTag} E
  * @augments UIContainer<E>
  */
 export default class UI extends UIContainer {
@@ -26,7 +26,7 @@ export default class UI extends UIContainer {
   canvas = $('canvas');
 
   /**
-   * @param {E} appContainer
+   * @param {import("./lib/element.js").ConcreteHTMLElement<E>} appContainer
    */
   constructor(appContainer) {
     super(appContainer);
