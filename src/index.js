@@ -151,6 +151,7 @@ window.addEventListener('load', () => {
   bottomMenu.addLabel('Measurements');
   const measurementsInput = bottomMenu.addInput('', { disabled: true }).element;
 
+  rightMenu.container.classList.add('rightMenu');
   const browser = rightMenu.addTabs('tabContents');
   browser.$container({ className: 'tabContainer' });
 

@@ -336,3 +336,26 @@ dialog::backdrop {
 .tree .tree:first-of-type:last-of-type:after {
   height: 0.6em;
 }
+
+/* Right menu */
+
+.rightMenu {
+  width: 15em;
+  max-height: 90vh;
+  display: grid;
+  grid-auto-rows: 1fr;
+}
+
+.rightMenu > * {
+  overflow: hidden;
+  position: relative;
+}
+
+.rightMenu .tabContainer {
+  position: sticky;
+}
+
+.rightMenu .tabContents {
+  height: calc(100% - 1.75em);
+  overflow-y: auto;
+}
