@@ -22,6 +22,7 @@ export default (engine) => {
       void main() {
         v_coord = u_trs * a_position;
         gl_Position = u_frustum * v_coord;
+        gl_PointSize = 10.0;
       }
     `,
     frag`
@@ -106,15 +107,19 @@ export default (engine) => {
 
       ctx.bindBuffer(ctx.ARRAY_BUFFER, model.buffer.vertex);
       ctx.vertexAttribPointer(program.aLoc.a_position, 3, ctx.FLOAT, false, 0, 0);
+
+      // Geometry
       ctx.bindBuffer(ctx.ELEMENT_ARRAY_BUFFER, model.buffer.index);
       ctx.drawElements(ctx.TRIANGLES, model.data.index.length, UNSIGNED_INDEX_TYPE, 0);
 
-      ctx.bindBuffer(ctx.ARRAY_BUFFER, model.buffer.vertex);
-      ctx.vertexAttribPointer(program.aLoc.a_position, 3, ctx.FLOAT, false, 0, 0);
+      // Lines
       ctx.bindBuffer(ctx.ELEMENT_ARRAY_BUFFER, model.buffer.lineIndex);
       ctx.lineWidth(5);
       ctx.drawElements(ctx.LINES, model.data.lineIndex.length, UNSIGNED_INDEX_TYPE, 0);
       ctx.lineWidth(1);
+
+      // Points
+      ctx.drawArrays(ctx.POINTS, 0, model.data.vertex.length / 3);
 
       // requires OES_texture_float
       ctx.readPixels(0, 0, 1, 1, ctx.RGBA, ctx.FLOAT, coords);
