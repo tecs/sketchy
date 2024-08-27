@@ -47,6 +47,30 @@ export default class Placement extends implement({
   }
 
   /**
+   * @param {vec3} out
+   * @param {ReadonlyVec3} globalRelativeCoords
+   * @param {ReadonlyMat4} inverseTrs
+   * @returns {vec3}
+   */
+  static toLocalRelativeCoords(out, globalRelativeCoords, inverseTrs) {
+    vec3.transformMat4(out, globalRelativeCoords, inverseTrs);
+    mat4.getTranslation(tempToVec3, inverseTrs);
+    return vec3.subtract(out, out, tempToVec3);
+  }
+
+  /**
+   * @param {vec3} out
+   * @param {ReadonlyVec3} localRelativeCoords
+   * @param {ReadonlyMat4} trs
+   * @returns {vec3}
+   */
+  static toGlobalRelativeCoords(out, localRelativeCoords, trs) {
+    vec3.transformMat4(out, localRelativeCoords, trs);
+    mat4.getTranslation(tempToVec3, trs);
+    return vec3.subtract(out, out, tempToVec3);
+  }
+
+  /**
    * @param {ReadonlyMat4 | PlainMat4} trs
    */
   set(trs) {
@@ -128,9 +152,7 @@ export default class Placement extends implement({
    * @returns {vec3}
    */
   toLocalRelativeCoords(out, globalRelativeCoords) {
-    vec3.transformMat4(out, globalRelativeCoords, this.inverseTrs);
-    mat4.getTranslation(tempToVec3, this.inverseTrs);
-    return vec3.subtract(out, out, tempToVec3);
+    return Placement.toLocalRelativeCoords(out, globalRelativeCoords, this.inverseTrs);
   }
 
   /**
@@ -139,8 +161,6 @@ export default class Placement extends implement({
    * @returns {vec3}
    */
   toGlobalRelativeCoords(out, localRelativeCoords) {
-    vec3.transformMat4(out, localRelativeCoords, this.trs);
-    mat4.getTranslation(tempToVec3, this.trs);
-    return vec3.subtract(out, out, tempToVec3);
+    return Placement.toGlobalRelativeCoords(out, localRelativeCoords, this.trs);
   }
 }
