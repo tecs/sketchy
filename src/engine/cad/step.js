@@ -44,6 +44,9 @@ export default class Step extends Base {
   /** @type {Readonly<Record<keyof Model["data"], number>>} */
   offsets;
 
+  /** @type {Record<keyof Model["data"], number>} */
+  lengths;
+
   /** @type {Engine} */
   engine;
 
@@ -77,6 +80,7 @@ export default class Step extends Base {
     this.#recompute();
     this.model = this.assertProperty('model');
     this.offsets = this.assertProperty('offsets');
+    this.lengths = this.assertProperty('lengths');
   }
 
   /**
@@ -111,6 +115,23 @@ export default class Step extends Base {
       index: this.model.data.index.length,
       lineIndex: this.model.data.lineIndex.length,
     };
+
+    this.lengths = {
+      vertex: 0,
+      normal: 0,
+      color: 0,
+      index: 0,
+      lineIndex: 0,
+    };
+  }
+
+  /**
+   * @param {keyof Model["data"]} part
+   * @param {number} index
+   * @returns {boolean}
+   */
+  indexBelongsTo(part, index) {
+    return index >= this.offsets[part] && index <= this.offsets[part] + this.lengths[part];
   }
 
   recompute() {

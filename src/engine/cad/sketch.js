@@ -40,6 +40,9 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
   toSketch = mat4.create();
   fromSketch = mat4.create();
 
+  /** @type {[x: number, y: number][]} */
+  vertexToIndex = [];
+
   /** @param {PartialBaseParams} args  */
   constructor(...args) {
     if (!args[0].elements) {
@@ -106,8 +109,8 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
    */
   #resizeModelBuffer(part, elements) {
     const isNumber = typeof elements === 'number';
-    const diff = isNumber ? elements : elements.length;
-    const newSize = this.offsets[part] + diff;
+    this.lengths[part] = isNumber ? elements : elements.length;
+    const newSize = this.offsets[part] + this.lengths[part];
     if (newSize !== this.model.data[part].length) {
       const oldData = this.model.data[part].subarray(0, this.offsets[part]);
       this.model.data[part] = new /** @type {new (e: number) => any} */ (this.model.data[part].constructor)(newSize);
@@ -140,8 +143,7 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
     let lineIndexOffset = this.offsets.lineIndex;
     let lastIndex = firstIndex;
 
-    /** @type {[x: number, y: number][]} */
-    const vertexToIndex = [];
+    this.vertexToIndex = [];
 
     let index = -1;
 
@@ -151,23 +153,23 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
     for (const element of this.data.elements) {
       switch (element.type) {
         case 'line':
-          index = firstIndex + vertexToIndex.findIndex(([x, y]) => x === element.data[0] && y === element.data[1]);
+          index = firstIndex + this.vertexToIndex.findIndex(([x, y]) => x === element.data[0] && y === element.data[1]);
           if (index < firstIndex) {
             vec3.set(tempVertex, element.data[0], element.data[1], 0);
             vec3.transformMat4(tempVertex, tempVertex, this.fromSketch);
 
-            vertexToIndex.push([element.data[0], element.data[1]]);
+            this.vertexToIndex.push([element.data[0], element.data[1]]);
             verticesToAdd.push(...tempVertex);
             index = lastIndex++;
           }
           data.lineIndex[lineIndexOffset++] = index;
 
-          index = firstIndex + vertexToIndex.findIndex(([x, y]) => x === element.data[2] && y === element.data[3]);
+          index = firstIndex + this.vertexToIndex.findIndex(([x, y]) => x === element.data[2] && y === element.data[3]);
           if (index < firstIndex) {
             vec3.set(tempVertex, element.data[2], element.data[3], 0);
             vec3.transformMat4(tempVertex, tempVertex, this.fromSketch);
 
-            vertexToIndex.push([element.data[2], element.data[3]]);
+            this.vertexToIndex.push([element.data[2], element.data[3]]);
             verticesToAdd.push(...tempVertex);
             index = lastIndex++;
           }
@@ -201,6 +203,31 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
    */
   line(x1, y1, x2, y2) {
     return this.#createConstructionElement('line', [x1, y1, x2, y2]);
+  }
+
+  /**
+   * @param {number} index
+   * @returns {LineConstructionElement | null}
+   */
+  getLine(index) {
+    if (!this.indexBelongsTo('lineIndex', index * 2)) return null;
+    return this.data.elements[index - this.offsets.lineIndex / 2] ?? null;
+  }
+
+  /**
+   * @param {number} index
+   * @returns {[LineConstructionElement, number] | null}
+   */
+  getLineForPoint(index) {
+    if (!this.indexBelongsTo('vertex', index * 3)) return null;
+    index -= this.offsets.vertex / 3;
+    const coords = this.vertexToIndex[index];
+    if (!coords) return null;
+
+    const line = this.data.elements.find(({ data }) =>
+      (data[0] === coords[0] && data[1] === coords[1]) || (data[2] === coords[0] && data[3] === coords[1]),
+    );
+    return line ? [line, line.data[0] === coords[0] && line.data[1] === coords[1] ? 0 : 2] : null;
   }
 
   /**
