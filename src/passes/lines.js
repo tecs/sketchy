@@ -88,7 +88,7 @@ export default (engine) => {
         for (const instance of instances) {
           const isSelected = scene.selectedInstance && SubInstance.belongsTo(instance, scene.selectedInstance) ? 1 : 0;
           const isInShadow = !isSelected && !SubInstance.belongsTo(instance, scene.enteredInstance) ? 1 : 0;
-          const selectedLineIndex = scene.enteredInstance === instance ? scene.selectedLineIndex : 0;
+          const selectedIndex = scene.enteredInstance === instance ? scene.selectedLineIndex : 0;
 
           ctx.uniformMatrix4fv(program.uLoc.u_trs, false, instance.Placement.trs);
           ctx.uniform1f(program.uLoc.u_isSelected, isSelected);
@@ -96,9 +96,9 @@ export default (engine) => {
 
           if (isSelected) ctx.lineWidth(2);
 
-          if (selectedLineIndex) {
+          if (selectedIndex) {
             for (let i = 0; i < model.data.lineIndex.length / 2; ++i) {
-              const segmentIsSelected = selectedLineIndex === i + 1 ? 1 : 0;
+              const segmentIsSelected = selectedIndex === i + 1 ? 1 : 0;
               ctx.lineWidth(1 + segmentIsSelected);
               ctx.uniform1f(program.uLoc.u_isSelected, segmentIsSelected);
               ctx.drawElements(ctx.LINES, 2, UNSIGNED_INDEX_TYPE, i * UNSIGNED_INDEX_SIZE);

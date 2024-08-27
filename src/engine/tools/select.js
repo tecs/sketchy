@@ -38,7 +38,8 @@ export default (engine) => {
 
       if (clicked === enteredInstance) {
         scene.setSelectedInstance(null);
-        scene.setSelectedLine(scene.hoveredLineIndex);
+        if (scene.hoveredPointIndex) scene.setSelectedPoint(scene.hoveredPointIndex);
+        else if (scene.hoveredLineIndex) scene.setSelectedLine(scene.hoveredLineIndex);
       }
       else if (clickedOwn) scene.setSelectedInstance(clicked);
       else if (selectedInstance) scene.setSelectedInstance(null);

@@ -14,6 +14,7 @@ import renderAxis from '../passes/axis.js';
 import renderSkybox from '../passes/skybox.js';
 import renderObjects from '../passes/objects.js';
 import renderLines from '../passes/lines.js';
+import renderPoints from '../passes/points.js';
 import extractId from '../passes/extractId.js';
 import extractPosition from '../passes/extractPosition.js';
 
@@ -80,6 +81,7 @@ export default class Engine extends Base {
     this.renderer.addToPipeline(renderSkybox);
     this.renderer.addToPipeline(renderObjects);
     this.renderer.addToPipeline(renderLines);
+    this.renderer.addToPipeline(renderPoints);
     this.renderer.addToPipeline(extractId);
     this.renderer.addToPipeline(extractPosition);
     this.renderer.addToPipeline(renderAxis);

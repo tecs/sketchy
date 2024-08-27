@@ -17,11 +17,12 @@ export default (engine) => {
 
       uniform mat4 u_trs;
       uniform mat4 u_viewProjection;
-      uniform float u_isLine;
+      uniform float u_offset;
 
       void main() {
         gl_Position = u_viewProjection * u_trs * a_position;
-        gl_Position.z -= u_isLine * 0.00001;
+        gl_Position.z -= u_offset * 0.00001;
+        gl_PointSize = 10.0;
       }
     `,
     frag`
@@ -77,7 +78,7 @@ export default (engine) => {
         ctx.uniformMatrix4fv(program.uLoc.u_viewProjection, false, camera.frustum);
 
         // Geometry
-        ctx.uniform1f(program.uLoc.u_isLine, 0);
+        ctx.uniform1f(program.uLoc.u_offset, 0);
         for (const instance of instances) {
           ctx.uniformMatrix4fv(program.uLoc.u_trs, false, instance.Placement.trs);
           ctx.uniform4fv(program.uLoc.u_instanceId, instance.Id.vec4);
@@ -86,7 +87,7 @@ export default (engine) => {
         }
 
         // Lines
-        ctx.uniform1f(program.uLoc.u_isLine, 1);
+        ctx.uniform1f(program.uLoc.u_offset, 1);
         ctx.bindBuffer(ctx.ELEMENT_ARRAY_BUFFER, model.buffer.lineIndex);
         ctx.lineWidth(5);
         for (const instance of instances) {
@@ -96,6 +97,15 @@ export default (engine) => {
           ctx.drawElements(ctx.LINES, model.data.lineIndex.length, UNSIGNED_INDEX_TYPE, 0);
         }
         ctx.lineWidth(1);
+
+        // Points
+        ctx.uniform1f(program.uLoc.u_offset, 2);
+        for (const instance of instances) {
+          ctx.uniformMatrix4fv(program.uLoc.u_trs, false, instance.Placement.trs);
+          ctx.uniform4fv(program.uLoc.u_instanceId, instance.Id.vec4);
+
+          ctx.drawArrays(ctx.POINTS, 0, model.data.vertex.length / 3);
+        }
       }
 
       ctx.readPixels(0, 0, 1, 1, ctx.RGBA, ctx.UNSIGNED_BYTE, readData);
@@ -115,7 +125,7 @@ export default (engine) => {
       ctx.vertexAttribPointer(program.aLoc.a_position, 3, ctx.FLOAT, false, 0, 0);
 
       // Geometry
-      ctx.uniform1f(program.uLoc.u_isLine, 0);
+      ctx.uniform1f(program.uLoc.u_offset, 0);
 
       ctx.bindBuffer(ctx.ELEMENT_ARRAY_BUFFER, model.buffer.index);
       ctx.uniform4fv(program.uLoc.u_instanceId, Id.intToVec4(0));
@@ -123,11 +133,40 @@ export default (engine) => {
       ctx.drawElements(ctx.TRIANGLES, model.data.index.length, UNSIGNED_INDEX_TYPE, 0);
 
       // Lines
-      ctx.uniform1f(program.uLoc.u_isLine, 1);
+      ctx.uniform1f(program.uLoc.u_offset, 1);
 
       ctx.bindBuffer(ctx.ELEMENT_ARRAY_BUFFER, model.buffer.lineIndex);
 
-      ctx.uniformMatrix4fv(program.uLoc.u_trs, false, instance.Placement.trs);
+      ctx.lineWidth(5);
+      ctx.drawElements(ctx.LINES, model.data.lineIndex.length, UNSIGNED_INDEX_TYPE, 0);
+      ctx.lineWidth(1);
+
+      // Points
+      ctx.uniform1f(program.uLoc.u_offset, 2);
+
+      for (let i = 0; i < model.data.vertex.length / 3; ++i) {
+        ctx.uniform4fv(program.uLoc.u_instanceId, Id.intToVec4(i + 1));
+        ctx.drawArrays(ctx.POINTS, i, 1);
+      }
+
+      ctx.readPixels(0, 0, 1, 1, ctx.RGBA, ctx.UNSIGNED_BYTE, readData);
+      scene.hoverPoint(readData);
+      if (scene.hoveredPointIndex) return;
+
+      ctx.clear(ctx.COLOR_BUFFER_BIT | ctx.DEPTH_BUFFER_BIT);
+
+      // Geometry
+      ctx.uniform1f(program.uLoc.u_offset, 0);
+
+      ctx.bindBuffer(ctx.ELEMENT_ARRAY_BUFFER, model.buffer.index);
+      ctx.uniform4fv(program.uLoc.u_instanceId, Id.intToVec4(0));
+
+      ctx.drawElements(ctx.TRIANGLES, model.data.index.length, UNSIGNED_INDEX_TYPE, 0);
+
+      // Lines
+      ctx.uniform1f(program.uLoc.u_offset, 1);
+
+      ctx.bindBuffer(ctx.ELEMENT_ARRAY_BUFFER, model.buffer.lineIndex);
 
       ctx.lineWidth(5);
       for (let i = 0; i < model.data.lineIndex.length / 2; ++i) {

@@ -34,6 +34,12 @@ export default class Scene extends Base {
   /** @type {number | null} */
   hoveredLineIndex = null;
 
+  /** @type {number | null} */
+  selectedPointIndex = null;
+
+  /** @type {number | null} */
+  hoveredPointIndex = null;
+
   /** @type {import('../cad/body.js').AnyStep | null} */
   currentStep = null;
 
@@ -186,6 +192,7 @@ export default class Scene extends Base {
       const previous = this.selectedInstance;
       this.selectedInstance = newInstance;
       this.selectedLineIndex = null;
+      this.selectedPointIndex = null;
       this.#engine.emit('selectionchange', newInstance, previous);
     }
   }
@@ -224,6 +231,20 @@ export default class Scene extends Base {
       this.selectedLineIndex = lineIndex;
       const previous = this.selectedInstance;
       this.selectedInstance = null;
+      this.selectedPointIndex = null;
+      this.#engine.emit('selectionchange', null, previous);
+    }
+  }
+
+  /**
+   * @param {number | null} pointIndex
+   */
+  setSelectedPoint(pointIndex) {
+    if (this.selectedPointIndex !== pointIndex) {
+      this.selectedPointIndex = pointIndex;
+      const previous = this.selectedInstance;
+      this.selectedInstance = null;
+      this.selectedLineIndex = null;
       this.#engine.emit('selectionchange', null, previous);
     }
   }
@@ -250,6 +271,7 @@ export default class Scene extends Base {
 
     if (!this.hoveredInstance) {
       this.hoveredLineIndex = null;
+      this.hoveredPointIndex = null;
     }
   }
 
@@ -259,6 +281,14 @@ export default class Scene extends Base {
   hoverLine(id4u) {
     const id = Id.uuuuToInt(id4u);
     this.hoveredLineIndex = id > 0 ? id : null;
+  }
+
+  /**
+   * @param {Readonly<Uint8Array>} id4u
+   */
+  hoverPoint(id4u) {
+    const id = Id.uuuuToInt(id4u);
+    this.hoveredPointIndex = id > 0 ? id : null;
   }
 
   /**
