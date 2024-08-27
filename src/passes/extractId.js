@@ -62,7 +62,7 @@ export default (engine) => {
       ctx.bindFramebuffer(ctx.FRAMEBUFFER, framebuffer);
       ctx.clear(ctx.COLOR_BUFFER_BIT | ctx.DEPTH_BUFFER_BIT);
 
-      const drawing = tools.isActive('line', 'rectangle');
+      const drawing = tools.isActive('line', 'rectangle', 'move');
 
       const bodies = entities.values(Body);
       for (const { currentModel: model, instances } of bodies) {
