@@ -94,7 +94,7 @@ export default class Camera {
     const pKey = config.createString('shortcuts.changePerspective', 'Change perspective', 'key', 'p');
 
     engine.on('keyup', (_, keyCombo) => {
-      if (engine.tools.selected.active) return;
+      if (engine.tools.selected?.active) return;
 
       switch (keyCombo) {
         case cameraFaceXkey.value:

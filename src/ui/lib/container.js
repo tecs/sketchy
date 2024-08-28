@@ -25,7 +25,7 @@ import UIElement, { $ } from './element.js';
  * @property {typeof import(".").UIDialog} UIDialog
  * @property {typeof import(".").UITabs} UITabs
  * @property {typeof import(".").UIMenu} UIMenu
- * @property {typeof import(".").UIWindows} UIWindows
+ * @property {typeof import(".").UIWindow} UIWindow
  */
 
 /**
@@ -74,9 +74,7 @@ export default class UIContainer extends UIElement {
    * @returns {E}
    */
   addChild(child) {
-    child.remove();
-    child.parent = this;
-    this.container.appendChild(child.element);
+    child.setParent(this);
     this.children.add(child);
     return child;
   }
@@ -87,8 +85,7 @@ export default class UIContainer extends UIElement {
    */
   removeChild(child) {
     if (this.children.delete(child)) {
-      child.parent = null;
-      child.element.remove();
+      child.setParent(null);
       return true;
     }
     return false;
@@ -174,11 +171,11 @@ export default class UIContainer extends UIElement {
   }
 
   /**
-   * @param  {ConstructorParameters<UITypes["UIWindows"]>} params
-   * @returns {InstanceType<UITypes["UIWindows"]>}
+   * @param  {ConstructorParameters<UITypes["UIWindow"]>} params
+   * @returns {InstanceType<UITypes["UIWindow"]>}
    */
-  addWindows(...params) {
-    return this.addChild(new UIContainer.#typeMap.UIWindows(...params));
+  addWindow(...params) {
+    return this.addChild(new UIContainer.#typeMap.UIWindow(...params));
   }
 }
 

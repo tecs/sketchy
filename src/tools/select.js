@@ -1,4 +1,4 @@
-import SubInstance from '../cad/subinstance.js';
+import SubInstance from '../engine/cad/subinstance.js';
 
 /** @type {(engine: Engine) => Tool} */
 export default (engine) => {

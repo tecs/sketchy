@@ -1,21 +1,21 @@
-import Sketch from '../cad/sketch.js';
+import Sketch from '../engine/cad/sketch.js';
 
 const { vec2, vec3, mat4 } = glMatrix;
 
 /**
  * @typedef RectData
- * @property {import("../cad/sketch").default} sketch
- * @property {import("../cad/sketch").LineConstructionElement} lineOriginVertical
- * @property {import("../cad/sketch").LineConstructionElement} lineOriginHorizontal
- * @property {import("../cad/sketch").LineConstructionElement} lineCoordVertical
- * @property {import("../cad/sketch").LineConstructionElement} lineCoordHorizontal
+ * @property {import("../engine/cad/sketch.js").default} sketch
+ * @property {import("../engine/cad/sketch.js").LineConstructionElement} lineOriginVertical
+ * @property {import("../engine/cad/sketch.js").LineConstructionElement} lineOriginHorizontal
+ * @property {import("../engine/cad/sketch.js").LineConstructionElement} lineCoordVertical
+ * @property {import("../engine/cad/sketch.js").LineConstructionElement} lineCoordHorizontal
  */
 
 /** @type {(engine: Engine) => Tool} */
 export default (engine) => {
   const { history, scene, emit } = engine;
 
-  /** @type {import("../history").HistoryAction<RectData>|undefined} */
+  /** @type {import("../engine/history.js").HistoryAction<RectData>|undefined} */
   let historyAction;
 
   // cached structures
@@ -156,7 +156,7 @@ export default (engine) => {
       historyAction.commit();
     },
     abort() {
-      if (!historyAction || engine.tools.selected.type === 'orbit') return;
+      if (!historyAction || engine.tools.selected?.type === 'orbit') return;
       historyAction.discard();
     },
   };

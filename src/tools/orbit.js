@@ -48,10 +48,10 @@ export default (engine) => {
     if (button !== 'middle' || orbit.active) return;
 
     const { selected } = engine.tools;
-    if (selected !== orbit) engine.tools.setTool(orbit);
+    if (selected && selected !== orbit) engine.tools.setTool(orbit);
 
     orbit.start();
-    lastTool = selected;
+    if (selected) lastTool = selected;
   });
 
   engine.on('mouseup', (button) => {

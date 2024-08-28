@@ -40,7 +40,7 @@ export default class Scene extends Base {
   /** @type {number | null} */
   hoveredPointIndex = null;
 
-  /** @type {import('../cad/body.js').AnyStep | null} */
+  /** @type {import("../cad/body.js").AnyStep | null} */
   currentStep = null;
 
   /** @type {ReadonlyVec3} */
@@ -61,22 +61,22 @@ export default class Scene extends Base {
     this.currentInstance = this.assertProperty('currentInstance');
 
     engine.on('mousedown', (button) => {
-      if (button === 'left' && !engine.tools.selected.active) engine.tools.selected.start();
+      if (button === 'left' && !engine.tools.selected?.active) engine.tools.selected?.start();
     });
 
     engine.on('mouseup', (button) => {
-      if (button === 'left' && engine.tools.selected.active !== false) engine.tools.selected.end();
+      if (button === 'left' && engine.tools.selected?.active !== false) engine.tools.selected?.end();
     });
 
     engine.on('mousemove', (_, delta) => {
-      if (engine.tools.selected.active !== false) engine.tools.selected.update(delta);
+      if (engine.tools.selected?.active !== false) engine.tools.selected?.update(delta);
     });
 
     engine.on('toolchange', (_, tool) => {
-      if (tool.active !== false) tool.abort();
+      if (tool?.active !== false) tool?.abort();
     });
     engine.on('keyup', (_, keyCombo) => {
-      if (keyCombo === 'Escape' && engine.tools.selected.active !== false) engine.tools.selected.abort();
+      if (keyCombo === 'Escape' && engine.tools.selected?.active !== false) engine.tools.selected?.abort();
       else if (keyCombo === 'Delete') this.deleteInstance(this.selectedInstance);
       else if (keyCombo.toLowerCase() === 'control + shift + z') engine.history.redo();
       else if (keyCombo.toLowerCase() === 'control + z') engine.history.undo();
@@ -250,7 +250,7 @@ export default class Scene extends Base {
   }
 
   /**
-   * @param {import('../cad/body.js').AnyStep | null} step
+   * @param {import("../cad/body.js").AnyStep | null} step
    */
   setCurrentStep(step) {
     if (step !== this.currentStep) {

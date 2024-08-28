@@ -7,7 +7,7 @@ import UITable from './table.js';
 import UIDialog from './dialog.js';
 import UITabs from './tabs.js';
 import UIMenu from './menu.js';
-import UIWindows from './windows.js';
+import UIWindow from './window.js';
 
 UIContainer.setTypes({
   UILabel,
@@ -19,7 +19,7 @@ UIContainer.setTypes({
   UIDialog,
   UITabs,
   UIMenu,
-  UIWindows,
+  UIWindow,
 });
 
 export { default as UIElement, $ } from './element.js';
@@ -32,7 +32,7 @@ export { default as UITable } from './table.js';
 export { default as UIDialog } from './dialog.js';
 export { default as UITabs } from './tabs.js';
 export { default as UIMenu } from './menu.js';
-export { default as UIWindows } from './windows.js';
+export { default as UIWindow } from './window.js';
 
 /** @typedef {keyof HTMLElementTagNameMap} HTMLTag */
 /** @typedef {HTMLTag | HTMLElement} HTMLElementRepresentation */

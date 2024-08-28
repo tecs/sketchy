@@ -3,15 +3,18 @@ import { $ } from './element.js';
 
 /** @augments UIContainer<"dialog","p"> */
 export default class UIDialog extends UIContainer {
-  constructor() {
-    const p = $('p', { className: 'dialogBody' });
+  /**
+   * @param {string} message
+   */
+  constructor(message) {
+    const p = $('p', { className: 'dialogBody', innerText: message });
 
     super($('dialog', { className: 'error', innerHTML: '' }, [
       p,
-      ['button', { className: 'dialogClose button', innerText: '⨯', onclick: () => this.hide() }],
+      ['button', { className: 'dialogClose button', innerText: '⨯', onclick: () => this.element.close() }],
       ['div', { className: 'dialogButtonWrapper' }, [
-        ['button', { className: 'dialogConfirm button', innerText: 'OK', onclick: () => this.hide() }],
-        ['button', { className: 'dialogCancel button', onclick: () => this.hide() }],
+        ['button', { className: 'dialogConfirm button', innerText: 'OK', onclick: () => this.element.close() }],
+        ['button', { className: 'dialogCancel button', onclick: () => this.element.close() }],
       ]],
     ]));
 
@@ -19,15 +22,10 @@ export default class UIDialog extends UIContainer {
   }
 
   /**
-   * @param {string} message
+   * @param {import(".").AnyUIParent} parent
    */
-  error(message) {
-    this.$container({ innerText: message });
-    this.element.showModal();
-  }
-
-  hide() {
-    this.element.close();
-    return true;
+  setParent(parent) {
+    super.setParent(parent);
+    if (parent) this.element.showModal();
   }
 }

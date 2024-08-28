@@ -8,15 +8,7 @@ import Input from './input.js';
 import Camera from './3d/camera.js';
 import Renderer from './renderer.js';
 import Scene from './scene/index.js';
-import Tools from './tools/index.js';
-
-import renderAxis from '../passes/axis.js';
-import renderSkybox from '../passes/skybox.js';
-import renderObjects from '../passes/objects.js';
-import renderLines from '../passes/lines.js';
-import renderPoints from '../passes/points.js';
-import extractId from '../passes/extractId.js';
-import extractPosition from '../passes/extractPosition.js';
+import Tools from './tools.js';
 
 import Body from './cad/body.js';
 import Sketch from './cad/sketch.js';
@@ -30,7 +22,7 @@ import SubInstance from './cad/subinstance.js';
 /** @typedef {import("./history-types").HistoryEvent} HistoryEv */
 /** @typedef {import("./input-types").InputEvent} InputEv */
 /** @typedef {import("./scene/types").SceneEvent} SceneEv */
-/** @typedef {import("./tools/types").ToolEvent} ToolEv */
+/** @typedef {import("./tools-types.js").ToolEvent} ToolEv */
 /** @typedef {import("./scene/intance-types.js").InstanceEvent} InstanceEv */
 /** @typedef {BoundingBoxEv|CameraEv|ConfigEv|EntitiesEv|HistoryEv|InputEv|SceneEv|ToolEv|InstanceEv} EngineEvent */
 
@@ -78,14 +70,6 @@ export default class Engine extends Base {
     this.renderer = new Renderer(this);
     this.scene = new Scene(this);
     this.tools = new Tools(this);
-
-    this.renderer.addToPipeline(renderSkybox);
-    this.renderer.addToPipeline(renderObjects);
-    this.renderer.addToPipeline(renderLines);
-    this.renderer.addToPipeline(renderPoints);
-    this.renderer.addToPipeline(extractId);
-    this.renderer.addToPipeline(extractPosition);
-    this.renderer.addToPipeline(renderAxis);
 
     Body.registerStep(Sketch, this);
     Body.registerStep(RawData, this);

@@ -1,15 +1,6 @@
-import LineTool from './line.js';
-import RectangleTool from './rectangle.js';
-import SelectTool from './select.js';
-import MoveTool from './move.js';
-import OrbitTool from './orbit.js';
-import ZoomTool from './zoom.js';
-
-/** @typedef {"select"|"line"|"rectangle"|"orbit"|"move"|"zoom"} ToolType */
-
 /**
  * @typedef Tool
- * @property {ToolType} type
+ * @property {string} type
  * @property {string} name
  * @property {string} shortcut
  * @property {string} icon
@@ -27,8 +18,8 @@ export default class Tools {
   /** @type {Engine} */
   #engine;
 
-  /** @type {Tool} */
-  selected;
+  /** @type {Tool | null} */
+  selected = null;
 
   /** @type {Tool[]} */
   tools = [];
@@ -38,13 +29,6 @@ export default class Tools {
    */
   constructor(engine) {
     this.#engine = engine;
-
-    this.tools.push(SelectTool(engine));
-    this.tools.push(LineTool(engine));
-    this.tools.push(RectangleTool(engine));
-    this.tools.push(MoveTool(engine));
-    this.tools.push(OrbitTool(engine));
-    this.tools.push(ZoomTool(engine));
 
     this.selected = this.tools[0];
 
@@ -62,6 +46,15 @@ export default class Tools {
   }
 
   /**
+   * @param {(engine: Engine) => Tool} Tool
+   */
+  addTool(Tool) {
+    const tool = Tool(this.#engine);
+    this.tools.push(tool);
+    if (!this.selected) this.setTool(tool);
+  }
+
+  /**
    * @param {Tool} tool
    */
   setTool(tool) {
@@ -74,7 +67,7 @@ export default class Tools {
   }
 
   /**
-   * @param  {...ToolType} toolTypes
+   * @param  {...string} toolTypes
    * @returns {boolean}
    */
   isActive(...toolTypes) {

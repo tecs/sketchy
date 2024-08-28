@@ -1,8 +1,8 @@
-import Sketch from '../cad/sketch.js';
+import Sketch from '../engine/cad/sketch.js';
 
 const { vec3, mat4 } = glMatrix;
 
-/** @typedef {import("../cad/sketch").LineConstructionElement} Line */
+/** @typedef {import("../engine/cad/sketch.js").LineConstructionElement} Line */
 
 /**
  * @typedef LineData
@@ -14,7 +14,7 @@ const { vec3, mat4 } = glMatrix;
 export default (engine) => {
   const { history, scene, emit } = engine;
 
-  /** @type {import("../history").HistoryAction<LineData>|undefined} */
+  /** @type {import("../engine/history.js").HistoryAction<LineData>|undefined} */
   let historyAction;
 
   // cached structures
@@ -108,7 +108,7 @@ export default (engine) => {
       this.start(true);
     },
     abort() {
-      if (engine.tools.selected.type === 'orbit') return;
+      if (engine.tools.selected?.type === 'orbit') return;
 
       historyAction?.discard();
     },

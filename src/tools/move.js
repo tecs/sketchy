@@ -1,6 +1,6 @@
-import Placement from '../3d/placement.js';
-import Sketch from '../cad/sketch.js';
-import SubInstance from '../cad/subinstance.js';
+import Placement from '../engine/3d/placement.js';
+import Sketch from '../engine/cad/sketch.js';
+import SubInstance from '../engine/cad/subinstance.js';
 
 const { vec3, mat4 } = glMatrix;
 
@@ -17,14 +17,14 @@ export default (engine) => {
   /**
    * @typedef LineSelection
    * @property {"line"} type
-   * @property {import('../cad/sketch.js').LineConstructionElement} line
+   * @property {import("../engine/cad/sketch.js").LineConstructionElement} line
    * @property {Sketch} sketch
    */
 
   /**
    * @typedef PointSelection
    * @property {"point"} type
-   * @property {import('../cad/sketch.js').LineConstructionElement} line
+   * @property {import("../engine/cad/sketch.js").LineConstructionElement} line
    * @property {number} offset
    * @property {Sketch} sketch
    */
@@ -37,7 +37,7 @@ export default (engine) => {
    * @property {vec3} translation
    */
 
-  /** @type {import("../history").HistoryAction<MoveData>|undefined} */
+  /** @type {import("../engine/history.js").HistoryAction<MoveData>|undefined} */
   let historyAction;
 
   // cached structures
@@ -230,7 +230,7 @@ export default (engine) => {
       historyAction?.commit();
     },
     abort() {
-      if (engine.tools.selected.type === 'orbit') return;
+      if (engine.tools.selected?.type === 'orbit') return;
 
       historyAction?.discard();
     },

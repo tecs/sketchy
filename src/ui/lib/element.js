@@ -59,8 +59,13 @@ export default class UIElement {
   /** @type {ConcreteHTMLElement<E>} */
   element;
 
-  /** @type {AnyUIParent | null} */
-  parent = null;
+  /** @type {AnyUIParent} */
+  #parent = null;
+
+  /** @type {AnyUIParent} */
+  get parent() {
+    return this.#parent;
+  }
 
   /**
    * @param {ConcreteHTMLElement<E>} element
@@ -79,8 +84,26 @@ export default class UIElement {
     return /** @type {ConcreteHTMLElement<E>} */ ($(this.element, attributes, children));
   }
 
+  /** @param {AnyUIParent} parent */
+  setParent(parent) {
+    const oldParent = this.#parent;
+    this.#parent = parent;
+
+    if (parent === oldParent) return;
+
+    if (oldParent) {
+      this.element.remove();
+      oldParent.removeChild(this);
+    }
+
+    if (parent) {
+      parent.container.appendChild(this.element);
+      parent.addChild(this);
+    }
+  }
+
   remove() {
-    this.parent?.removeChild(this);
+    this.setParent(null);
   }
 
   /**
