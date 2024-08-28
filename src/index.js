@@ -206,7 +206,26 @@ window.addEventListener('load', () => {
     const currentBody = currentInstance?.body;
     for (const body of bodies) {
       bodyTab.addContainer()
-        .addLabel(body.name).$element({ style: { fontWeight: body === currentBody ? 'bold' : undefined } });
+        .addLabel(body.name).$element({
+          ondblclick: () => {
+            const { enteredInstance } = engine.scene;
+            const instance = enteredInstance
+              ? enteredInstance.body.createStep(SubInstance, { bodyId: body.Id.str }).instances.at(0)
+              : body.instantiate();
+
+            if (!instance) return;
+
+            engine.scene.setSelectedInstance(instance);
+            engine.scene.hover(vec3.create());
+
+            const tool = engine.tools.tools.find(({ type }) => type === 'move');
+            if (tool) {
+              engine.tools.setTool(tool);
+              tool.start();
+            }
+          },
+          style: { fontWeight: body === currentBody ? 'bold' : undefined },
+        });
     }
   };
 
