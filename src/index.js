@@ -251,9 +251,9 @@ window.addEventListener('load', () => {
     const angle = quat.getAxisAngle(axis, placement.rotation);
 
     const table = container.addTable(2);
-    table.addRow('Position', stringifyFloat32(placement.translation));
-    table.addRow('Axis', stringifyFloat32(axis));
-    table.addRow('Angle', `${(angle * 180 / Math.PI).toFixed(3)}°`);
+    table.addMixedRow(1, 'Position', stringifyFloat32(placement.translation));
+    table.addMixedRow(1, 'Axis', stringifyFloat32(axis));
+    table.addMixedRow(1, 'Angle', `${(angle * 180 / Math.PI).toFixed(3)}°`);
   };
   const repopulateSelectedMenu = () => {
     const instance = engine.scene.selectedInstance ?? engine.scene.enteredInstance;
@@ -268,18 +268,18 @@ window.addEventListener('load', () => {
     infoTab.clearChildren();
     const general = infoTab.addGroup('General');
     const generalProps = general.addTable(2);
-    generalProps.addRow('Id', instance.Id.str);
-    generalProps.addRow('Body', instance.body.name);
+    generalProps.addMixedRow(1, 'Id', instance.Id.str);
+    generalProps.addMixedRow(1, 'Body', instance.body.name);
 
     const parent = SubInstance.getParent(instance);
     if (parent) {
-      generalProps.addRow('Parent', parent.body.name);
+      generalProps.addMixedRow(1, 'Parent', parent.body.name);
       describePlacement(parent.subInstance.placement, infoTab.addGroup('Placement'));
     }
     describePlacement(instance.Placement, infoTab.addGroup(parent ? 'Global placement' : 'Placement'));
 
     const tip = instance.body.step?.State;
-    generalProps.addRow('Tip', tip ? `${tip.name} (${tip.type})` : '<none>');
+    generalProps.addMixedRow(1, 'Tip', tip ? `${tip.name} (${tip.type})` : '<none>');
   };
 
   /**

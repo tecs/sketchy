@@ -1,10 +1,13 @@
 import UIContainer from './container.js';
 import { $ } from './element.js';
 
-/** @augments UIContainer<"td"> */
+/** @augments UIContainer<"td"|"th"> */
 class UICell extends UIContainer {
-  constructor() {
-    super($('td'));
+  /**
+   * @param {boolean} [header]
+   */
+  constructor(header = false) {
+    super($(header ? 'th' : 'td'));
   }
 }
 
@@ -18,10 +21,23 @@ class UIRow extends UIContainer {
 
   /**
    * @param {S} cols
+   * @param {number} [headers]
    */
-  constructor(cols) {
+  constructor(cols, headers = 0) {
     super($('tr'));
-    this.cells = /** @type {Tuple<UICell, S>} */ ([...Array(cols)].map(() => this.addChild(new UICell())));
+    this.cells = /** @type {Tuple<UICell, S>} */ ([...Array(cols)]
+      .map((_, i) => this.addChild(new UICell(i < headers))));
+  }
+
+  /**
+   * @param {OptionalTuple<string, S>} labels
+   */
+  setLabels(...labels) {
+    for (const cell of /** @type {UICell[]} */ (this.cells)) {
+      const label = /** @type {string[]} */ (labels).shift();
+      if (label === undefined) break;
+      cell.addLabel(label);
+    }
   }
 }
 
@@ -47,11 +63,28 @@ export default class UITable extends UIContainer {
    */
   addRow(...labels) {
     const row = this.addChild(new UIRow(this.#cols));
-    for (const cell of /** @type {UICell[]} */ (row.cells)) {
-      const label = /** @type {string[]} */ (labels).shift();
-      if (label === undefined) break;
-      cell.addLabel(label);
-    }
+    row.setLabels(...labels);
+    return row;
+  }
+
+  /**
+   * @param {OptionalTuple<string, S>} labels
+   * @returns {UIRow<S>}
+   */
+  addHeader(...labels) {
+    const row = this.addChild(new UIRow(this.#cols, this.#cols));
+    row.setLabels(...labels);
+    return row;
+  }
+
+  /**
+   * @param {number} headers
+   * @param {OptionalTuple<string, S>} labels
+   * @returns {UIRow<S>}
+   */
+  addMixedRow(headers, ...labels) {
+    const row = this.addChild(new UIRow(this.#cols, headers));
+    row.setLabels(...labels);
     return row;
   }
 }
