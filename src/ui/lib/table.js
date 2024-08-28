@@ -1,6 +1,9 @@
 import UIContainer from './container.js';
 import { $ } from './element.js';
 
+/** @typedef {UICell} _UICell */
+/** @typedef {UIRow<number>} _UIRow */
+
 /** @augments UIContainer<"td"|"th"> */
 class UICell extends UIContainer {
   /**

@@ -40,3 +40,6 @@ export { default as UIWindow } from './window.js';
 /** @typedef {UIContainer<HTMLTag>} AnyUIContainer */
 /** @typedef {AnyUIContainer | null | undefined} AnyUIParent */
 /** @typedef {UITable<number>} AnyUITable */
+/** @typedef {import("./tabs.js")._UITab} UITab */
+/** @typedef {import("./table.js")._UICell} UICell */
+/** @typedef {import("./table.js")._UIRow} UIRow */

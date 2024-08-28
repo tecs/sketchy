@@ -1,6 +1,8 @@
 import UIContainer from './container.js';
 import { $ } from './element.js';
 
+/** @typedef {UITab} _UITab */
+
 /** @augments UIContainer<"button","div"> */
 class UITab extends UIContainer {
   /**
