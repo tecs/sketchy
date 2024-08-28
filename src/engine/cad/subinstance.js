@@ -57,16 +57,22 @@ export default class SubInstance extends /** @type {typeof Step<SubInstanceState
   /**
    * @param {Instance} instance
    */
-  static #recalculateGlobalTrs(instance) {
+  static #recalculateGlobalTrsOnly(instance) {
     const parent = this.getParent(instance);
     if (parent) {
       mat4.multiply(transform, parent.instance.Placement.trs, parent.subInstance.placement.trs);
       instance.Placement.set(transform);
     }
 
-    for (const child of this.#getChildren(instance)) this.#recalculateGlobalTrs(child);
+    for (const child of this.#getChildren(instance)) this.#recalculateGlobalTrsOnly(child);
+  }
 
-    parent?.body.recalculateBoundingBox();
+  /**
+   * @param {Instance} instance
+   */
+  static #recalculateGlobalTrs(instance) {
+    this.#recalculateGlobalTrsOnly(instance);
+    this.getParent(instance)?.body.recalculateBoundingBox();
   }
 
   /**
