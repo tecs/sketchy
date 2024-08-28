@@ -18,6 +18,9 @@ export default class Tools {
   /** @type {Engine} */
   #engine;
 
+  /** @type {Readonly<import("./config").StringSetting>[]} */
+  #shortcuts = [];
+
   /** @type {Tool | null} */
   selected = null;
 
@@ -30,17 +33,8 @@ export default class Tools {
   constructor(engine) {
     this.#engine = engine;
 
-    this.selected = this.tools[0];
-
-    const shortcuts = this.tools.map(({ name, type, shortcut }) => engine.config.createString(
-      `shortcuts.${type}Tool`,
-      `${name} tool shortcut`,
-      'key',
-      shortcut,
-    ));
-
     engine.on('keyup', (_, keyCombo) => {
-      const index = shortcuts.findIndex(({ value }) => value === keyCombo);
+      const index = this.#shortcuts.findIndex(({ value }) => value === keyCombo);
       if (index > -1) this.setTool(this.tools[index]);
     });
   }
@@ -51,6 +45,12 @@ export default class Tools {
   addTool(Tool) {
     const tool = Tool(this.#engine);
     this.tools.push(tool);
+    this.#shortcuts.push(this.#engine.config.createString(
+      `shortcuts.${tool.type}Tool`,
+      `${tool.name} tool shortcut`,
+      'key',
+      tool.shortcut,
+    ));
     if (!this.selected) this.setTool(tool);
   }
 
