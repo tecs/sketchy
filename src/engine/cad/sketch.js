@@ -57,6 +57,43 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
   }
 
   /**
+   * @param {Engine} engine
+   */
+  static register(engine) {
+    super.register(engine);
+
+    engine.on('keydown', (_, keyCombo) => {
+      const sketch = engine.scene.currentStep ?? engine.scene.enteredInstance?.body.step;
+      if (keyCombo === 'Delete' && sketch instanceof Sketch) {
+        const index = engine.scene.selectedPointIndex ?? engine.scene.selectedLineIndex;
+        if (!index) return;
+
+        const type = engine.scene.selectedPointIndex ? 'point' : 'line';
+
+        const line = type === 'point' ? sketch.getLineForPoint(index - 1)?.[0] : sketch.getLine(index - 1);
+        if (!line) return;
+
+        const action = engine.history.createAction(`Delete line from Sketch ${sketch.name}`, {});
+        if (!action) return;
+
+        action.append(
+          () => {
+            sketch.deleteElement(line);
+            if (type === 'line') engine.scene.setSelectedLine(null);
+            else engine.scene.setSelectedPoint(null);
+          },
+          () => {
+            sketch.addElement(line);
+            if (type === 'line') engine.scene.setSelectedLine(index);
+            else engine.scene.setSelectedPoint(index);
+          },
+        );
+        action.commit();
+      }
+    });
+  }
+
+  /**
    * @template {ConstructionElements} T
    * @param {T["type"]} type
    * @param {T["data"]} [data]
