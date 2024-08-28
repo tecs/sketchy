@@ -1,46 +1,12 @@
-import { UIMenu, $ } from '../lib/index.js';
+import { $ } from '../../lib/element.js';
 
 /**
  * @param {Engine} engine
- * @returns {UIMenu}
+ * @param {import("../../lib/index.js").AnyUIContainer} container
  */
-export default (engine) => {
-  const menu = new UIMenu({ position: 'top' });
-
-  menu.addButton('🗋', () => engine.scene.reset(), 'New file');
-  menu.addButton('🖫', () => {
-    const json = engine.scene.export();
-    const data = btoa(unescape(encodeURIComponent(json)));
-    $('a', { href: `data:text/plain;charset=utf8,${encodeURIComponent(data)}`, download: 'Untitled.scene' }).click();
-  }, 'Save file');
-  menu.addButton('🖿', () => {
-    $('input', {
-      type: 'file',
-      accept: '.scene',
-      onchange({ currentTarget: el }) {
-        if (!(el instanceof HTMLInputElement) || !el.files?.length) return;
-        const reader = new FileReader();
-        reader.addEventListener('load', () => {
-          const json = decodeURIComponent(escape(atob(reader.result?.toString() ?? '')));
-          engine.scene.import(json);
-        });
-        reader.readAsText(el.files[0]);
-      },
-    }).click();
-  }, 'Load file');
-
-  const undoButton = menu.addButton('↶', () => engine.history.undo(), 'Undo');
-  const redoButton = menu.addButton('↷', () => engine.history.redo(), 'Redo');
-  undoButton.toggleDisabled();
-  redoButton.toggleDisabled();
-
-  engine.on('historychange', () => {
-    undoButton.toggleDisabled(!engine.history.canUndo);
-    redoButton.toggleDisabled(!engine.history.canRedo);
-  });
-
-  menu.addButton('⚙', () => {
-    const settingsWindow = menu.addWindow('Settings');
+export default (engine, container) => {
+  container.addButton('⚙', () => {
+    const settingsWindow = container.addWindow('Settings');
     const settingsWindowContents = settingsWindow.addContainer();
 
     const tabs = settingsWindowContents.addTabs('settingsContents');
@@ -54,7 +20,7 @@ export default (engine) => {
       toggle: 'checkbox',
     };
 
-    /** @type {Record<string, import("../lib").AnyUIParent>} */
+    /** @type {Record<string, import("../../lib/index.js").AnyUIParent>} */
     const tabMap = {};
 
     /** @type {(el: HTMLElement) => boolean} */
@@ -129,6 +95,4 @@ export default (engine) => {
     }, { className: 'button' });
     buttons.addButton('close', () => settingsWindow.remove(), { className: 'button' });
   }, 'Settings');
-
-  return menu;
 };

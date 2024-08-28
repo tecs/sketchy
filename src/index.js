@@ -16,9 +16,9 @@ import MoveTool from './tools/move.js';
 import OrbitTool from './tools/orbit.js';
 import ZoomTool from './tools/zoom.js';
 
-import makeSystemMenu from './ui/menu/system.js';
+import makeSystemMenu from './ui/menu/system/index.js';
 import makeToolsMenu from './ui/menu/tools.js';
-import makeBrowserMenu from './ui/menu/browser.js';
+import makeBrowserMenu from './ui/menu/browser/index.js';
 import makeInfoMenu from './ui/menu/info.js';
 
 window.addEventListener('load', () => {
