@@ -21,6 +21,8 @@ const { mat4, vec3 } = glMatrix;
 /** @typedef {BaseParamsT<Partial<SubInstanceState>>} PartialBaseParams */
 /** @typedef {Instance & { _subInstanceParent: Parent }} ChildInstance */
 /** @typedef {Instance & { _subInstanceChildren: ChildInstance[] }} ParentInstance */
+/** @typedef {Instance & Partial<ChildInstance>} MaybeChildInstance */
+/** @typedef {Instance & Partial<ParentInstance>} MaybeParentInstance */
 
 /**
  * @typedef SubInstanceState
@@ -68,7 +70,7 @@ export default class SubInstance extends /** @type {typeof Step<SubInstanceState
   }
 
   /**
-   * @param {Partial<ParentInstance>} instance
+   * @param {MaybeParentInstance} instance
    * @returns {ChildInstance[]}
    */
   static #getChildren(instance) {
@@ -93,7 +95,7 @@ export default class SubInstance extends /** @type {typeof Step<SubInstanceState
   }
 
   /**
-   * @param {Partial<ChildInstance>} instance
+   * @param {MaybeChildInstance} instance
    * @returns {Parent|undefined}
    */
   static getParent(instance) {
@@ -200,11 +202,11 @@ export default class SubInstance extends /** @type {typeof Step<SubInstanceState
   }
 
   /**
-   * @param {Instance & Partial<ParentInstance>} partialParentInstance
+   * @param {MaybeParentInstance} partialParentInstance
    * @returns {ChildInstance}
    */
   #instantiate(partialParentInstance) {
-    const partialChildInstance = /** @type {Instance & Partial<ChildInstance>} */ (this.subBody.instantiate());
+    const partialChildInstance = /** @type {MaybeChildInstance} */ (this.subBody.instantiate());
 
     partialParentInstance._subInstanceChildren ??= [];
     const parentInstance = /** @type {ParentInstance} */ (partialParentInstance);
