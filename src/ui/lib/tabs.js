@@ -77,8 +77,9 @@ export default class UITabs extends UIContainer {
     if (omitTab === this.selected) this.unselect(this.selected);
     for (const child of this.children) {
       if (this.selected) break;
-      if (child instanceof UITab && child !== omitTab) this.select(child);
+      if (child instanceof UITab && child !== omitTab && !child.hidden) this.select(child);
     }
+    if (!this.selected) this.hide();
   }
 
   /**
@@ -104,6 +105,8 @@ export default class UITabs extends UIContainer {
       tab.element.classList.toggle('selected', true);
       this.contents.container.appendChild(tab.container);
     }
+
+    if (this.selected) this.show();
   }
 
   /**

@@ -67,6 +67,11 @@ export default class UIElement {
     return this.#parent;
   }
 
+  /** @type {boolean} */
+  get hidden() {
+    return this.element.style.display === 'none';
+  }
+
   /**
    * @param {ConcreteHTMLElement<E>} element
    */
@@ -110,7 +115,7 @@ export default class UIElement {
    * @returns {boolean}
    */
   hide() {
-    if (this.element.style.display !== 'none') {
+    if (!this.hidden) {
       this.#previousDisplay = this.element.style.display;
       this.element.style.display = 'none';
       return true;
@@ -122,7 +127,7 @@ export default class UIElement {
    * @returns {boolean}
    */
   show() {
-    if (this.element.style.display === 'none') {
+    if (this.hidden) {
       this.element.style.display = this.#previousDisplay;
       return true;
     }
