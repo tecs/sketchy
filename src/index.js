@@ -234,7 +234,6 @@ window.addEventListener('load', () => {
 
   const selected = rightMenu.addTabs('tabContents');
   selected.$container({ className: 'tabContainer' });
-  selected.hide();
 
   /**
    * @param {Iterable<number>} f
@@ -259,13 +258,13 @@ window.addEventListener('load', () => {
   const repopulateSelectedMenu = () => {
     const instance = engine.scene.selectedInstance ?? engine.scene.enteredInstance;
     if (!instance) {
-      selected.hide();
+      infoTab.hide();
       return;
     }
 
     infoTab.rename(engine.scene.selectedInstance ? 'Selected instance' : 'Active instance');
 
-    selected.show();
+    infoTab.show();
     infoTab.clearChildren();
     const general = infoTab.addGroup('General');
     const generalProps = general.addTable(2);
@@ -292,6 +291,8 @@ window.addEventListener('load', () => {
       repopulateSelectedMenu();
     }
   };
+
+  repopulateSelectedMenu();
 
   engine.on('currentchange', repopulateStepsMenu);
   engine.on('scenechange', repopulateStepsMenu);

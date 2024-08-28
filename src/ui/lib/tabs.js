@@ -34,8 +34,9 @@ class UITab extends UIContainer {
    */
   show(reselect = false) {
     const shown = super.show();
-    if (shown && reselect && this.parent instanceof UITabs) {
-      this.parent.select(this);
+    if (shown && this.parent instanceof UITabs) {
+      if (reselect) this.parent.select(this);
+      else this.parent.autoselect();
     }
     return shown;
   }
