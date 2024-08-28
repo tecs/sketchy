@@ -20,6 +20,7 @@ import extractPosition from '../passes/extractPosition.js';
 
 import Body from './cad/body.js';
 import Sketch from './cad/sketch.js';
+import RawData from './cad/rawdata.js';
 import SubInstance from './cad/subinstance.js';
 
 /** @typedef {import("./3d/bounding-box-types").BoundingBoxEvent} BoundingBoxEv */
@@ -87,6 +88,7 @@ export default class Engine extends Base {
     this.renderer.addToPipeline(renderAxis);
 
     Body.registerStep(Sketch, this);
+    Body.registerStep(RawData, this);
     Body.registerStep(SubInstance, this);
   }
 }
