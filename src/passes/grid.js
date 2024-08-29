@@ -56,9 +56,7 @@ export default (engine) => {
 
   const setting = engine.config.createBoolean('display.grid', 'Show grid', 'toggle', true);
   engine.on('settingchange', (changed) => {
-    if (changed === setting) {
-      engine.emit('scenechange');
-    }
+    if (changed === setting) engine.emit('scenechange');
   });
 
   return {

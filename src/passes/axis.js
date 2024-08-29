@@ -76,12 +76,16 @@ export default (engine) => {
   const halfRes = vec3.create();
   const farPlaneV3 = vec3.fromValues(camera.farPlane, camera.farPlane, camera.farPlane);
 
+  const setting = engine.config.createBoolean('display.axis', 'Show axis', 'toggle', true);
+  engine.on('settingchange', (changed) => {
+    if (changed === setting) engine.emit('scenechange');
+  });
   engine.on('viewportresize', (current) => vec3.scale(halfRes, current, 0.5));
 
   return {
     program,
     render(draw) {
-      if (!draw) return;
+      if (!draw || !setting.value) return;
 
       ctx.enable(ctx.BLEND);
 
