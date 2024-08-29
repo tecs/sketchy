@@ -17,6 +17,7 @@ export default (engine) => {
 
   /** @type {import("../engine/history.js").HistoryAction<RectData>|undefined} */
   let historyAction;
+  let released = true;
 
   // cached structures
   const transformation = mat4.create();
@@ -76,6 +77,7 @@ export default (engine) => {
       this.end();
     },
     start() {
+      released = false;
       const instance = scene.enteredInstance ?? scene.hoveredInstance ?? scene.currentInstance;
       if (!(scene.currentStep instanceof Sketch)) {
         const normal = vec3.create();
@@ -152,7 +154,12 @@ export default (engine) => {
       sketch.update();
     },
     end() {
-      if (!historyAction || !this.distance?.every(v => v >= 0.1)) return;
+      if (!historyAction) return;
+
+      const tooShort = !released && !this.distance?.every(v => v >= 0.1);
+      released = true;
+      if (tooShort) return;
+
       historyAction.commit();
     },
     abort() {

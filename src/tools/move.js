@@ -39,6 +39,7 @@ export default (engine) => {
 
   /** @type {import("../engine/history.js").HistoryAction<MoveData>|undefined} */
   let historyAction;
+  let released = true;
 
   // cached structures
   const transformation = mat4.create();
@@ -92,6 +93,7 @@ export default (engine) => {
       emit('scenechange');
     },
     start() {
+      released = false;
       const { selectedInstance, hoveredInstance, enteredInstance } = scene;
 
       const sketch = scene.currentStep ?? enteredInstance?.body.step;
@@ -225,7 +227,9 @@ export default (engine) => {
       emit('scenechange');
     },
     end() {
-      if (!this.distance?.every(v => v >= 0.1)) return;
+      const tooShort = !released && !this.distance?.every(v => v >= 0.1);
+      released = true;
+      if (tooShort) return;
 
       historyAction?.commit();
     },
