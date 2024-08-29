@@ -2,6 +2,7 @@ import UI from './ui/index.js';
 import Engine from './engine/index.js';
 
 import renderAxis from './passes/axis.js';
+import renderGrid from './passes/grid.js';
 import renderSkybox from './passes/skybox.js';
 import renderObjects from './passes/objects.js';
 import renderLines from './passes/lines.js';
@@ -31,6 +32,7 @@ window.addEventListener('load', () => {
   engine.renderer.addToPipeline(renderPoints);
   engine.renderer.addToPipeline(extractId);
   engine.renderer.addToPipeline(extractPosition);
+  engine.renderer.addToPipeline(renderGrid);
   engine.renderer.addToPipeline(renderAxis);
 
   engine.tools.addTool(SelectTool);
