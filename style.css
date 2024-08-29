@@ -9,6 +9,7 @@
   --borderHighlightColor: #FFFFFF;
   --borderShadowColor: #DDDDDD;
   --iconSize: 32px;
+  --rightMenuWidth: 15em;
 }
 
 /* Global */
@@ -340,7 +341,7 @@ dialog::backdrop {
 /* Right menu */
 
 .rightMenu {
-  width: 15em;
+  min-width: var(--rightMenuWidth);
   max-height: 90vh;
   display: grid;
   grid-auto-rows: 1fr;
@@ -358,4 +359,7 @@ dialog::backdrop {
 .rightMenu .tabContents {
   height: calc(100% - 1.75em);
   overflow-y: auto;
+}
+.rightMenu .tabContents > * {
+  width: calc(var(--rightMenuWidth) - 2em);
 }

@@ -1,6 +1,7 @@
 import { UIMenu } from '../../lib/index.js';
 import renderActiveTab from './active.js';
 import renderBodiesTab from './bodies.js';
+import renderDebug from './debug.js';
 import renderSceneTab from './scene.js';
 import renderStepsTab from './steps.js';
 
@@ -23,6 +24,7 @@ export default (engine) => {
   selected.$container({ className: 'tabContainer' });
 
   renderActiveTab(engine, selected);
+  renderDebug(engine, selected);
 
   return menu;
 };

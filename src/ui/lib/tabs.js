@@ -3,16 +3,24 @@ import { $ } from './element.js';
 
 /** @typedef {UITab} _UITab */
 
+/**
+ * @typedef AddTabOptions
+ * @property {boolean} expandParent
+ */
+
 /** @augments UIContainer<"button","div"> */
 class UITab extends UIContainer {
   /**
    * @param {string} name
    * @param {() => void} onClick
+   * @param {Partial<AddTabOptions>} [options]
    */
-  constructor(name, onClick) {
+  constructor(name, onClick, options = {}) {
     super($('button', { onclick: onClick }));
     this.rename(name);
     this.container = $('div');
+
+    if (options.expandParent) this.$container({ style: { width: 'auto' } });
   }
 
   /**
@@ -64,10 +72,11 @@ export default class UITabs extends UIContainer {
 
   /**
    * @param {string} name
+   * @param {Partial<AddTabOptions>} [options]
    * @returns {UITab}
    */
-  addTab(name) {
-    const tab = this.addChild(new UITab(name, () => this.select(tab)));
+  addTab(name, options) {
+    const tab = this.addChild(new UITab(name, () => this.select(tab), options));
     this.autoselect();
     return tab;
   }
