@@ -1,4 +1,4 @@
-const { mat4, vec3 } = glMatrix;
+const { mat4 } = glMatrix;
 
 /** @type {RenderingPass} */
 export default (engine) => {
@@ -53,10 +53,6 @@ export default (engine) => {
 
   // cached structures
   const mvp = mat4.create();
-  const origin = vec3.create();
-  const halfRes = vec3.create();
-
-  engine.on('viewportresize', (current) => vec3.scale(halfRes, current, 0.5));
 
   const setting = engine.config.createBoolean('display.grid', 'Show grid', 'toggle', true);
   engine.on('settingchange', (changed) => {
@@ -78,11 +74,7 @@ export default (engine) => {
 
       const { trs } = scene.currentInstance.Placement;
 
-      mat4.getScaling(origin, trs);
-      vec3.inverse(origin, origin);
-      mat4.scale(mvp, trs, origin);
-
-      mat4.multiply(mvp, camera.viewProjection, mvp);
+      mat4.multiply(mvp, camera.viewProjection, trs);
       ctx.uniformMatrix4fv(program.uLoc.u_matrix, false, mvp);
 
       ctx.drawElements(ctx.LINES, indices.length, UNSIGNED_INDEX_TYPE, 0);
