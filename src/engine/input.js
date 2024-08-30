@@ -44,8 +44,9 @@ export default class Input {
   /**
    * @param {number} button
    * @param {boolean} down
+   * @param {number} count
    */
-  setButton(button, down) {
+  setButton(button, down, count) {
     switch (button) {
       case 0:
         this.leftButton = down;
@@ -64,8 +65,8 @@ export default class Input {
         return;
     }
 
-    if (down) this.#engine.emit('mousedown', this.button);
-    else this.#engine.emit('mouseup', this.button);
+    if (down) this.#engine.emit('mousedown', this.button, count);
+    else this.#engine.emit('mouseup', this.button, count);
   }
 
   /**

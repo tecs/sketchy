@@ -53,8 +53,8 @@ window.addEventListener('load', () => {
 
   ui.canvas.addEventListener('wheel', ({ deltaY }) => engine.input.scroll(/** @type {-1|1} */ (Math.sign(deltaY))), { passive: true });
 
-  ui.canvas.addEventListener('mousedown', ({ button }) => engine.input.setButton(button, true));
-  ui.canvas.addEventListener('mouseup', ({ button }) => engine.input.setButton(button, false));
+  ui.canvas.addEventListener('mousedown', ({ button, detail }) => engine.input.setButton(button, true, detail));
+  ui.canvas.addEventListener('mouseup', ({ button, detail }) => engine.input.setButton(button, false, detail));
 
   ui.canvas.addEventListener('mousemove', (e) => engine.input.setPosition(e.clientX, e.clientY, e.movementX, e.movementY));
 

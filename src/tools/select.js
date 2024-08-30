@@ -2,11 +2,7 @@ import SubInstance from '../engine/cad/subinstance.js';
 
 /** @type {(engine: Engine) => Tool} */
 export default (engine) => {
-  const { config, scene } = engine;
-
-  const doubleClickDelay = config.createNumber('mouse.doubleClickDelay', 'Double click delay', 'int', 200);
-
-  let lastClick = 0;
+  const { scene } = engine;
 
   /** @type {Tool} */
   const select = {
@@ -16,11 +12,7 @@ export default (engine) => {
     icon: '🮰',
     start() {},
     update() {},
-    end() {
-      const now = Date.now();
-      const doubleClicked = now - lastClick < doubleClickDelay.value;
-      lastClick = now;
-
+    end(count = 1) {
       const { enteredInstance, selectedInstance } = scene;
       let clicked = scene.hoveredInstance;
       let parent = clicked ? SubInstance.getParent(clicked) : undefined;
@@ -29,7 +21,7 @@ export default (engine) => {
         parent = clicked ? SubInstance.getParent(clicked) : undefined;
       }
 
-      if (doubleClicked && clicked === selectedInstance) {
+      if (count === 2 && clicked === selectedInstance) {
         scene.setEnteredInstance(clicked);
         return;
       }

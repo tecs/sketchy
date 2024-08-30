@@ -19,8 +19,9 @@ export default (engine, tabs) => {
       const parentContainer = (parent ? instanceCache[parent.Id.str] : null) ?? tab;
       const instanceContainer = parentContainer.addContainer({ className: 'tree' });
       instanceContainer.addLabel(instance.body.name).$element({
-        ondblclick: () => engine.scene.setEnteredInstance(instance),
-        onclick: () => {
+        onclick: ({ detail }) => {
+          if (detail === 2) return void(engine.scene.setEnteredInstance(instance));
+
           const { enteredInstance } = engine.scene;
           if (instance !== enteredInstance && SubInstance.belongsTo(instance, enteredInstance)) {
             engine.scene.setSelectedInstance(instance);

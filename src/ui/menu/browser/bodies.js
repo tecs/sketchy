@@ -19,7 +19,9 @@ export default (engine, tabs) => {
     for (const body of bodies) {
       tab.addContainer()
         .addLabel(body.name).$element({
-          ondblclick: () => {
+          onclick: ({ detail }) => {
+            if (detail !== 2) return;
+
             const { enteredInstance } = engine.scene;
             const instance = enteredInstance
               ? enteredInstance.body.createStep(SubInstance, { bodyId: body.Id.str }).instances.at(0)

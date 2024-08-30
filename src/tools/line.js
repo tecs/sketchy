@@ -23,7 +23,7 @@ export default (engine) => {
   const origin = vec3.create();
   const coord = vec3.create();
 
-  /** @type {Omit<Tool, "start"> & { start: (linkSegment?: boolean) => void }} */
+  /** @type {Omit<Tool, "start"> & { start: (click?: number, linkSegment?: boolean) => void }} */
   const lineTool = {
     type: 'line',
     name: 'Line/Arc',
@@ -51,7 +51,7 @@ export default (engine) => {
 
       this.end();
     },
-    start(linkSegment = false) {
+    start(_, linkSegment = false) {
       released = linkSegment;
       const instance = scene.enteredInstance ?? scene.hoveredInstance ?? scene.currentInstance;
 
@@ -111,7 +111,7 @@ export default (engine) => {
 
       historyAction.commit();
       vec3.copy(origin, coord);
-      this.start(true);
+      this.start(1, true);
     },
     abort() {
       if (engine.tools.selected?.type === 'orbit') return;

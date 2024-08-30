@@ -8,9 +8,9 @@
  * @property {boolean} [active]
  * @property {number[]} [distance]
  * @property {(distance: number[]) => void} [setDistance]
- * @property {() => void} start
+ * @property {(count?: number) => void} start
  * @property {(delta: ReadonlyVec3) => void} update
- * @property {() => void} end
+ * @property {(count?: number) => void} end
  * @property {() => void} abort
  */
 
@@ -33,12 +33,12 @@ export default class Tools {
   constructor(engine) {
     this.#engine = engine;
 
-    engine.on('mousedown', (button) => {
-      if (button === 'left' && !this.selected?.active) this.selected?.start();
+    engine.on('mousedown', (button, click) => {
+      if (button === 'left' && !this.selected?.active) this.selected?.start(click);
     });
 
-    engine.on('mouseup', (button) => {
-      if (button === 'left' && this.selected?.active !== false) this.selected?.end();
+    engine.on('mouseup', (button, click) => {
+      if (button === 'left' && this.selected?.active !== false) this.selected?.end(click);
     });
 
     engine.on('mousemove', (_, delta) => {
