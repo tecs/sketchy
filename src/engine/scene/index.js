@@ -263,6 +263,7 @@ export default class Scene extends Base {
   hoverLine(id4u) {
     const id = Id.uuuuToInt(id4u);
     this.hoveredLineIndex = id > 0 ? id : null;
+    this.hoveredPointIndex = null;
   }
 
   /**
@@ -271,6 +272,7 @@ export default class Scene extends Base {
   hoverPoint(id4u) {
     const id = Id.uuuuToInt(id4u);
     this.hoveredPointIndex = id > 0 ? id : null;
+    this.hoveredLineIndex = null;
   }
 
   /**
