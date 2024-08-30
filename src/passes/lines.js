@@ -18,6 +18,7 @@ export default (engine) => {
       uniform mat4 u_viewProjection;
       uniform float u_isSelected;
       uniform float u_isInShadow;
+      uniform float u_isHovered;
 
       varying vec4 v_color;
 
@@ -27,7 +28,7 @@ export default (engine) => {
 
         // Darken non-selected instance
         v_color.rgb *= max(1.0 - u_isInShadow, 0.2);
-        v_color.rgb += u_isInShadow * 0.3;
+        v_color.rgb += u_isInShadow * 0.3 + u_isHovered;
 
         // offset the coord a tiny bit towards the camera
         // so that lines at concave edges render in front
@@ -71,6 +72,7 @@ export default (engine) => {
   return {
     program,
     render() {
+      const { enteredInstance, selectedInstance, hoveredInstance, selectedLineIndex, hoveredLineIndex } = scene;
       const bodies = entities.values(Body);
       for (const { currentModel: model, instances } of bodies) {
         if (!model) continue;
@@ -84,29 +86,35 @@ export default (engine) => {
         ctx.uniformMatrix4fv(program.uLoc.u_viewProjection, false, camera.viewProjection);
 
         for (const instance of instances) {
-          const isSelected = scene.selectedInstance && SubInstance.belongsTo(instance, scene.selectedInstance) ? 1 : 0;
-          const isInShadow = !isSelected && !SubInstance.belongsTo(instance, scene.enteredInstance) ? 1 : 0;
-          const selectedIndex = scene.enteredInstance === instance ? scene.selectedLineIndex : 0;
+          const isSelected = selectedInstance && SubInstance.belongsTo(instance, selectedInstance) ? 1 : 0;
+          const isInShadow = !isSelected && !SubInstance.belongsTo(instance, enteredInstance) ? 1 : 0;
+          const selectedIndex = enteredInstance === instance ? selectedLineIndex : 0;
+          const hoveredIndex = enteredInstance === instance && hoveredInstance === instance ? hoveredLineIndex : 0;
 
           ctx.uniformMatrix4fv(program.uLoc.u_trs, false, instance.Placement.trs);
           ctx.uniform1f(program.uLoc.u_isSelected, isSelected);
           ctx.uniform1f(program.uLoc.u_isInShadow, isInShadow);
 
-          if (isSelected) ctx.lineWidth(2);
+          if (hoveredIndex) {
+            ctx.uniform1f(program.uLoc.u_isHovered, 1);
+            ctx.lineWidth(5);
+            ctx.drawElements(ctx.LINES, 2, UNSIGNED_INDEX_TYPE, (hoveredIndex - 1) * UNSIGNED_INDEX_SIZE);
+            ctx.uniform1f(program.uLoc.u_isHovered, 0);
+          }
 
+          ctx.lineWidth(1 + isSelected);
           ctx.drawElements(ctx.LINES, model.data.lineIndex.length, UNSIGNED_INDEX_TYPE, 0);
           if (selectedIndex) {
             ctx.uniform1f(program.uLoc.u_isSelected, 1);
             ctx.lineWidth(2);
             ctx.drawElements(ctx.LINES, 2, UNSIGNED_INDEX_TYPE, (selectedIndex - 1) * UNSIGNED_INDEX_SIZE);
           }
-          ctx.lineWidth(1);
         }
       }
 
       // Draw bounding box of selected instance
-      if (scene.selectedInstance?.body.currentModel) {
-        const { body, Placement: { trs } } = scene.selectedInstance;
+      if (selectedInstance?.body.currentModel) {
+        const { body, Placement: { trs } } = selectedInstance;
 
         ctx.bindBuffer(ctx.ELEMENT_ARRAY_BUFFER, boundingBoxIndexBuffer);
 
@@ -118,6 +126,7 @@ export default (engine) => {
         ctx.uniformMatrix4fv(program.uLoc.u_trs, false, trs);
         ctx.uniform1f(program.uLoc.u_isSelected, 1);
         ctx.uniform1f(program.uLoc.u_isInShadow, 0);
+        ctx.uniform1f(program.uLoc.u_isHovered, 0);
 
         ctx.lineWidth(2);
         ctx.drawElements(ctx.LINES, 24, UNSIGNED_INDEX_TYPE, 0);

@@ -12,18 +12,21 @@ export default (engine) => {
 
       uniform mat4 u_trs;
       uniform mat4 u_viewProjection;
+      uniform float u_isSelected;
+      uniform float u_isHovered;
 
       varying vec4 v_color;
 
       void main() {
         gl_Position = u_viewProjection * u_trs * a_position;
-        v_color = vec4(0.0, 0.0, 1.0, 1.0);
+        v_color = vec4(0.0, 0.0, u_isSelected, 1.0);
+        v_color.rgb += u_isHovered;
 
         // offset the coord a tiny bit towards the camera
         // so that lines at concave edges render in front
         // of the object's faces
         gl_Position.z -= 0.00002;
-        gl_PointSize = 5.0;
+        gl_PointSize = 5.0 + u_isHovered * 5.0;
       }
     `,
     frag`
@@ -40,9 +43,11 @@ export default (engine) => {
   return {
     program,
     render() {
-      if (!scene.selectedPointIndex) return;
+      const { enteredInstance, hoveredInstance, selectedPointIndex, hoveredPointIndex } = scene;
+      const pointIsHovered = hoveredPointIndex && enteredInstance === hoveredInstance;
+      if (!selectedPointIndex && !pointIsHovered) return;
 
-      const model = scene.enteredInstance?.body.currentModel;
+      const model = enteredInstance?.body.currentModel;
       if (!model) return;
 
       ctx.bindBuffer(ctx.ARRAY_BUFFER, model.buffer.vertex);
@@ -51,9 +56,20 @@ export default (engine) => {
 
       ctx.uniformMatrix4fv(program.uLoc.u_viewProjection, false, camera.viewProjection);
 
-      ctx.uniformMatrix4fv(program.uLoc.u_trs, false, scene.enteredInstance.Placement.trs);
+      ctx.uniformMatrix4fv(program.uLoc.u_trs, false, enteredInstance.Placement.trs);
 
-      ctx.drawArrays(ctx.POINTS, scene.selectedPointIndex - 1, 1);
+      if (pointIsHovered) {
+        ctx.uniform1f(program.uLoc.u_isSelected, 0);
+        ctx.uniform1f(program.uLoc.u_isHovered, 1);
+        ctx.drawArrays(ctx.POINTS, hoveredPointIndex - 1, 1);
+        ctx.uniform1f(program.uLoc.u_isHovered, 0);
+        ctx.drawArrays(ctx.POINTS, hoveredPointIndex - 1, 1);
+      }
+      if (selectedPointIndex) {
+        ctx.uniform1f(program.uLoc.u_isSelected, 1);
+        ctx.uniform1f(program.uLoc.u_isHovered, 0);
+        ctx.drawArrays(ctx.POINTS, selectedPointIndex - 1, 1);
+      }
     },
   };
 };
