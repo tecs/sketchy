@@ -1,11 +1,8 @@
-import Body from '../engine/cad/body.js';
-
 /** @type {RenderingPass} */
 export default (engine) => {
   const {
     driver: { ctx, makeProgram, vert, frag },
     camera,
-    entities,
     scene,
   } = engine;
 
@@ -43,28 +40,20 @@ export default (engine) => {
   return {
     program,
     render(draw) {
-      if (!draw) return;
+      if (!draw || !scene.selectedPointIndex) return;
 
-      const bodies = entities.values(Body);
-      for (const { currentModel: model, instances } of bodies) {
-        if (!model) continue;
+      const model = scene.enteredInstance?.body.currentModel;
+      if (!model) return;
 
-        ctx.bindBuffer(ctx.ARRAY_BUFFER, model.buffer.vertex);
-        ctx.enableVertexAttribArray(program.aLoc.a_position);
-        ctx.vertexAttribPointer(program.aLoc.a_position, 3, ctx.FLOAT, false, 0, 0);
+      ctx.bindBuffer(ctx.ARRAY_BUFFER, model.buffer.vertex);
+      ctx.enableVertexAttribArray(program.aLoc.a_position);
+      ctx.vertexAttribPointer(program.aLoc.a_position, 3, ctx.FLOAT, false, 0, 0);
 
-        ctx.uniformMatrix4fv(program.uLoc.u_viewProjection, false, camera.viewProjection);
+      ctx.uniformMatrix4fv(program.uLoc.u_viewProjection, false, camera.viewProjection);
 
-        for (const instance of instances) {
-          const selectedIndex = scene.enteredInstance === instance ? scene.selectedPointIndex : 0;
+      ctx.uniformMatrix4fv(program.uLoc.u_trs, false, scene.enteredInstance.Placement.trs);
 
-          ctx.uniformMatrix4fv(program.uLoc.u_trs, false, instance.Placement.trs);
-
-          if (selectedIndex) {
-            ctx.drawArrays(ctx.POINTS, selectedIndex - 1, 1);
-          }
-        }
-      }
+      ctx.drawArrays(ctx.POINTS, scene.selectedPointIndex - 1, 1);
     },
   };
 };
