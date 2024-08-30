@@ -85,9 +85,7 @@ export default ({ driver: { ctx, makeProgram, vert, frag }, camera }) => {
 
   return {
     program,
-    render(draw) {
-      if (!draw) return;
-
+    render() {
       ctx.disable(ctx.DEPTH_TEST);
 
       ctx.bindBuffer(ctx.ARRAY_BUFFER, positionBuffer);

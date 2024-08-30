@@ -70,9 +70,7 @@ export default (engine) => {
 
   return {
     program,
-    render(draw) {
-      if (!draw) return;
-
+    render() {
       const bodies = entities.values(Body);
       for (const { currentModel: model, instances } of bodies) {
         if (!model) continue;

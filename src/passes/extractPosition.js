@@ -68,7 +68,7 @@ export default (engine) => {
 
   return {
     program,
-    render(_, extract) {
+    render(extract) {
       if (!extract || tools.isActive('orbit')) return;
 
       const model = scene.hoveredInstance?.body.currentModel;

@@ -61,8 +61,8 @@ export default (engine) => {
 
   return {
     program,
-    render(draw) {
-      if (!draw || !setting.value) return;
+    render() {
+      if (!setting.value) return;
 
       ctx.bindBuffer(ctx.ELEMENT_ARRAY_BUFFER, indicesBuffer);
 

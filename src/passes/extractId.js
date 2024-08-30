@@ -56,7 +56,7 @@ export default (engine) => {
 
   return {
     program,
-    render(_, extract) {
+    render(extract) {
       if (!extract || tools.isActive('orbit')) return;
 
       ctx.bindFramebuffer(ctx.FRAMEBUFFER, framebuffer);

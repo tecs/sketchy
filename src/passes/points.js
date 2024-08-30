@@ -39,8 +39,8 @@ export default (engine) => {
 
   return {
     program,
-    render(draw) {
-      if (!draw || !scene.selectedPointIndex) return;
+    render() {
+      if (!scene.selectedPointIndex) return;
 
       const model = scene.enteredInstance?.body.currentModel;
       if (!model) return;
