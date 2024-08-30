@@ -17,9 +17,10 @@ export default (engine, tabs) => {
     const currentStep = instance.body.step;
     for (const step of instance.body.listSteps()) {
       tab.addContainer()
-        .addLabel(`${step === currentStep ? '* ' : ''}${step.name}`).$element({
+        .addLabel(step.name).$element({
           ondblclick: () => engine.scene.setCurrentStep(step),
           style: { fontWeight: step === engine.scene.currentStep ? 'bold' : undefined },
+          className: step !== currentStep ? 'disabled' : undefined,
         });
     }
   };
