@@ -96,15 +96,12 @@ export default (engine) => {
 
           if (isSelected) ctx.lineWidth(2);
 
+          ctx.drawElements(ctx.LINES, model.data.lineIndex.length, UNSIGNED_INDEX_TYPE, 0);
           if (selectedIndex) {
-            for (let i = 0; i < model.data.lineIndex.length / 2; ++i) {
-              const segmentIsSelected = selectedIndex === i + 1 ? 1 : 0;
-              ctx.lineWidth(1 + segmentIsSelected);
-              ctx.uniform1f(program.uLoc.u_isSelected, segmentIsSelected);
-              ctx.drawElements(ctx.LINES, 2, UNSIGNED_INDEX_TYPE, i * UNSIGNED_INDEX_SIZE);
-            }
+            ctx.uniform1f(program.uLoc.u_isSelected, 1);
+            ctx.lineWidth(2);
+            ctx.drawElements(ctx.LINES, 2, UNSIGNED_INDEX_TYPE, (selectedIndex - 1) * UNSIGNED_INDEX_SIZE);
           }
-          else ctx.drawElements(ctx.LINES, model.data.lineIndex.length, UNSIGNED_INDEX_TYPE, 0);
           ctx.lineWidth(1);
         }
       }
