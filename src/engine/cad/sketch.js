@@ -91,6 +91,17 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
         action.commit();
       }
     });
+
+    engine.on('mousedown', (button, count) => {
+      const { currentInstance, hoveredInstance, currentStep, hoveredLineIndex, hoveredPointIndex } = engine.scene;
+      if (button !== 'left' || count !== 2 || hoveredInstance !== currentInstance) return;
+
+      const sketch = currentInstance.body.step;
+      if (!(sketch instanceof Sketch) || sketch === currentStep) return;
+
+      if (hoveredLineIndex && sketch.hasLine(hoveredLineIndex - 1)) engine.scene.setCurrentStep(sketch);
+      else if (hoveredPointIndex && sketch.hasPoint(hoveredPointIndex - 1)) engine.scene.setCurrentStep(sketch);
+    });
   }
 
   /**
@@ -247,7 +258,7 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
    * @returns {LineConstructionElement | null}
    */
   getLine(index) {
-    if (!this.indexBelongsTo('lineIndex', index * 2)) return null;
+    if (!this.hasLine(index)) return null;
     return this.data.elements[index - this.offsets.lineIndex / 2] ?? null;
   }
 
@@ -256,7 +267,7 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
    * @returns {[LineConstructionElement, number] | null}
    */
   getLineForPoint(index) {
-    if (!this.indexBelongsTo('vertex', index * 3)) return null;
+    if (!this.hasPoint(index)) return null;
     index -= this.offsets.vertex / 3;
     const coords = this.vertexToIndex[index];
     if (!coords) return null;
@@ -285,5 +296,21 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
 
     this.data.elements.splice(index, 1);
     this.update();
+  }
+
+  /**
+   * @param {number} index
+   * @returns {boolean}
+   */
+  hasLine(index) {
+    return this.indexBelongsTo('lineIndex', index * 2);
+  }
+
+  /**
+   * @param {number} index
+   * @returns {boolean}
+   */
+  hasPoint(index) {
+    return this.indexBelongsTo('vertex', index * 3);
   }
 }
