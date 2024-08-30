@@ -50,6 +50,11 @@ export default class History {
    */
   constructor(engine) {
     this.#engine = engine;
+
+    engine.on('keyup', (_, keyCombo) => {
+      if (keyCombo.toLowerCase() === 'control + shift + z') this.redo();
+      else if (keyCombo.toLowerCase() === 'control + z') this.undo();
+    });
   }
 
   /**

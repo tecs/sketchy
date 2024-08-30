@@ -60,26 +60,8 @@ export default class Scene extends Base {
 
     this.currentInstance = this.assertProperty('currentInstance');
 
-    engine.on('mousedown', (button) => {
-      if (button === 'left' && !engine.tools.selected?.active) engine.tools.selected?.start();
-    });
-
-    engine.on('mouseup', (button) => {
-      if (button === 'left' && engine.tools.selected?.active !== false) engine.tools.selected?.end();
-    });
-
-    engine.on('mousemove', (_, delta) => {
-      if (engine.tools.selected?.active !== false) engine.tools.selected?.update(delta);
-    });
-
-    engine.on('toolchange', (_, tool) => {
-      if (tool?.active !== false) tool?.abort();
-    });
     engine.on('keyup', (_, keyCombo) => {
-      if (keyCombo === 'Escape' && engine.tools.selected?.active !== false) engine.tools.selected?.abort();
-      else if (keyCombo === 'Delete') this.deleteInstance(this.selectedInstance);
-      else if (keyCombo.toLowerCase() === 'control + shift + z') engine.history.redo();
-      else if (keyCombo.toLowerCase() === 'control + z') engine.history.undo();
+      if (keyCombo === 'Delete') this.deleteInstance(this.selectedInstance);
     });
     engine.on('entityadded', (entity) => {
       if (entity instanceof Instance) {

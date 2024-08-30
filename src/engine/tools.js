@@ -33,9 +33,26 @@ export default class Tools {
   constructor(engine) {
     this.#engine = engine;
 
+    engine.on('mousedown', (button) => {
+      if (button === 'left' && !this.selected?.active) this.selected?.start();
+    });
+
+    engine.on('mouseup', (button) => {
+      if (button === 'left' && this.selected?.active !== false) this.selected?.end();
+    });
+
+    engine.on('mousemove', (_, delta) => {
+      if (this.selected?.active !== false) this.selected?.update(delta);
+    });
+
+    engine.on('toolchange', (_, tool) => {
+      if (tool?.active !== false) tool?.abort();
+    });
+
     engine.on('keyup', (_, keyCombo) => {
       const index = this.#shortcuts.findIndex(({ value }) => value === keyCombo);
       if (index > -1) this.setTool(this.tools[index]);
+      else if (keyCombo === 'Escape' && this.selected?.active !== false) this.selected?.abort();
     });
   }
 
