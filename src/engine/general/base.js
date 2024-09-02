@@ -16,7 +16,13 @@
 /**
  * @template {Mapping} T
  * @template {Constructor} [B=DefaultConstructor]
- * @typedef {new(traitArgs: Args<T>, ...baseArgs: ConstructorParameters<B>) => InstanceType<B> & Type<T>} Derived
+ * @typedef {[traitArgs: Args<T>, ...baseArgs: ConstructorParameters<B>]} DerivedArgs
+ */
+
+/**
+ * @template {Mapping} T
+ * @template {Constructor} [B=DefaultConstructor]
+ * @typedef {(new(...args: DerivedArgs<T, B>) => InstanceType<B> & Type<T>) & { [K in keyof B]: B[K] }} Derived
  */
 
 /**
@@ -42,10 +48,10 @@ export const implement = (traits, Base) => {
   };
 
   if (!Base) {
-    return /** @type {Derived<T>} */ (class {
-      /** @param {Args<T>} traitArgs */
-      constructor(traitArgs) {
-        applyTraits(/** @type {Type<T>} */ (this), traitArgs);
+    return /** @type {Derived<T, B>} */ (class {
+      /** @param {DerivedArgs<T, B>} args */
+      constructor(...args) {
+        applyTraits(/** @type {Type<T>} */ (this), args[0]);
       }
     });
   }
