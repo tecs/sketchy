@@ -77,16 +77,8 @@ export default class Input {
     /** @type {string[]} */
     const combo = [];
 
-    if (key === 'GroupNext') {
-      key = this.shift === down ? 'Alt' : 'Shift';
-    }
-
     switch (key) {
-      case 'Alt':
-      case 'AltGraph':
-        key = 'Alt';
-        this.alt = down;
-        break;
+      case 'Alt': this.alt = down; break;
       case 'Shift': this.shift = down; break;
       case 'Control': this.ctrl = down; break;
       default: combo.push(key);
