@@ -1,7 +1,14 @@
 import { implement } from '../general/base.js';
+import { Properties } from '../general/properties.js';
 import State from '../general/state.js';
 
 const { vec3, mat4, quat } = glMatrix;
+
+/**
+ * @param {Iterable<number>} f
+ * @returns {string}
+ */
+const stringifyFloat32 = (f) => `[${[...f].map(v => v.toFixed(3)).join(', ')}]`;
 
 // cached structures
 export const defaultTrs = /** @type {PlainMat4} */ (Object.freeze([...mat4.create()]));
@@ -11,6 +18,7 @@ const tempTransform = mat4.create();
 
 export default class Placement extends implement({
   State: State.withDefaults({ trs: defaultTrs }),
+  Properties,
 }) {
   trs = mat4.create();
   inverseTrs = mat4.create();
@@ -40,6 +48,18 @@ export default class Placement extends implement({
         undefined,
         {
           onExport: () => ({ trs: /** @type {PlainMat4} */ ([...this.trs]) }),
+        },
+      ],
+      Properties: [
+        () => {
+          const angle = quat.getAxisAngle(tempToVec3, this.rotation);
+          return {
+            Placement: {
+              Position: stringifyFloat32(this.translation),
+              Axis: stringifyFloat32(tempToVec3),
+              Angle: `${(angle * 180 / Math.PI).toFixed(3)}°`,
+            },
+          };
         },
       ],
     });

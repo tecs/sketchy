@@ -1,27 +1,5 @@
 import SubInstance from '../../../engine/cad/subinstance.js';
 
-const { vec3, quat } = glMatrix;
-
-/**
- * @param {Iterable<number>} f
- * @returns {string}
- */
-const stringifyFloat32 = (f) => `[${[...f].map(v => v.toFixed(3)).join(', ')}]`;
-
-/**
- * @param {import("../../../engine/3d/placement.js").default} placement
- * @param {import("../../lib").AnyUIContainer} container
- */
-const describePlacement = (placement, container) => {
-  const axis = vec3.create();
-  const angle = quat.getAxisAngle(axis, placement.rotation);
-
-  const table = container.addTable(2);
-  table.addMixedRow(1, 'Position', stringifyFloat32(placement.translation));
-  table.addMixedRow(1, 'Axis', stringifyFloat32(axis));
-  table.addMixedRow(1, 'Angle', `${(angle * 180 / Math.PI).toFixed(3)}°`);
-};
-
 /**
  * @param {Engine} engine
  * @param {import("../../lib/index.js").UITabs} tabs
@@ -40,20 +18,14 @@ export default (engine, tabs) => {
 
     tab.show();
     tab.clearChildren();
-    const general = tab.addGroup('General');
-    const generalProps = general.addTable(2);
-    generalProps.addMixedRow(1, 'Id', instance.Id.str);
-    generalProps.addMixedRow(1, 'Body', instance.body.name);
 
-    const parent = SubInstance.getParent(instance);
-    if (parent) {
-      generalProps.addMixedRow(1, 'Parent', parent.body.name);
-      describePlacement(parent.subInstance.placement, tab.addGroup('Placement'));
+    const propertyData = instance.Properties.get(SubInstance.getParent(instance)?.subInstance.Properties.get());
+    for (const [category, properties] of Object.entries(propertyData)) {
+      const props = tab.addGroup(category).addTable(2);
+      for (const [name, value] of Object.entries(properties)) {
+        props.addMixedRow(1, name, value);
+      }
     }
-    describePlacement(instance.Placement, tab.addGroup(parent ? 'Global placement' : 'Placement'));
-
-    const tip = instance.body.step?.State;
-    generalProps.addMixedRow(1, 'Tip', tip ? `${tip.name} (${tip.type})` : '<none>');
   };
 
   /**

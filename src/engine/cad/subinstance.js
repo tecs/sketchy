@@ -2,6 +2,8 @@ import Instance from '../scene/instance.js';
 import Placement, { defaultTrs } from '../3d/placement.js';
 import Body from './body.js';
 import Step from './step.js';
+import { implement } from '../general/base.js';
+import { Properties } from '../general/properties.js';
 
 const { mat4, vec3 } = glMatrix;
 
@@ -34,7 +36,9 @@ const { mat4, vec3 } = glMatrix;
 const relative = vec3.create();
 const transform = mat4.create();
 
-export default class SubInstance extends /** @type {typeof Step<SubInstanceState>} */ (Step) {
+export default class SubInstance extends implement({
+  Properties,
+}, /** @type {typeof Step<SubInstanceState>} */ (Step)) {
   /** @type {Body} */
   subBody;
 
@@ -48,7 +52,10 @@ export default class SubInstance extends /** @type {typeof Step<SubInstanceState
     if (!args[0].placement) {
       args[0] = { ...args[0], placement: [...defaultTrs] };
     }
-    super(.../** @type {BaseParams} */ (args));
+    super({ Properties: [() => ({
+      General: { Parent: this.body.name },
+      ...this.placement.Properties.get(),
+    })] }, .../** @type {BaseParams} */ (args));
     this.#recompute();
 
     this.subBody = this.assertProperty('subBody');

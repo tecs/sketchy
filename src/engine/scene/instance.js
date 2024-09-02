@@ -1,4 +1,5 @@
 import { implement } from '../general/base.js';
+import { Properties } from '../general/properties.js';
 import Id from '../general/id.js';
 import State from '../general/state.js';
 import Placement, { defaultTrs } from '../3d/placement.js';
@@ -20,6 +21,7 @@ export default class Instance extends implement({
     bodyId: '',
     trs: defaultTrs,
   })),
+  Properties,
 }) {
   /** @type {Body} */
   body;
@@ -47,6 +49,16 @@ export default class Instance extends implement({
             engine.emit('instancetransformed', this, this.Placement.trs);
           },
         },
+      ],
+      Properties: [
+        (stepState = this.body.step?.State) => ({
+          General: {
+            Id: this.Id.str,
+            Body: body.name,
+            Tip: stepState ? `${stepState.name} (${stepState.type})` : '<none>',
+          },
+          ...this.Placement.Properties.get(),
+        }),
       ],
     });
 
