@@ -56,17 +56,52 @@ export default class Placement extends implement({
             Position: {
               value: this.translation,
               displayValue: stringifyFloat32(this.translation),
+              onEdit: (component, strValue) => {
+                const value = parseFloat(strValue);
+                if (Number.isNaN(value)) return;
+
+                const translation = vec3.create();
+                translation[component] = value - this.translation[component];
+                this.translate(translation);
+              },
               type: 'vec3',
             },
             Axis: {
               value: axis,
               displayValue: stringifyFloat32(axis),
               type: 'vec3',
+              onEdit: (component, strValue) => {
+                const value = Math.min(Math.max(parseFloat(strValue), -1), 1);
+                if (Number.isNaN(value)) return;
+
+                const normal = vec3.clone(axis);
+                normal[component] = 0;
+
+                const length = vec3.length(normal);
+                if (length > 0) vec3.scale(normal, normal, Math.sqrt(1 - value * value) / length);
+
+                normal[component] = value;
+                vec3.normalize(normal, normal);
+
+                if (vec3.length(normal) === 0) return;
+
+                mat4.rotate(this.trs, this.trs, -angle * Math.PI / 180, axis);
+                mat4.rotate(this.trs, this.trs, angle * Math.PI / 180, normal);
+                this.#recalculateAll();
+              },
             },
             Angle: {
               value: angle,
               displayValue: `${angle.toFixed(3)}°`,
               type: 'angle',
+              onEdit: (strValue) => {
+                const value = parseFloat(strValue);
+                if (Number.isNaN(value)) return;
+
+                const diff = value - angle;
+                mat4.rotate(this.trs, this.trs, diff * Math.PI / 180, axis);
+                this.#recalculateAll();
+              },
             },
           },
         }),

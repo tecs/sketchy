@@ -4,6 +4,8 @@ import Id from '../general/id.js';
 import State from '../general/state.js';
 import Placement, { defaultTrs } from '../3d/placement.js';
 
+const { mat4 } = glMatrix;
+
 /** @typedef {import("../cad/body").default} Body */
 
 /**
@@ -57,7 +59,20 @@ export default class Instance extends implement({
             Body: { value: body.name, type: 'plain' },
             Tip: { value: stepState ? `${stepState.name} (${stepState.type})` : '<none>', type: 'plain' },
           },
-          ...this.Placement.Properties.get(),
+          ...this.Placement.Properties.map(prop => {
+            const newProp = { ...prop };
+            const { onEdit } = prop;
+
+            if (onEdit) newProp.onEdit = /** @param {unknown[]} args */ (...args) => {
+              const transform = mat4.clone(this.Placement.inverseTrs);
+              /** @type {Function} */ (onEdit)(...args);
+              this.Placement.toGlobalTransformation(transform, transform);
+              this.engine.emit('instancetransformed', this, transform);
+              this.engine.emit('scenechange');
+            };
+
+            return newProp;
+          }),
         }),
       ],
     });

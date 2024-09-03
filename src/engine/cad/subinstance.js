@@ -54,7 +54,17 @@ export default class SubInstance extends implement({
     }
     super({ Properties: [() => ({
       General: { Parent: { value: this.body.name, type: 'plain' } },
-      ...this.placement.Properties.get(),
+      ...this.placement.Properties.map(prop => {
+        const newProp = { ...prop };
+        const { onEdit } = prop;
+
+        if (onEdit) newProp.onEdit = /** @param {unknown[]} args1 */ (...args1) => {
+          /** @type {Function} */ (onEdit)(...args1);
+          this.#placementChanged();
+        };
+
+        return newProp;
+      }),
     })] }, .../** @type {BaseParams} */ (args));
     this.#recompute();
 
@@ -240,6 +250,15 @@ export default class SubInstance extends implement({
     return childInstance;
   }
 
+  #placementChanged() {
+    for (const child of this.instances) SubInstance.#recalculateGlobalTrs(child);
+
+    if (!this.instances.length) {
+      this.body.recalculateBoundingBox();
+    }
+    this.engine.emit('scenechange');
+  }
+
   recompute() {
     super.recompute();
     this.#recompute();
@@ -256,10 +275,7 @@ export default class SubInstance extends implement({
    */
   transform(transformation) {
     this.placement.transform(transformation);
-    for (const child of this.instances) SubInstance.#recalculateGlobalTrs(child);
-    if (!this.instances.length) {
-      this.body.recalculateBoundingBox();
-    }
+    this.#placementChanged();
   }
 
   /**
@@ -267,11 +283,7 @@ export default class SubInstance extends implement({
    */
   translate(translation) {
     this.placement.translate(translation);
-    for (const child of this.instances) SubInstance.#recalculateGlobalTrs(child);
-
-    if (!this.instances.length) {
-      this.body.recalculateBoundingBox();
-    }
+    this.#placementChanged();
   }
 
   export() {

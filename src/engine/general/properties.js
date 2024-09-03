@@ -2,7 +2,7 @@
  * @template T
  * @template {string} S
  * @template {unknown[]} [E=[string]]
- * @typedef {{ value: T, displayValue: string, type: S }} TypedPropertyData
+ * @typedef {{ value: T, displayValue: string, type: S, onEdit?: (...args: E) => void }} TypedPropertyData
  */
 
 /** @typedef {Omit<TypedPropertyData<string, "plain">, "displayValue"> & { displayValue?: string }} PlainPropertyData */
