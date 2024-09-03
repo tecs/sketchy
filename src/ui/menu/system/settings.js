@@ -38,13 +38,18 @@ export default (engine, container) => {
         type: InputTypeMap[setting.type],
         value: originalValue,
         checked: setting.type === 'toggle' && setting.value,
-        onkeydown({ key }) {
+        onkeydown({ key, ctrlKey, altKey, shiftKey }) {
           if (setting.type !== 'key') return true;
 
           // block non-printable keys
           if (key.length !== 1) return false;
 
-          input.value = key;
+          const combo = [key.toLowerCase()];
+          if (shiftKey) combo.unshift('shift');
+          if (altKey) combo.unshift('alt');
+          if (ctrlKey) combo.unshift('control');
+
+          input.value = combo.join(' + ');
           forceChange(input);
           input.blur();
 

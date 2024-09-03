@@ -81,14 +81,14 @@ export default class Input {
       case 'Alt': this.alt = down; break;
       case 'Shift': this.shift = down; break;
       case 'Control': this.ctrl = down; break;
-      default: combo.push(key);
+      default: combo.push(key.toLowerCase());
     }
 
     this.key = key;
 
-    if (this.shift || key === 'Shift') combo.unshift('Shift');
-    if (this.alt || key === 'Alt') combo.unshift('Alt');
-    if (this.ctrl || key === 'Control') combo.unshift('Control');
+    if (this.shift || key === 'Shift') combo.unshift('shift');
+    if (this.alt || key === 'Alt') combo.unshift('alt');
+    if (this.ctrl || key === 'Control') combo.unshift('control');
     const keyCombo = combo.join(' + ');
 
     if (down) this.#engine.emit('keydown', key, keyCombo);

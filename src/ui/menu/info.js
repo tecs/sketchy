@@ -27,17 +27,17 @@ export default (engine) => {
     if (!distance || !engine.tools.selected?.setDistance) return;
 
     switch (key) {
-      case 'Enter': {
+      case 'enter': {
         const newDistance = measurementsInput.value.replace(/[, ]+/g, ' ').trim().split(' ').map(v => parseFloat(v));
         if (newDistance.some(v => typeof v !== 'number') || newDistance.length !== distance.length) return;
 
         engine.tools.selected.setDistance(newDistance);
         break;
       }
-      case 'Delete':
+      case 'delete':
         measurementsInput.value = '';
         break;
-      case 'Backspace':
+      case 'backspace':
         measurementsInput.value = measurementsInput.value.substring(0, measurementsInput.value.length - 1);
         break;
     }

@@ -22,7 +22,7 @@ export default (engine) => {
     abort() {},
   };
 
-  const zoomInKey = engine.config.createString('shortcuts.zoomIn', 'Zoom in', 'key', '=');
+  const zoomInKey = engine.config.createString('shortcuts.zoomIn', 'Zoom in', 'key', 'shift + +');
   const zoomOutKey = engine.config.createString('shortcuts.zoomOut', 'Zoom out', 'key', '-');
 
   engine.on('mousescroll', (direction) => {

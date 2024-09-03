@@ -52,7 +52,7 @@ export default class Tools {
     engine.on('keyup', (_, keyCombo) => {
       const index = this.#shortcuts.findIndex(({ value }) => value === keyCombo);
       if (index > -1) this.setTool(this.tools[index]);
-      else if (keyCombo === 'Escape' && this.selected?.active !== false) this.selected?.abort();
+      else if (keyCombo === 'escape' && this.selected?.active !== false) this.selected?.abort();
     });
   }
 

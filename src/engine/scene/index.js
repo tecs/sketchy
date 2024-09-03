@@ -61,7 +61,7 @@ export default class Scene extends Base {
     this.currentInstance = this.assertProperty('currentInstance');
 
     engine.on('keyup', (_, keyCombo) => {
-      if (keyCombo === 'Delete') this.deleteInstance(this.selectedInstance);
+      if (keyCombo === 'delete') this.deleteInstance(this.selectedInstance);
     });
     engine.on('entityadded', (entity) => {
       if (entity instanceof Instance) {

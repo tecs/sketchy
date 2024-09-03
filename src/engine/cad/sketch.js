@@ -64,7 +64,7 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
 
     engine.on('keydown', (_, keyCombo) => {
       const sketch = engine.scene.currentStep ?? engine.scene.enteredInstance?.body.step;
-      if (keyCombo === 'Delete' && sketch instanceof Sketch) {
+      if (keyCombo === 'delete' && sketch instanceof Sketch) {
         const index = engine.scene.selectedPointIndex ?? engine.scene.selectedLineIndex;
         if (!index) return;
 

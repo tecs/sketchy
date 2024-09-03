@@ -51,9 +51,18 @@ export default class History {
   constructor(engine) {
     this.#engine = engine;
 
+    const undoKey = engine.config.createString('shortcuts.undo', 'Undo', 'key', 'control + z');
+    const redoKey = engine.config.createString('shortcuts.redo', 'Redo', 'key', 'control + shift + z');
+
     engine.on('keyup', (_, keyCombo) => {
-      if (keyCombo.toLowerCase() === 'control + shift + z') this.redo();
-      else if (keyCombo.toLowerCase() === 'control + z') this.undo();
+      switch (keyCombo) {
+        case undoKey.value:
+          this.undo();
+          break;
+        case redoKey.value:
+          this.redo();
+          break;
+      }
     });
   }
 
