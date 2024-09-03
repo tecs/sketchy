@@ -15,39 +15,20 @@ export default (engine) => {
   });
   engine.on('toolinactive', () => {
     measurementsInput.value = '';
-    measurementsInput.setAttribute('x-changed', 'false');
     measurementsInput.disabled = true;
   });
   engine.on('scenechange', () => {
     measurementsInput.value = engine.tools.selected?.distance?.map(v => v.toFixed(2)).join(', ') ?? '';
-    measurementsInput.setAttribute('x-changed', 'false');
+    if (!measurementsInput.disabled) measurementsInput.select();
   });
-  engine.on('keydown', (key) => {
+  measurementsInput.addEventListener('keydown', ({ key }) => {
     const distance = engine.tools.selected?.distance;
-    if (!distance || !engine.tools.selected?.setDistance) return;
+    if (!distance || !engine.tools.selected?.setDistance || key !== 'Enter') return;
 
-    switch (key) {
-      case 'enter': {
-        const newDistance = measurementsInput.value.replace(/[, ]+/g, ' ').trim().split(' ').map(v => parseFloat(v));
-        if (newDistance.some(v => typeof v !== 'number') || newDistance.length !== distance.length) return;
-
-        engine.tools.selected.setDistance(newDistance);
-        break;
-      }
-      case 'delete':
-        measurementsInput.value = '';
-        break;
-      case 'backspace':
-        measurementsInput.value = measurementsInput.value.substring(0, measurementsInput.value.length - 1);
-        break;
+    const newDistance = measurementsInput.value.replace(/[, ]+/g, ' ').trim().split(' ').map(v => parseFloat(v));
+    if (newDistance.every(v => !Number.isNaN(v)) && newDistance.length === distance.length) {
+      engine.tools.selected.setDistance(newDistance);
     }
-
-    if (key.length === 1) {
-      const changed = measurementsInput.getAttribute('x-changed') === 'true';
-      measurementsInput.value = changed ? `${measurementsInput.value}${key}` : key;
-    }
-
-    measurementsInput.setAttribute('x-changed', 'true');
   });
 
   return menu;
