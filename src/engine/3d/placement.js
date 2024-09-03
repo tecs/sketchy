@@ -109,6 +109,14 @@ export default class Placement extends implement({
   /**
    * @param {ReadonlyMat4} transformation
    */
+  preTransform(transformation) {
+    mat4.multiply(this.trs, transformation, this.trs);
+    this.#recalculateAll();
+  }
+
+  /**
+   * @param {ReadonlyMat4} transformation
+   */
   transformGlobal(transformation) {
     this.toLocalTransformation(tempTransform, transformation);
     this.transform(tempTransform);
@@ -119,7 +127,7 @@ export default class Placement extends implement({
    */
   translate(translation) {
     mat4.fromTranslation(tempTransform, translation);
-    this.transform(tempTransform);
+    this.preTransform(tempTransform);
   }
 
   /**
