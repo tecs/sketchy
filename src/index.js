@@ -63,7 +63,9 @@ window.addEventListener('load', () => {
    * @param {boolean} down
    * @returns {(e: KeyboardEvent) => void} e
    */
-  const keyHandler = (down) => ({ key, altKey, ctrlKey, shiftKey }) => {
+  const keyHandler = (down) => ({ key, altKey, ctrlKey, shiftKey, target }) => {
+    if (target instanceof HTMLInputElement) return;
+
     if (key === 'GroupNext') {
       shiftKey ||= down;
       altKey ||= down;
