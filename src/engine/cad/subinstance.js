@@ -53,7 +53,7 @@ export default class SubInstance extends implement({
       args[0] = { ...args[0], placement: [...defaultTrs] };
     }
     super({ Properties: [() => ({
-      General: { Parent: this.body.name },
+      General: { Parent: { value: this.body.name, type: 'plain' } },
       ...this.placement.Properties.get(),
     })] }, .../** @type {BaseParams} */ (args));
     this.#recompute();

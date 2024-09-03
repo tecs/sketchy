@@ -22,8 +22,8 @@ export default (engine, tabs) => {
     const propertyData = instance.Properties.get(SubInstance.getParent(instance)?.subInstance.Properties.get());
     for (const [category, properties] of Object.entries(propertyData)) {
       const props = tab.addGroup(category).addTable(2);
-      for (const [name, value] of Object.entries(properties)) {
-        props.addMixedRow(1, name, value);
+      for (const [name, { value, displayValue, type }] of Object.entries(properties)) {
+        props.addMixedRow(1, name).cells[1].addLabel(type === 'plain' ? value : displayValue);
       }
     }
   };

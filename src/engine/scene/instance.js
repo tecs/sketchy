@@ -53,9 +53,9 @@ export default class Instance extends implement({
       Properties: [
         (stepState = this.body.step?.State) => ({
           General: {
-            Id: this.Id.str,
-            Body: body.name,
-            Tip: stepState ? `${stepState.name} (${stepState.type})` : '<none>',
+            Id: { value: this.Id.str, type: 'plain' },
+            Body: { value: body.name, type: 'plain' },
+            Tip: { value: stepState ? `${stepState.name} (${stepState.type})` : '<none>', type: 'plain' },
           },
           ...this.Placement.Properties.get(),
         }),

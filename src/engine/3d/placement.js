@@ -51,16 +51,25 @@ export default class Placement extends implement({
         },
       ],
       Properties: [
-        () => {
-          const angle = quat.getAxisAngle(tempToVec3, this.rotation);
-          return {
-            Placement: {
-              Position: stringifyFloat32(this.translation),
-              Axis: stringifyFloat32(tempToVec3),
-              Angle: `${(angle * 180 / Math.PI).toFixed(3)}°`,
+        (axis = vec3.create(), angle = quat.getAxisAngle(axis, this.rotation) * 180 / Math.PI) => ({
+          Placement: {
+            Position: {
+              value: this.translation,
+              displayValue: stringifyFloat32(this.translation),
+              type: 'vec3',
             },
-          };
-        },
+            Axis: {
+              value: axis,
+              displayValue: stringifyFloat32(axis),
+              type: 'vec3',
+            },
+            Angle: {
+              value: angle,
+              displayValue: `${angle.toFixed(3)}°`,
+              type: 'angle',
+            },
+          },
+        }),
       ],
     });
     this.set(this.State.trs);
