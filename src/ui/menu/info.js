@@ -22,6 +22,11 @@ export default (engine) => {
     if (!measurementsInput.disabled) measurementsInput.select();
   });
   measurementsInput.addEventListener('keydown', ({ key }) => {
+    if (key === 'Escape') {
+      engine.tools.selected?.abort();
+      return;
+    }
+
     const distance = engine.tools.selected?.distance;
     if (!distance || !engine.tools.selected?.setDistance || key !== 'Enter') return;
 
