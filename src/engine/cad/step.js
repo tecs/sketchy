@@ -1,5 +1,6 @@
 import Model from '../3d/model.js';
-import Base from '../general/base.js';
+import Base, { generateName } from '../general/base.js';
+import { Properties } from '../general/properties.js';
 import State from '../general/state.js';
 
 /** @typedef {import("./body.js").default} Body */
@@ -26,7 +27,7 @@ import State from '../general/state.js';
 /**
  * @template {Value} T
  */
-export default class Step extends Base {
+export default class Step extends Base.implement({ Properties }) {
   static registered = false;
 
   /** @type {import("../general/state.js").StateType<StepState<T>>} */
@@ -64,7 +65,22 @@ export default class Step extends Base {
   constructor(...args) {
     const [data, name, body, engine] = args;
 
-    super();
+    super({ Properties: [() => ({
+      General: {
+        Name: {
+          value: this.name,
+          type: 'plain',
+          onEdit: (newName) => {
+            if (newName === '' || newName === this.name) return;
+            this.State.name = generateName(newName, this.body.listSteps(), step => step.name);
+            this.engine.emit('stepedited', this);
+          },
+        },
+        Type: { value: this.State.type, type: 'plain' },
+        Parent: { value: this.body.name, type: 'plain' },
+      },
+    })] });
+
     this.State = new /** @type {import("../general/state.js").StateConstructor<StepState<T>>} */ (State)({
       name,
       type: /** @type {typeof Step<T>} */ (this.constructor).getType(),

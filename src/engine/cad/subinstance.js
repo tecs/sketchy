@@ -2,7 +2,6 @@ import Instance from '../scene/instance.js';
 import Placement, { defaultTrs } from '../3d/placement.js';
 import Body from './body.js';
 import Step from './step.js';
-import { implement } from '../general/base.js';
 import { Properties } from '../general/properties.js';
 
 const { mat4, vec3 } = glMatrix;
@@ -36,9 +35,7 @@ const { mat4, vec3 } = glMatrix;
 const relative = vec3.create();
 const transform = mat4.create();
 
-export default class SubInstance extends implement({
-  Properties,
-}, /** @type {typeof Step<SubInstanceState>} */ (Step)) {
+export default class SubInstance extends /** @type {typeof Step<SubInstanceState>} */ (Step) {
   /** @type {Body} */
   subBody;
 
@@ -52,20 +49,20 @@ export default class SubInstance extends implement({
     if (!args[0].placement) {
       args[0] = { ...args[0], placement: [...defaultTrs] };
     }
-    super({ Properties: [() => ({
-      General: { Parent: { value: this.body.name, type: 'plain' } },
-      ...this.placement.Properties.map(prop => {
-        const newProp = { ...prop };
-        const { onEdit } = prop;
+    super(.../** @type {BaseParams} */ (args));
 
-        if (onEdit) newProp.onEdit = /** @param {unknown[]} args1 */ (...args1) => {
-          /** @type {Function} */ (onEdit)(...args1);
-          this.#placementChanged();
-        };
+    this.Properties.extend(properties => Properties.merge(properties, this.placement.Properties.map(prop => {
+      const newProp = { ...prop };
+      const { onEdit } = prop;
 
-        return newProp;
-      }),
-    })] }, .../** @type {BaseParams} */ (args));
+      if (onEdit) newProp.onEdit = /** @param {unknown[]} args1 */ (...args1) => {
+        /** @type {Function} */ (onEdit)(...args1);
+        this.#placementChanged();
+      };
+
+      return newProp;
+    })));
+
     this.#recompute();
 
     this.subBody = this.assertProperty('subBody');
