@@ -1,9 +1,10 @@
 import { UIMenu } from '../../lib/index.js';
 import renderActiveTab from './active.js';
 import renderBodiesTab from './bodies.js';
-import renderDebug from './debug.js';
+import renderDebugTab from './debug.js';
 import renderSceneTab from './scene.js';
 import renderStepsTab from './steps.js';
+import renderSelectedStepTab from './steps-selected.js';
 
 /**
  * @param {Engine} engine
@@ -23,8 +24,9 @@ export default (engine) => {
   const selected = menu.addTabs('tabContents');
   selected.$container({ className: 'tabContainer' });
 
+  renderSelectedStepTab(engine, selected);
   renderActiveTab(engine, selected);
-  renderDebug(engine, selected);
+  renderDebugTab(engine, selected);
 
   return menu;
 };

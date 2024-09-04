@@ -17,6 +17,7 @@ import SubInstance from './cad/subinstance.js';
 
 /** @typedef {import("./3d/bounding-box-types").BoundingBoxEvent} BoundingBoxEv */
 /** @typedef {import("./3d/camera-types").CameraEvent} CameraEv */
+/** @typedef {import("./cad/types").CadEvent} CadEv */
 /** @typedef {import("./config-types").ConfigEvent} ConfigEv */
 /** @typedef {import("./entities-types").EntitiesEvent} EntitiesEv */
 /** @typedef {import("./history-types").HistoryEvent} HistoryEv */
@@ -24,7 +25,8 @@ import SubInstance from './cad/subinstance.js';
 /** @typedef {import("./scene/types").SceneEvent} SceneEv */
 /** @typedef {import("./tools-types.js").ToolEvent} ToolEv */
 /** @typedef {import("./scene/intance-types.js").InstanceEvent} InstanceEv */
-/** @typedef {BoundingBoxEv|CameraEv|ConfigEv|EntitiesEv|HistoryEv|InputEv|SceneEv|ToolEv|InstanceEv} EngineEvent */
+// eslint-disable-next-line max-len
+/** @typedef {BoundingBoxEv|CadEv|CameraEv|ConfigEv|EntitiesEv|HistoryEv|InputEv|SceneEv|ToolEv|InstanceEv} EngineEvent */
 
 /** @augments Base<EngineEvent> */
 export default class Engine extends Base {

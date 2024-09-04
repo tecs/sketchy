@@ -189,6 +189,7 @@ export default class Body extends Base.implement({
 
     this.#stack[index + 1]?.recompute();
 
+    this.#engine.emit('stepedited', step);
     this.#engine.emit('scenechange');
   }
 

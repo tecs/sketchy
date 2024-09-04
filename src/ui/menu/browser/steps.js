@@ -34,4 +34,5 @@ export default (engine, tabs) => {
   engine.on('currentchange', render);
   engine.on('scenechange', render);
   engine.on('stepchange', render);
+  engine.on('stepedited', render);
 };
