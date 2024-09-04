@@ -1,3 +1,4 @@
+import { Properties } from '../general/properties.js';
 import Step from './step.js';
 
 const { vec3, mat4, quat } = glMatrix;
@@ -49,6 +50,14 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
       args[0] = { ...args[0], elements: [] };
     }
     super(.../** @type {BaseParams} */ (args));
+
+    this.Properties.extend(properties => Properties.merge(properties, {
+      Attachment: {
+        Type: { value: this.State.data.attachment.type, type: 'plain' },
+        Normal: { value: this.normal, type: 'vec3' },
+      },
+    }));
+
     this.#recompute();
   }
 
