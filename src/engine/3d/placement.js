@@ -4,12 +4,6 @@ import State from '../general/state.js';
 
 const { vec3, mat4, quat } = glMatrix;
 
-/**
- * @param {Iterable<number>} f
- * @returns {string}
- */
-const stringifyFloat32 = (f) => `[${[...f].map(v => v.toFixed(3)).join(', ')}]`;
-
 // cached structures
 export const defaultTrs = /** @type {PlainMat4} */ (Object.freeze([...mat4.create()]));
 const tempToVec3 = vec3.create();
@@ -55,7 +49,6 @@ export default class Placement extends implement({
           Placement: {
             Position: {
               value: this.translation,
-              displayValue: stringifyFloat32(this.translation),
               onEdit: (component, strValue) => {
                 const value = parseFloat(strValue);
                 if (Number.isNaN(value)) return;
@@ -68,7 +61,6 @@ export default class Placement extends implement({
             },
             Axis: {
               value: axis,
-              displayValue: stringifyFloat32(axis),
               type: 'vec3',
               onEdit: (component, strValue) => {
                 const value = Math.min(Math.max(parseFloat(strValue), -1), 1);
@@ -92,7 +84,6 @@ export default class Placement extends implement({
             },
             Angle: {
               value: angle,
-              displayValue: `${angle.toFixed(3)}°`,
               type: 'angle',
               onEdit: (strValue) => {
                 const value = parseFloat(strValue);
