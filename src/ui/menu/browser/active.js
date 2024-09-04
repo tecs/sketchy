@@ -1,5 +1,3 @@
-import SubInstance from '../../../engine/cad/subinstance.js';
-
 /**
  * @param {Engine} engine
  * @param {import("../../lib/index.js").UITabs} tabs
@@ -19,7 +17,7 @@ export default (engine, tabs) => {
     tab.show();
     tab.clearChildren();
 
-    const propertyData = instance.Properties.get(SubInstance.getParent(instance)?.subInstance.Properties.get());
+    const propertyData = instance.Properties.get();
     for (const [category, properties] of Object.entries(propertyData)) {
       const props = tab.addGroup(category).addTable(2);
       for (const [name, { value, displayValue, type, onEdit }] of Object.entries(properties)) {

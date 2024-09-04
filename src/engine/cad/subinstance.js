@@ -231,6 +231,14 @@ export default class SubInstance extends implement({
   #instantiate(partialParentInstance) {
     const partialChildInstance = /** @type {MaybeChildInstance} */ (this.subBody.instantiate());
 
+    const originalProperties = partialChildInstance.Properties;
+    partialChildInstance.Properties = new Properties(() => originalProperties.get({
+      General: {
+        Parent: { value: partialParentInstance.name, type: 'plain' },
+      },
+      Placement: this.Properties.get().Placement,
+    }));
+
     partialParentInstance._subInstanceChildren ??= [];
     const parentInstance = /** @type {ParentInstance} */ (partialParentInstance);
 
