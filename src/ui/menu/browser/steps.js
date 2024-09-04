@@ -19,10 +19,13 @@ export default (engine, tabs) => {
       tab.addContainer()
         .addLabel(step.name).$element({
           onclick: ({ detail }) => {
-            if (detail === 2) engine.scene.setCurrentStep(step);
+            switch (detail) {
+              case 1: engine.scene.setSelectedStep(step); break;
+              case 2: engine.scene.setCurrentStep(step); break;
+            }
           },
           style: { fontWeight: step === engine.scene.currentStep ? 'bold' : undefined },
-          className: step !== currentStep ? 'disabled' : undefined,
+          className: `${step !== currentStep ? 'disabled' : ''} ${step === engine.scene.selectedStep ? 'selected' : ''}`,
         });
     }
   };

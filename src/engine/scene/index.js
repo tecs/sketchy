@@ -6,6 +6,8 @@ import SubInstance from '../cad/subinstance.js';
 
 const { vec3 } = glMatrix;
 
+/** @typedef {import('../cad/body.js').AnyStep} AnyStep */
+
 /**
  * @typedef SceneState
  * @property {import("../cad/body.js").BodyState[]} bodies
@@ -40,8 +42,11 @@ export default class Scene extends Base {
   /** @type {number | null} */
   hoveredPointIndex = null;
 
-  /** @type {import("../cad/body.js").AnyStep | null} */
+  /** @type {AnyStep | null} */
   currentStep = null;
+
+  /** @type {AnyStep | null} */
+  selectedStep = null;
 
   /** @type {ReadonlyVec3} */
   axisNormal = vec3.create();
@@ -200,6 +205,7 @@ export default class Scene extends Base {
       this.#engine.emit('currentchange', newInstance, previous);
       this.setSelectedInstance(null);
       this.setCurrentStep(null);
+      this.setSelectedStep(null);
     }
 
     if (newInstance) this.setCurrentInstance(newInstance);
@@ -232,12 +238,23 @@ export default class Scene extends Base {
   }
 
   /**
-   * @param {import("../cad/body.js").AnyStep | null} step
+   * @param {AnyStep | null} step
    */
   setCurrentStep(step) {
     if (step !== this.currentStep) {
       const previous = this.currentStep;
       this.currentStep = step;
+      this.#engine.emit('stepchange', step, previous);
+    }
+  }
+
+  /**
+   * @param {AnyStep | null} step
+   */
+  setSelectedStep(step) {
+    if (step !== this.selectedStep) {
+      const previous = this.selectedStep;
+      this.selectedStep = step;
       this.#engine.emit('stepchange', step, previous);
     }
   }
