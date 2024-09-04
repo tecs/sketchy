@@ -1,6 +1,6 @@
 type Callback<P extends unknown[]> = (...args: P) => void;
 
-export type Event<T extends string, P extends unknown[]> = {
+export type Event<T extends string, P extends unknown[] = []> = {
   type: T;
   params: P;
   callback: Callback<P>;
