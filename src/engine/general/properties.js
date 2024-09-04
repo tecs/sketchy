@@ -24,18 +24,28 @@ export class Properties {
   }
 
   /**
+   * @param {...PropertyDefinitions} definitions
+   * @returns {PropertyDefinitions}
+   */
+  static merge(...definitions) {
+    const out = /** @type {PropertyDefinitions} */ ({});
+
+    for (const overrides of definitions) {
+      for (const [category, properties] of Object.entries(overrides)) {
+        if (category in out) Object.assign(out[category], properties);
+        else out[category] = properties;
+      }
+    }
+
+    return out;
+  }
+
+  /**
    * @param {PropertyDefinitions} [overrides]
    * @returns {PropertyDefinitions}
    */
   get(overrides = {}) {
-    const out = this.#getFn();
-
-    for (const [category, properties] of Object.entries(overrides)) {
-      if (category in out) Object.assign(out[category], properties);
-      else out[category] = properties;
-    }
-
-    return out;
+    return Properties.merge(this.#getFn(), overrides);
   }
 
   /**
@@ -56,5 +66,13 @@ export class Properties {
     }
 
     return out;
+  }
+
+  /**
+   * @param {(prev: PropertyDefinitions) => PropertyDefinitions} next
+   */
+  extend(next) {
+    const prevFn = this.#getFn;
+    this.#getFn = () => next(prevFn());
   }
 }
