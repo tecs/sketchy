@@ -2,7 +2,7 @@ import UnsupportedStep from './unsupported.js';
 
 import Instance from '../scene/instance.js';
 import BoundingBox from '../3d/bounding-box.js';
-import Base from '../general/base.js';
+import Base, { generateName } from '../general/base.js';
 import Id from '../general/id.js';
 import State from '../general/state.js';
 
@@ -15,23 +15,6 @@ import State from '../general/state.js';
  * @property {import("../entities.js").Key} id
  * @property {import("./step.js").StepState<any>[]} stack
  */
-
-/**
- * @template T
- * @param {string} baseName
- * @param {Readonly<T[]>} pool
- * @param {(element: T) => string} extractNameFn
- * @returns {string}
- */
-const generateName = (baseName, pool, extractNameFn) => {
-  const names = pool.map(extractNameFn);
-  let name = baseName;
-  for (let i = 1; ; ++i) {
-    if (!names.includes(name)) break;
-    name = `${baseName} (${String(i).padStart(3, '0')})`;
-  }
-  return name;
-};
 
 export default class Body extends Base.implement({
   BoundingBox,

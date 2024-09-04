@@ -18,7 +18,7 @@ export default (engine, tabs) => {
       const parent = SubInstance.getParent(instance)?.instance;
       const parentContainer = (parent ? instanceCache[parent.Id.str] : null) ?? tab;
       const instanceContainer = parentContainer.addContainer({ className: 'tree' });
-      instanceContainer.addLabel(instance.body.name).$element({
+      instanceContainer.addLabel(instance.name).$element({
         onclick: ({ detail }) => {
           if (detail === 2) return void(engine.scene.setEnteredInstance(instance));
 
@@ -38,6 +38,7 @@ export default (engine, tabs) => {
 
   engine.on('entityadded', render);
   engine.on('entityremoved', render);
+  engine.on('instanceedited', render);
   engine.on('currentchange', render);
   engine.on('selectionchange', render);
 };

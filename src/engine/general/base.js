@@ -70,6 +70,23 @@ export const implement = (traits, Base) => {
 };
 
 /**
+ * @template T
+ * @param {string} baseName
+ * @param {Readonly<T[]>} pool
+ * @param {(element: T) => string} extractNameFn
+ * @returns {string}
+ */
+export const generateName = (baseName, pool, extractNameFn) => {
+  const names = pool.map(extractNameFn);
+  let name = baseName;
+  for (let i = 1; ; ++i) {
+    if (!names.includes(name)) break;
+    name = `${baseName} (${String(i).padStart(3, '0')})`;
+  }
+  return name;
+};
+
+/**
  * @template {object} T
  * @param {T} obj
  * @param {...(keyof T)} keys
