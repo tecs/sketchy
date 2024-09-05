@@ -4,6 +4,7 @@ import renderBodiesTab from './bodies.js';
 import renderDebugTab from './debug.js';
 import renderSceneTab from './scene.js';
 import renderStepsTab from './steps.js';
+import renderSelectedBodyTab from './bodies-selected.js';
 import renderSelectedStepTab from './steps-selected.js';
 
 /**
@@ -25,6 +26,7 @@ export default (engine) => {
   selected.$container({ className: 'tabContainer' });
 
   renderSelectedStepTab(engine, selected);
+  renderSelectedBodyTab(engine, selected);
   renderActiveTab(engine, selected);
   renderDebugTab(engine, selected);
 

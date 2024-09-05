@@ -19,8 +19,13 @@ export default (engine, tabs) => {
     for (const body of bodies) {
       tab.addContainer()
         .addLabel(body.name).$element({
+          className: body === engine.scene.selectedBody ? 'selected' : '',
           onclick: ({ detail }) => {
-            if (detail !== 2) return;
+            switch (detail) {
+              case 1: engine.scene.setSelectedBody(body); return;
+              case 2: break;
+              default: return;
+            }
 
             const { enteredInstance } = engine.scene;
             const instance = enteredInstance
@@ -49,4 +54,7 @@ export default (engine, tabs) => {
   engine.on('entityremoved', render);
   engine.on('currentchange', render);
   engine.on('selectionchange', render);
+  engine.on('selectedbodychange', render);
+  engine.on('bodyedited', render);
+  engine.on('mousedown', () => engine.scene.setSelectedBody(null));
 };

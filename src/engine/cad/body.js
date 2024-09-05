@@ -5,6 +5,7 @@ import BoundingBox from '../3d/bounding-box.js';
 import Base, { generateName } from '../general/base.js';
 import Id from '../general/id.js';
 import State from '../general/state.js';
+import { Properties } from '../general/properties.js';
 
 /** @typedef {import("./step.js").default<any>} AnyStep */
 /** @typedef {import("./step.js").StepConstructor<any>} StepConstructor */
@@ -19,6 +20,7 @@ import State from '../general/state.js';
 export default class Body extends Base.implement({
   BoundingBox,
   Id,
+  Properties,
   State: State.withDefaults(/** @type {BodyState} */ ({
     name: '',
     id: '',
@@ -65,6 +67,21 @@ export default class Body extends Base.implement({
   constructor(engine, state) {
     super({
       Id: [state?.id],
+      Properties: [(stepState = this.step?.State) => ({
+        General: {
+          Id: { value: this.State.id, type: 'plain' },
+          Name: {
+            value: this.name,
+            type: 'plain',
+            onEdit: (name) => {
+              if (name === '' || name === this.State.name) return;
+              this.State.name = generateName(name, engine.entities.values(Body), body => body.name);
+              engine.emit('bodyedited', this);
+            },
+          },
+          Tip: { value: stepState ? `${stepState.name} (${stepState.type})` : '<none>', type: 'plain' },
+        },
+      })],
       State: [
         undefined,
         {
@@ -120,6 +137,7 @@ export default class Body extends Base.implement({
 
     this.recalculateBoundingBox();
     this.#engine.emit('scenechange');
+    this.#engine.emit('bodyedited', this);
   }
 
   /**
@@ -178,6 +196,7 @@ export default class Body extends Base.implement({
     this.#stack[index + 1]?.recompute();
 
     this.#engine.emit('scenechange');
+    this.#engine.emit('bodyedited', this);
   }
 
   /**

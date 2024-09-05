@@ -48,6 +48,9 @@ export default class Scene extends Base {
   /** @type {AnyStep | null} */
   selectedStep = null;
 
+  /** @type {Body | null} */
+  selectedBody = null;
+
   /** @type {ReadonlyVec3} */
   axisNormal = vec3.create();
   hoveredView = vec3.create();
@@ -256,6 +259,17 @@ export default class Scene extends Base {
       const previous = this.selectedStep;
       this.selectedStep = step;
       this.#engine.emit('stepchange', step, previous);
+    }
+  }
+
+  /**
+   * @param {Body | null} body
+   */
+  setSelectedBody(body) {
+    if (body !== this.selectedBody) {
+      const previous = this.selectedBody;
+      this.selectedBody = body;
+      this.#engine.emit('selectedbodychange', body, previous);
     }
   }
 

@@ -59,7 +59,7 @@ export default class Instance extends implement({
         },
       ],
       Properties: [
-        (stepState = this.body.step?.State) => ({
+        () => ({
           General: {
             Id: { value: this.Id.str, type: 'plain' },
             Name: {
@@ -73,7 +73,6 @@ export default class Instance extends implement({
               },
             },
             Body: { value: body.name, type: 'plain' },
-            Tip: { value: stepState ? `${stepState.name} (${stepState.type})` : '<none>', type: 'plain' },
           },
           ...this.Placement.Properties.map(prop => {
             const newProp = { ...prop };
