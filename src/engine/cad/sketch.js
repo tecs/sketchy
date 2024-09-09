@@ -125,7 +125,7 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
     let size = 0;
 
     switch (type) {
-      case "line":
+      case 'line':
         size = 4;
         break;
       default:

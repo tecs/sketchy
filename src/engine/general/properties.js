@@ -1,12 +1,11 @@
 /**
  * @template T
  * @template {string} S
- * @template {unknown[]} [E=[string]]
- * @typedef {{ value: T, displayValue?: string, type: S, onEdit?: (...args: E) => void }} TypedPropertyData
+ * @typedef {{ value: T, displayValue?: string, type: S, onEdit?: (value: T) => void }} TypedPropertyData
  */
 
 /** @typedef {TypedPropertyData<string, "plain">} PlainPropertyData */
-/** @typedef {TypedPropertyData<vec3, "vec3", [component: 0|1|2, value: string]>} Vec3PropertyData */
+/** @typedef {TypedPropertyData<vec3, "vec3">} Vec3PropertyData */
 /** @typedef {TypedPropertyData<number, "angle">} AnglePropertyData */
 /** @typedef {PlainPropertyData | Vec3PropertyData | AnglePropertyData} PropertyData */
 /** @typedef {Record<string, Record<string, PropertyData>>} PropertyDefinitions */

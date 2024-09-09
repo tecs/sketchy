@@ -1,38 +1,133 @@
+/** @typedef {import("../../../engine/general/properties").PropertyData} PropertyData */
 /**
- * @param {import("../../../engine/general/properties").PropertyData} property
+ * @typedef Unit
+ * @property {string} suffix
+ * @property {number} toBase
+ * @property {number} fromBase
+ */
+
+const { vec3 } = glMatrix;
+
+/** @type {Unit[]} */
+const ANGLE_UNITS = [
+  { suffix: 'rad', toBase: 1, fromBase: 1 },
+  { suffix: 'tau', toBase: 2, fromBase: 0.5 },
+  { suffix:   '°', toBase: Math.PI / 180, fromBase: 180 / Math.PI },
+  { suffix: 'deg', toBase: Math.PI / 180, fromBase: 180 / Math.PI },
+];
+
+/**
+ * @param {string} value
+ * @param {Unit[]} units
+ * @returns {number | null}
+ */
+const parseUnit = (value, units) => {
+  value = value.replace(/\s/g, '');
+  const unit = units.filter(({ suffix }) => value.endsWith(suffix))
+    .sort((a, b) => a.suffix.length - b.suffix.length)
+    .pop();
+  if (unit) value = value.slice(0, -unit.suffix.length);
+
+  const distance = parseFloat(value);
+  if (typeof distance !== 'number' || Number.isNaN(distance) || !Number.isFinite(distance)) return null;
+
+  return unit ? distance * unit.toBase : distance;
+};
+
+/**
+ * @param {vec3} value
+ * @param {number} [precision]
  * @returns {string}
  */
-const stringifyValue = ({ type, value, displayValue }) => {
+export const stringifyVec3 = (value, precision) => {
+  return precision === undefined ? `[${value.join(', ')}]` : `[${[...value].map(v => v.toFixed(3)).join(', ')}]`;
+};
+
+/**
+ * @param {number} value
+ * @param {number} [precision]
+ * @returns {string}
+ */
+export const stringifyAngle = (value, precision) => {
+  value *= 180 / Math.PI;
+  return precision === undefined ? `${value}°` : `${value.toFixed(3)}°`;
+};
+
+/**
+ * @param {string} value
+ * @returns {number | null}
+ */
+export const typifyAngle = (value) => parseUnit(value, ANGLE_UNITS);
+
+/**
+ * @template {PropertyData} T
+ * @param {string} value
+ * @param {T} property
+ * @returns {T["value"]}
+ */
+export const typifyString = (value, property) => {
+  switch (property.type) {
+    case 'angle': return typifyAngle(value) ?? property.value;
+  }
+
+  return property.value;
+};
+
+/**
+ * @param {PropertyData} property
+ * @param {number} [precision]
+ * @returns {string}
+ */
+export const stringifyValue = ({ type, value, displayValue }, precision) => {
   if (typeof displayValue === 'string') return displayValue;
 
   switch(type) {
-    case "vec3": return `[${[...value].map(v => v.toFixed(3)).join(', ')}]`;
-    case "angle": return `${value.toFixed(3)}°`;
-    case "plain": return value;
+    case 'vec3': return stringifyVec3(value, precision);
+    case 'angle': return stringifyAngle(value, precision);
+    case 'plain': return value;
     default: return '<<UNSUPPORTED PROPERTY TYPE>>';
   }
 };
 
 /**
- * @param {import("../../../engine/general/properties").PropertyData} property
+ * @param {PropertyData} property
  * @param {import("../../lib").AnyUIContainer} container
  */
-const renderInput = ({ type, value, onEdit }, container) => {
+export const renderInput = ({ type, value, onEdit }, container) => {
   if (!onEdit) return;
 
   switch (type) {
     case 'vec3': {
-      const x = container.addInput(`${value[0]}`, { onchange: () => onEdit(0, x.value) });
-      const y = container.addInput(`${value[1]}`, { onchange: () => onEdit(1, y.value) });
-      const z = container.addInput(`${value[2]}`, { onchange: () => onEdit(2, z.value) });
+      /**
+       * @param {0|1|2} component
+       * @param {string} str
+       */
+      const typifyComponent = (component, str) => {
+        const newValue = parseFloat(str);
+        if (typeof newValue !== 'number' || Number.isNaN(newValue) || !Number.isFinite(newValue)) return;
+        if (newValue === value[component]) return;
+
+        const newVec = vec3.clone(value);
+        newVec[component] = newValue;
+
+        onEdit(newVec);
+      };
+      const x = container.addInput(`${value[0]}`, { onchange: () => typifyComponent(0, x.value) });
+      const y = container.addInput(`${value[1]}`, { onchange: () => typifyComponent(1, y.value) });
+      const z = container.addInput(`${value[2]}`, { onchange: () => typifyComponent(2, z.value) });
       break;
     }
     case 'angle': {
-      const input = container.addInput(`${value}`, { onchange: () => onEdit(input.value) });
+      const input = container.addInput(stringifyAngle(value), { onchange: () => {
+        const newAngle = typifyAngle(input.value);
+        if (newAngle !== null && newAngle !== value) onEdit(newAngle);
+      } });
       break;
     }
     case 'plain': {
-      const input = container.addInput(value, { onchange: () => onEdit(input.value) });
+      const input = container.addInput(value, { onchange: () => {
+        if (input.value !== value) onEdit(input.value);
+      } });
       break;
     }
     default:
@@ -49,7 +144,7 @@ export default (propertyData, container) => {
     const props = container.addGroup(category).addTable(2);
     for (const [name, property] of Object.entries(properties)) {
       const [, cell] = props.addMixedRow(1, name).cells;
-      const label = cell.addLabel(stringifyValue(property));
+      const label = cell.addLabel(stringifyValue(property, 3));
 
       if (!property.onEdit) {
         label.$element({ className: 'disabled' });

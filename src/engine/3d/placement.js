@@ -45,16 +45,12 @@ export default class Placement extends implement({
         },
       ],
       Properties: [
-        (axis = vec3.create(), angle = quat.getAxisAngle(axis, this.rotation) * 180 / Math.PI) => ({
+        (axis = vec3.create(), angle = quat.getAxisAngle(axis, this.rotation)) => ({
           Placement: {
             Position: {
               value: this.translation,
-              onEdit: (component, strValue) => {
-                const value = parseFloat(strValue);
-                if (Number.isNaN(value)) return;
-
-                const translation = vec3.create();
-                translation[component] = value - this.translation[component];
+              onEdit: (translation) => {
+                vec3.subtract(translation, translation, this.translation);
                 this.translate(translation);
               },
               type: 'vec3',
@@ -62,11 +58,9 @@ export default class Placement extends implement({
             Axis: {
               value: axis,
               type: 'vec3',
-              onEdit: (component, strValue) => {
-                const value = Math.min(Math.max(parseFloat(strValue), -1), 1);
-                if (Number.isNaN(value)) return;
-
-                const normal = vec3.clone(axis);
+              onEdit: (normal) => {
+                const component = (normal[1] !== axis[1] ? 1 : 0) + (normal[2] !== axis[2] ? 2 : 0);
+                const value = Math.min(Math.max(normal[component], -1), 1);
                 normal[component] = 0;
 
                 const length = vec3.length(normal);
@@ -77,20 +71,16 @@ export default class Placement extends implement({
 
                 if (vec3.length(normal) === 0) return;
 
-                mat4.rotate(this.trs, this.trs, -angle * Math.PI / 180, axis);
-                mat4.rotate(this.trs, this.trs, angle * Math.PI / 180, normal);
+                mat4.rotate(this.trs, this.trs, -angle, axis);
+                mat4.rotate(this.trs, this.trs, angle, normal);
                 this.#recalculateAll();
               },
             },
             Angle: {
               value: angle,
               type: 'angle',
-              onEdit: (strValue) => {
-                const value = parseFloat(strValue);
-                if (Number.isNaN(value)) return;
-
-                const diff = value - angle;
-                mat4.rotate(this.trs, this.trs, diff * Math.PI / 180, axis);
+              onEdit: (value) => {
+                mat4.rotate(this.trs, this.trs, value - angle, axis);
                 this.#recalculateAll();
               },
             },
