@@ -9,6 +9,17 @@
 const { vec3 } = glMatrix;
 
 /** @type {Unit[]} */
+const DISTANCE_UNITS = [
+  { suffix: 'pm', toBase: 1e-9, fromBase: 1e+9 },
+  { suffix: 'nm', toBase: 1e-6, fromBase: 1e+6 },
+  { suffix: 'um', toBase: 1e-3, fromBase: 1e+3 },
+  { suffix: 'mm', toBase: 1e+0, fromBase: 1e+0 },
+  { suffix: 'cm', toBase: 1e+1, fromBase: 1e-1 },
+  { suffix:  'm', toBase: 1e+3, fromBase: 1e-3 },
+  { suffix: 'km', toBase: 1e+6, fromBase: 1e-6 },
+];
+
+/** @type {Unit[]} */
 const ANGLE_UNITS = [
   { suffix: 'rad', toBase: 1, fromBase: 1 },
   { suffix: 'tau', toBase: 2, fromBase: 0.5 },
@@ -54,10 +65,28 @@ export const stringifyAngle = (value, precision) => {
 };
 
 /**
+ * @param {number} value
+ * @param {number} [precision]
+ * @returns {string}
+ */
+export const stringifyDistance = (value, precision) => {
+  const searchValue = value === 0 ? 1 : value * 0.1;
+  const unit = DISTANCE_UNITS.find(u => searchValue <= u.toBase) ?? DISTANCE_UNITS[0];
+  value *= unit.fromBase;
+  return precision === undefined ? `${value}${unit.suffix}` : `${value.toFixed(precision)}${unit.suffix}`;
+};
+
+/**
  * @param {string} value
  * @returns {number | null}
  */
 export const typifyAngle = (value) => parseUnit(value, ANGLE_UNITS);
+
+/**
+ * @param {string} value
+ * @returns {number | null}
+ */
+export const typifyDistance = (value) => parseUnit(value, DISTANCE_UNITS);
 
 /**
  * @template {PropertyData} T
@@ -68,6 +97,7 @@ export const typifyAngle = (value) => parseUnit(value, ANGLE_UNITS);
 export const typifyString = (value, property) => {
   switch (property.type) {
     case 'angle': return typifyAngle(value) ?? property.value;
+    case 'distance': return typifyDistance(value) ?? property.value;
   }
 
   return property.value;
@@ -84,6 +114,7 @@ export const stringifyValue = ({ type, value, displayValue }, precision) => {
   switch(type) {
     case 'vec3': return stringifyVec3(value, precision);
     case 'angle': return stringifyAngle(value, precision);
+    case 'distance': return stringifyDistance(value, precision);
     case 'plain': return value;
     default: return '<<UNSUPPORTED PROPERTY TYPE>>';
   }
@@ -121,6 +152,13 @@ export const renderInput = ({ type, value, onEdit }, container) => {
       const input = container.addInput(stringifyAngle(value), { onchange: () => {
         const newAngle = typifyAngle(input.value);
         if (newAngle !== null && newAngle !== value) onEdit(newAngle);
+      } });
+      break;
+    }
+    case 'distance': {
+      const input = container.addInput(stringifyAngle(value), { onchange: () => {
+        const newDistance = typifyDistance(input.value);
+        if (newDistance !== null && newDistance !== value) onEdit(newDistance);
       } });
       break;
     }
