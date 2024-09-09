@@ -1,3 +1,5 @@
+import { PropertyData } from './properties.js';
+
 type Callback<P extends unknown[]> = (...args: P) => void;
 
 export type Event<T extends string, P extends unknown[] = []> = {
@@ -13,7 +15,10 @@ export type AnyEvent = Event<any, any[]>;
 
 type SystemError = Event<'error', [message: string, details: unknown]>;
 type UserError = Event<'usererror', [message: string]>;
+type PropertyRequest = Event<'propertyrequest', [property: PropertyData]>;
+type PropertyResponse = Event<'propertyresponse', [property?: PropertyData]>;
 
 type EventMap<E extends AnyEvent> = { [K in E['type']]: Extract<E, { type: K }> };
 
-export type BasedEvents<E extends AnyEvent> = EventMap<SystemError | UserError> & EventMap<E>;
+export type BasedEvents<E extends AnyEvent> =
+  EventMap<SystemError | UserError | PropertyRequest | PropertyResponse> & EventMap<E>;
