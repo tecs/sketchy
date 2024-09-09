@@ -103,15 +103,15 @@ export default (engine) => {
       const candidateLineIndex = scene.selectedLineIndex ?? (selectedInstance ? null : scene.hoveredLineIndex);
 
       mat4.identity(transformation);
-      if (sketch instanceof Sketch && candidatePointIndex) {
-        const line = sketch.getLineForPoint(candidatePointIndex - 1);
+      if (sketch instanceof Sketch && candidatePointIndex !== null) {
+        const line = sketch.getLineForPoint(candidatePointIndex);
         if (line) {
           const instance = scene.currentStep?.body.instances[0] ?? enteredInstance;
           mat4.multiply(transformation, instance?.Placement.inverseTrs ?? mat4.create(), sketch.toSketch);
           movementSelection = { type: 'point', sketch, line: line[0], offset: line[1] };
         }
-      } else if (sketch instanceof Sketch && candidateLineIndex) {
-        const line = sketch.getLine(candidateLineIndex - 1);
+      } else if (sketch instanceof Sketch && candidateLineIndex !== null) {
+        const line = sketch.getLine(candidateLineIndex);
         if (line) {
           const instance = scene.currentStep?.body.instances[0] ?? enteredInstance;
           mat4.multiply(transformation, instance?.Placement.inverseTrs ?? mat4.create(), sketch.toSketch);

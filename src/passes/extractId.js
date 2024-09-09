@@ -151,7 +151,7 @@ export default (engine) => {
 
       ctx.readPixels(0, 0, 1, 1, ctx.RGBA, ctx.UNSIGNED_BYTE, readData);
       scene.hoverPoint(readData);
-      if (scene.hoveredPointIndex) return;
+      if (scene.hoveredPointIndex !== null) return;
 
       ctx.clear(ctx.COLOR_BUFFER_BIT | ctx.DEPTH_BUFFER_BIT);
 

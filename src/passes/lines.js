@@ -88,26 +88,26 @@ export default (engine) => {
         for (const instance of instances) {
           const isSelected = selectedInstance && SubInstance.belongsTo(instance, selectedInstance) ? 1 : 0;
           const isInShadow = !isSelected && !SubInstance.belongsTo(instance, enteredInstance) ? 1 : 0;
-          const selectedIndex = enteredInstance === instance ? selectedLineIndex : 0;
-          const hoveredIndex = enteredInstance === instance && hoveredInstance === instance ? hoveredLineIndex : 0;
+          const selectedIndex = enteredInstance === instance ? selectedLineIndex : null;
+          const hoveredIndex = enteredInstance === instance && hoveredInstance === instance ? hoveredLineIndex : null;
 
           ctx.uniformMatrix4fv(program.uLoc.u_trs, false, instance.Placement.trs);
           ctx.uniform1f(program.uLoc.u_isSelected, isSelected);
           ctx.uniform1f(program.uLoc.u_isInShadow, isInShadow);
 
-          if (hoveredIndex) {
+          if (hoveredIndex !== null) {
             ctx.uniform1f(program.uLoc.u_isHovered, 1);
             ctx.lineWidth(5);
-            ctx.drawElements(ctx.LINES, 2, UNSIGNED_INDEX_TYPE, (hoveredIndex - 1) * UNSIGNED_INDEX_SIZE);
+            ctx.drawElements(ctx.LINES, 2, UNSIGNED_INDEX_TYPE, hoveredIndex * UNSIGNED_INDEX_SIZE);
             ctx.uniform1f(program.uLoc.u_isHovered, 0);
           }
 
           ctx.lineWidth(1 + isSelected);
           ctx.drawElements(ctx.LINES, model.data.lineIndex.length, UNSIGNED_INDEX_TYPE, 0);
-          if (selectedIndex) {
+          if (selectedIndex !== null) {
             ctx.uniform1f(program.uLoc.u_isSelected, 1);
             ctx.lineWidth(2);
-            ctx.drawElements(ctx.LINES, 2, UNSIGNED_INDEX_TYPE, (selectedIndex - 1) * UNSIGNED_INDEX_SIZE);
+            ctx.drawElements(ctx.LINES, 2, UNSIGNED_INDEX_TYPE, selectedIndex * UNSIGNED_INDEX_SIZE);
           }
         }
       }

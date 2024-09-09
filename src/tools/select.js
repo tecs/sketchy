@@ -13,7 +13,7 @@ export default (engine) => {
     start() {},
     update() {},
     end(count = 1) {
-      const { enteredInstance, selectedInstance } = scene;
+      const { enteredInstance, selectedInstance, hoveredPointIndex, hoveredLineIndex } = scene;
       let clicked = scene.hoveredInstance;
       let parent = clicked ? SubInstance.getParent(clicked) : undefined;
       while (clicked && clicked !== enteredInstance && (parent?.instance ?? null) !== enteredInstance) {
@@ -30,8 +30,8 @@ export default (engine) => {
 
       if (clicked === enteredInstance) {
         scene.setSelectedInstance(null);
-        if (scene.hoveredPointIndex) scene.setSelectedPoint(scene.hoveredPointIndex);
-        else if (scene.hoveredLineIndex) scene.setSelectedLine(scene.hoveredLineIndex);
+        if (hoveredPointIndex !== null) scene.setSelectedPoint(hoveredPointIndex);
+        else if (hoveredLineIndex !== null) scene.setSelectedLine(hoveredLineIndex);
       }
       else if (clickedOwn) scene.setSelectedInstance(clicked);
       else if (selectedInstance) scene.setSelectedInstance(null);

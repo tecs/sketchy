@@ -71,30 +71,32 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
   static register(engine) {
     super.register(engine);
 
+    const { scene, history } = engine;
+
     engine.on('keydown', (_, keyCombo) => {
-      const sketch = engine.scene.currentStep ?? engine.scene.enteredInstance?.body.step;
+      const sketch = scene.currentStep ?? scene.enteredInstance?.body.step;
       if (keyCombo === 'delete' && sketch instanceof Sketch) {
-        const index = engine.scene.selectedPointIndex ?? engine.scene.selectedLineIndex;
-        if (!index) return;
+        const index = scene.selectedPointIndex ?? scene.selectedLineIndex;
+        if (index === null) return;
 
-        const type = engine.scene.selectedPointIndex ? 'point' : 'line';
+        const type = scene.selectedPointIndex !== null ? 'point' : 'line';
 
-        const line = type === 'point' ? sketch.getLineForPoint(index - 1)?.[0] : sketch.getLine(index - 1);
+        const line = type === 'point' ? sketch.getLineForPoint(index)?.[0] : sketch.getLine(index);
         if (!line) return;
 
-        const action = engine.history.createAction(`Delete line from Sketch ${sketch.name}`, {});
+        const action = history.createAction(`Delete line from Sketch ${sketch.name}`, {});
         if (!action) return;
 
         action.append(
           () => {
             sketch.deleteElement(line);
-            if (type === 'line') engine.scene.setSelectedLine(null);
-            else engine.scene.setSelectedPoint(null);
+            if (type === 'line') scene.setSelectedLine(null);
+            else scene.setSelectedPoint(null);
           },
           () => {
             sketch.addElement(line);
-            if (type === 'line') engine.scene.setSelectedLine(index);
-            else engine.scene.setSelectedPoint(index);
+            if (type === 'line') scene.setSelectedLine(index);
+            else scene.setSelectedPoint(index);
           },
         );
         action.commit();
@@ -102,14 +104,14 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
     });
 
     engine.on('mousedown', (button, count) => {
-      const { currentInstance, hoveredInstance, currentStep, hoveredLineIndex, hoveredPointIndex } = engine.scene;
+      const { currentInstance, hoveredInstance, currentStep, hoveredLineIndex, hoveredPointIndex } = scene;
       if (button !== 'left' || count !== 2 || hoveredInstance !== currentInstance) return;
 
       const sketch = currentInstance.body.step;
       if (!(sketch instanceof Sketch) || sketch === currentStep) return;
 
-      if (hoveredLineIndex && sketch.hasLine(hoveredLineIndex - 1)) engine.scene.setCurrentStep(sketch);
-      else if (hoveredPointIndex && sketch.hasPoint(hoveredPointIndex - 1)) engine.scene.setCurrentStep(sketch);
+      if (hoveredLineIndex !== null && sketch.hasLine(hoveredLineIndex)) scene.setCurrentStep(sketch);
+      else if (hoveredPointIndex !== null && sketch.hasPoint(hoveredPointIndex)) scene.setCurrentStep(sketch);
     });
   }
 
