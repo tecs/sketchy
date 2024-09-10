@@ -450,9 +450,9 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
     const index = this.data.elements.indexOf(element);
     if (index === -1) return;
 
+    const constraints = this.getConstraints(element);
     this.data.elements.splice(index, 1);
 
-    const constraints = this.getConstraints(element);
     for (const constraint of constraints) {
       this.deleteConstraint(constraint);
     }
