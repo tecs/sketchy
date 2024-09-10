@@ -27,8 +27,17 @@ const { glMatrix: { equals }, vec2, vec3, mat4, quat } = glMatrix;
  * @property {D} data
  */
 
-/** @typedef {Constraint<"distance", 1, number>} DistanceConstraint */
+/** @typedef {Constraint<"distance", 2, number>} DistanceConstraint */
 /** @typedef {DistanceConstraint} Constraints */
+
+/**
+ * @typedef PointInfo
+ * @property {ConstructionElements} element
+ * @property {number} elementIndex
+ * @property {number} offset
+ * @property {number} index
+ * @property {vec2} vec2
+ */
 
 /**
  * @typedef AxisAttachment
@@ -66,8 +75,8 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
   toSketch = mat4.create();
   fromSketch = mat4.create();
 
-  /** @type {[element: number, componentOffset: number][]} */
-  indexToElement = [];
+  /** @type {PointInfo[]} */
+  pointInfo = [];
 
   /** @param {PartialBaseParams} args  */
   constructor(...args) {
@@ -280,8 +289,11 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
       for (const constraint of this.data.constraints) {
         switch (constraint.type) {
           case 'distance': {
-            const line = this.data.elements[constraint.indices[0]];
-            const [v1, v2] = getLineVertices(line);
+            const [p1, p2] = constraint.indices.map(index => this.getPointInfo(index));
+            if (!p1 || !p2) break;
+            const v1 = p1.vec2;
+            const v2 = p2.vec2;
+
             const distance = vec2.distance(v1, v2);
             if (!equals(distance, constraint.data)) {
               solved = false;
@@ -289,10 +301,13 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
               vec2.subtract(tempVec2, v1, v2);
               vec2.scaleAndAdd(v1, v1, tempVec2, scale);
               vec2.scaleAndAdd(v2, v2, tempVec2, -scale);
-              line.data[0] = v1[0];
-              line.data[1] = v1[1];
-              line.data[2] = v2[0];
-              line.data[3] = v2[1];
+
+              const el1 = p1.element;
+              const el2 = p2.element;
+              el1.data[p1.offset] = v1[0];
+              el1.data[p1.offset + 1] = v1[1];
+              el2.data[p2.offset] = v2[0];
+              el2.data[p2.offset + 1] = v2[1];
             }
             break;
           }
@@ -312,7 +327,7 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
     let lineIndexOffset = this.offsets.lineIndex;
     let lastIndex = firstIndex;
 
-    this.indexToElement = [];
+    this.pointInfo = [];
 
     /** @type {number | undefined} */
     let cacheIndex = undefined;
@@ -340,7 +355,13 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
               verticesToAdd.push(...tempVertex);
             } else verticesToAdd.push(...verticesToAdd.slice(cacheIndex, cacheIndex + 3));
 
-            this.indexToElement.push([i, c]);
+            this.pointInfo.push({
+              element,
+              elementIndex: i,
+              offset: c,
+              index: lastIndex,
+              vec2: vec2.fromValues(dataX, dataY),
+            });
             data.lineIndex[lineIndexOffset++] = lastIndex++;
           }
 
@@ -376,14 +397,21 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
 
   /**
    * @param {number} length
-   * @param {LineConstructionElement} line
+   * @param {LineConstructionElement | [number, number]} lineOrIndices
    * @returns {Readonly<DistanceConstraint> | null}
    */
-  distance(length, line) {
-    const index = this.data.elements.indexOf(line);
-    if (index === -1) return null;
+  distance(length, lineOrIndices) {
+    if (!Array.isArray(lineOrIndices)) {
+      const index = this.data.elements.indexOf(lineOrIndices);
+      if (index === -1) return null;
+      const indices = this.pointInfo.filter(info => info.elementIndex === index).map(info => info.index);
+      if (indices.length !== 2) return null;
+      lineOrIndices = /** @type {[number, number]} */ (indices);
+    }
 
-    return this.#createConstraint('distance', [index], length);
+    if (!lineOrIndices.every(idx => this.hasPoint(idx))) return null;
+
+    return this.#createConstraint('distance', lineOrIndices, length);
   }
 
   /**
@@ -400,13 +428,27 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
    * @returns {[LineConstructionElement, number] | null}
    */
   getLineForPoint(index) {
-    if (!this.hasPoint(index)) return null;
-    index -= this.offsets.vertex / 3;
-    const elementInfo = this.indexToElement[index];
+    const elementInfo = this.pointInfo.find(info => info.index === index);
     if (!elementInfo) return null;
 
-    const line = this.data.elements[elementInfo[0]];
-    return line ? [line, elementInfo[1]] : null;
+    const line = this.data.elements[elementInfo.elementIndex];
+    return line ? [line, elementInfo.offset] : null;
+  }
+
+  /**
+   * @param {number} index
+   * @returns {PointInfo | null}
+   */
+  getPointInfo(index) {
+    return this.pointInfo.find(info => info.index === index) ?? null;
+  }
+
+  /**
+   * @param {ConstructionElements} element
+   * @returns {PointInfo[]}
+   */
+  getPoints(element) {
+    return this.pointInfo.filter(info => info.element === element);
   }
 
   /**
@@ -417,9 +459,9 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
    * @returns {R[]}
    */
   getConstraints(element, type) {
-    const index = this.data.elements.indexOf(element);
-    if (index === -1) return [];
-    const constraints = this.data.constraints.filter(constraint => constraint.indices.includes(index));
+    const indices = this.getPoints(element).map(info => info.index);
+    const constraints = this.data.constraints
+      .filter(constraint => constraint.indices.some(index => indices.includes(index)));
     return /** @type {R[]} */ (type !== undefined ? constraints.filter(c => c.type === type) : constraints);
   }
 
