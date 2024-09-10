@@ -253,8 +253,7 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
    */
   #createConstructionElement(type, data) {
     const element = Sketch.makeConstructionElement(type, data);
-    this.data.elements.push(element);
-    this.update();
+    this.addElement(element);
     return element;
   }
 
@@ -267,8 +266,7 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
    */
   #createConstraint(type, indices, data) {
     const constraint = Sketch.makeConstraint(type, indices, data);
-    this.data.constraints.push(constraint);
-    this.update();
+    this.addConstraint(constraint);
     return constraint;
   }
 
