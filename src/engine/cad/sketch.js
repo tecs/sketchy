@@ -280,6 +280,21 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
   }
 
   #solve() {
+    const firstIndex = this.offsets.vertex / 3;
+    this.pointInfo = [];
+    for (let elementIndex = 0; elementIndex < this.data.elements.length; ++elementIndex) {
+      const element = this.data.elements[elementIndex];
+      for (let offset = 0; offset < element.data.length; offset += 2) {
+        this.pointInfo.push({
+          element,
+          elementIndex,
+          offset,
+          index: firstIndex + this.pointInfo.length,
+          vec2: vec2.fromValues(element.data[offset], element.data[offset + 1]),
+        });
+      }
+    }
+
     let solved = true;
     let iteration = 0;
 
@@ -322,12 +337,9 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
     const { data } = this.model;
 
     this.#resizeModelBuffer('lineIndex', this.data.elements.length * 2);
+    this.#resizeModelBuffer('vertex', this.pointInfo.length * 3);
 
-    const firstIndex = this.offsets.vertex / 3;
     let lineIndexOffset = this.offsets.lineIndex;
-    let lastIndex = firstIndex;
-
-    this.pointInfo = [];
 
     /** @type {number | undefined} */
     let cacheIndex = undefined;
@@ -335,41 +347,26 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
     /** @type {[x: number, y: number, index: number][]} */
     const verticesCache = [];
 
-    /** @type {number[]} */
-    const verticesToAdd = [];
-
-    for (let i = 0; i < this.data.elements.length; ++i) {
-      const element = this.data.elements[i];
+    for (const { element, vec2: [dataX, dataY], index } of this.pointInfo) {
+      const coordIndex = index * 3;
       switch (element.type) {
         case 'line':
-          for (let c = 0; c < element.data.length; c += 2) {
-            const dataX = element.data[c + 0];
-            const dataY = element.data[c + 1];
-
-            cacheIndex = verticesCache.find(([x, y]) => x === dataX && y === dataY)?.[2];
-            if (cacheIndex === undefined) {
-              vec3.set(tempVertex, dataX, dataY, 0);
-              vec3.transformMat4(tempVertex, tempVertex, this.fromSketch);
-
-              verticesCache.push([dataX, dataY, verticesToAdd.length]);
-              verticesToAdd.push(...tempVertex);
-            } else verticesToAdd.push(...verticesToAdd.slice(cacheIndex, cacheIndex + 3));
-
-            this.pointInfo.push({
-              element,
-              elementIndex: i,
-              offset: c,
-              index: lastIndex,
-              vec2: vec2.fromValues(dataX, dataY),
-            });
-            data.lineIndex[lineIndexOffset++] = lastIndex++;
+          data.lineIndex[lineIndexOffset++] = index;
+          cacheIndex = verticesCache.find(([x, y]) => x === dataX && y === dataY)?.[2];
+          if (cacheIndex) {
+            data.vertex.copyWithin(coordIndex, cacheIndex, cacheIndex + 3);
+            break;
           }
+
+          vec3.set(tempVertex, dataX, dataY, 0);
+          vec3.transformMat4(tempVertex, tempVertex, this.fromSketch);
+
+          verticesCache.push([dataX, dataY, coordIndex]);
+          data.vertex.set(tempVertex, coordIndex);
 
           break;
       }
     }
-
-    this.#resizeModelBuffer('vertex', verticesToAdd);
 
     this.model.update('lineIndex', 'vertex');
   }
