@@ -247,7 +247,7 @@ declare var glMatrix: Readonly<{
         set: (out: vec4, x: number, y: number, z: number, w: number) => vec4;
         transformQuat: (out: vec4, a: ReadonlyVec4, q: ReadonlyQuat) => vec4;
     },
-    common: {
+    glMatrix: {
         EPSILON: number;
         ARRAY_TYPE: ArrayConstructor | Float32ArrayConstructor;
         RANDOM: () => number;
