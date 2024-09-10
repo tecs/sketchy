@@ -1,10 +1,10 @@
 import { Properties } from '../general/properties.js';
 import Step from './step.js';
 
-const { vec3, mat4, quat } = glMatrix;
+const { glMatrix: { equals }, vec2, vec3, mat4, quat } = glMatrix;
 
 /** @typedef {import("./step.js").BaseParams<SketchState>} BaseParams */
-/** @typedef {import("./step.js").BaseParams<Omit<SketchState, "elements"> & Partial<SketchState>>} PartialBaseParams */
+/** @typedef {import("./step.js").BaseParams<ConstructableSketchState>} PartialBaseParams */
 
 /**
  * @template {string} T
@@ -18,6 +18,19 @@ const { vec3, mat4, quat } = glMatrix;
 /** @typedef {LineConstructionElement} ConstructionElements */
 
 /**
+ * @template {string} T
+ * @template {number} I
+ * @template {import('../general/state.js').Value} D
+ * @typedef Constraint
+ * @property {T} type
+ * @property {Tuple<number, I>} indices
+ * @property {D} data
+ */
+
+/** @typedef {Constraint<"distance", 1, number>} DistanceConstraint */
+/** @typedef {DistanceConstraint} Constraints */
+
+/**
  * @typedef AxisAttachment
  * @property {"plane"} type
  * @property {PlainVec3} normal
@@ -29,12 +42,24 @@ const { vec3, mat4, quat } = glMatrix;
  * @typedef SketchState
  * @property {Attachment} attachment
  * @property {ConstructionElements[]} elements
+ * @property {Constraints[]} constraints
  */
 
+/** @typedef {Omit<SketchState, "elements" | "constraints"> & Partial<SketchState>} ConstructableSketchState */
+
 // cached structures
+const tempVec2 = vec2.create();
 const forward = vec3.fromValues(0, 0, 1);
 const rotation = quat.create();
 const tempVertex = vec3.create();
+
+/**
+ * @param {Readonly<LineConstructionElement>} line
+ * @returns {[vec2, vec2]}
+ */
+const getLineVertices = ({ data: [x1, y1, x2, y2] }) => {
+  return [vec2.fromValues(x1, y1), vec2.fromValues(x2, y2)];
+};
 
 export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Step) {
   normal = vec3.create();
@@ -48,6 +73,9 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
   constructor(...args) {
     if (!args[0].elements) {
       args[0] = { ...args[0], elements: [] };
+    }
+    if (!args[0].constraints) {
+      args[0] = { ...args[0], constraints: [] };
     }
     super(.../** @type {BaseParams} */ (args));
 
@@ -71,11 +99,15 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
   static register(engine) {
     super.register(engine);
 
-    const { scene, history } = engine;
+    const { scene, history, config } = engine;
+
+    const distanceKey = config.createString('sketch.distance', 'Sketch constraint: distance', 'key', 'd');
 
     engine.on('keydown', (_, keyCombo) => {
       const sketch = scene.currentStep ?? scene.enteredInstance?.body.step;
-      if (keyCombo === 'delete' && sketch instanceof Sketch) {
+      if (!(sketch instanceof Sketch)) return;
+
+      if (keyCombo === 'delete') {
         const index = scene.selectedPointIndex ?? scene.selectedLineIndex;
         if (index === null) return;
 
@@ -100,6 +132,23 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
           },
         );
         action.commit();
+      } else if (keyCombo === distanceKey.value) {
+        if (scene.selectedLineIndex === null) return;
+
+        const line = sketch.getLine(scene.selectedLineIndex);
+        if (!line) return;
+
+        const distance = sketch.getConstraints(line, 'distance').pop();
+        const value = distance?.data ?? vec2.distance(...getLineVertices(line));
+
+        engine.emit('propertyrequest', { type: 'distance', value });
+        engine.on('propertyresponse', (property) => {
+          if (property?.type !== 'distance') return;
+          if (distance) {
+            distance.data = property.value;
+            sketch.update();
+          } else sketch.distance(property.value, line);
+        }, true);
       }
     });
 
@@ -138,6 +187,22 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
     }
 
     return element;
+  }
+
+  /**
+   * @template {Constraints} T
+   * @param {T["type"]} type
+   * @param {T["indices"]} indices
+   * @param {T["data"]} data
+   * @returns {T}
+   */
+  static makeConstraint(type, indices, data) {
+    switch (type) {
+      case 'distance':
+        return /** @type {T} */ ({ type, indices, data });
+      default:
+        throw new Error(`Unknown constraint type "${type}"`);
+    }
   }
 
   /**
@@ -193,7 +258,54 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
     return element;
   }
 
+  /**
+   * @template {Constraints} T
+   * @param {T["type"]} type
+   * @param {T["indices"]} indices
+   * @param {T["data"]} data
+   * @returns {T}
+   */
+  #createConstraint(type, indices, data) {
+    const constraint = Sketch.makeConstraint(type, indices, data);
+    this.data.constraints.push(constraint);
+    this.update();
+    return constraint;
+  }
+
+  #solve() {
+    let solved = true;
+    let iteration = 0;
+
+    do {
+      iteration++;
+
+      for (const constraint of this.data.constraints) {
+        switch (constraint.type) {
+          case 'distance': {
+            const line = this.data.elements[constraint.indices[0]];
+            const [v1, v2] = getLineVertices(line);
+            const distance = vec2.distance(v1, v2);
+            if (!equals(distance, constraint.data)) {
+              solved = false;
+              const scale = (constraint.data - distance) / 4;
+              vec2.subtract(tempVec2, v1, v2);
+              vec2.scaleAndAdd(v1, v1, tempVec2, scale);
+              vec2.scaleAndAdd(v2, v2, tempVec2, -scale);
+              line.data[0] = v1[0];
+              line.data[1] = v1[1];
+              line.data[2] = v2[0];
+              line.data[3] = v2[1];
+            }
+            break;
+          }
+        }
+      }
+    } while (!solved && iteration < 1000);
+  }
+
   #recalculate() {
+    this.#solve();
+
     const { data } = this.model;
 
     this.#resizeModelBuffer('lineIndex', this.data.elements.length * 2);
@@ -265,6 +377,18 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
   }
 
   /**
+   * @param {number} length
+   * @param {LineConstructionElement} line
+   * @returns {Readonly<DistanceConstraint> | null}
+   */
+  distance(length, line) {
+    const index = this.data.elements.indexOf(line);
+    if (index === -1) return null;
+
+    return this.#createConstraint('distance', [index], length);
+  }
+
+  /**
    * @param {number} index
    * @returns {LineConstructionElement | null}
    */
@@ -288,11 +412,34 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
   }
 
   /**
+   * @template {Constraints["type"] | undefined} T
+   * @template {IfEquals<T, undefined, Constraints, Extract<Constraints, { type: T } >>} R
+   * @param {ConstructionElements} element
+   * @param {T} [type]
+   * @returns {R[]}
+   */
+  getConstraints(element, type) {
+    const index = this.data.elements.indexOf(element);
+    if (index === -1) return [];
+    const constraints = this.data.constraints.filter(constraint => constraint.indices.includes(index));
+    return /** @type {R[]} */ (type !== undefined ? constraints.filter(c => c.type === type) : constraints);
+  }
+
+  /**
    * @param {Readonly<ConstructionElements>} element
    */
   addElement(element) {
     if (this.data.elements.includes(element)) return;
     this.data.elements.push(element);
+    this.update();
+  }
+
+  /**
+   * @param {Readonly<Constraints>} constraint
+   */
+  addConstraint(constraint) {
+    if (this.data.constraints.includes(constraint)) return;
+    this.data.constraints.push(constraint);
     this.update();
   }
 
@@ -304,6 +451,23 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
     if (index === -1) return;
 
     this.data.elements.splice(index, 1);
+
+    const constraints = this.getConstraints(element);
+    for (const constraint of constraints) {
+      this.deleteConstraint(constraint);
+    }
+
+    this.update();
+  }
+
+  /**
+   * @param {Readonly<Constraints>} constraint
+   */
+  deleteConstraint(constraint) {
+    const index = this.data.constraints.indexOf(constraint);
+    if (index === -1) return;
+
+    this.data.constraints.splice(index, 1);
     this.update();
   }
 
