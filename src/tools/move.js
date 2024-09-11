@@ -96,7 +96,7 @@ export default (engine) => {
       released = false;
       const { selectedInstance, hoveredInstance, enteredInstance } = scene;
 
-      const sketch = scene.currentStep ?? enteredInstance?.body.step;
+      const sketch = scene.currentStep ?? enteredInstance?.body.step ?? null;
       let movementSelection = /** @type {Selection | null} */ (null);
 
       const candidatePointIndex = scene.selectedPointIndex ?? (selectedInstance ? null : scene.hoveredPointIndex);
@@ -131,6 +131,8 @@ export default (engine) => {
       }
 
       if (!movementSelection) return;
+
+      if (movementSelection.type !== 'instance' && !scene.currentStep) scene.setCurrentStep(sketch);
 
       const title = `Move ${movementSelection.type} ${movementSelection.type === 'instance' ?
         `#${movementSelection.instance.Id.str}` :
