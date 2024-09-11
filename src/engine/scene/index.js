@@ -266,6 +266,10 @@ export default class Scene extends Base {
   setCurrentStep(step) {
     if (step !== this.currentStep) {
       const previous = this.currentStep;
+      if (step && this.enteredInstance !== this.currentInstance) {
+        this.currentStep = null;
+        this.setEnteredInstance(this.currentInstance);
+      }
       this.currentStep = step;
       this.#engine.emit('stepchange', step, previous);
     }
