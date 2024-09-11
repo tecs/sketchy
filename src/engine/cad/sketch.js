@@ -295,6 +295,17 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
       }
     }
 
+    const { currentLineIndex, currentPointIndex, currentStep } = this.engine.scene;
+    const lockedIndices  = /** @type {PointInfo[]} */ ([]);
+
+    if (this.engine.tools.isActive('move') && currentStep === this) {
+      const selectedPoint = currentPointIndex !== null ? this.getPointInfo(currentPointIndex) : null;
+      if (selectedPoint) lockedIndices.push(selectedPoint);
+
+      const selectedLine = currentLineIndex !== null ? this.getLine(currentLineIndex) : null;
+      if (selectedLine) lockedIndices.push(...this.getPoints(selectedLine));
+    }
+
     let solved = true;
     let iteration = 0;
 
@@ -309,18 +320,26 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
             const v1 = p1.vec2;
             const v2 = p2.vec2;
 
-            const distance = vec2.distance(v1, v2);
-            if (!equals(distance, constraint.data)) {
-              solved = false;
-              const scale = (constraint.data - distance) / 4;
-              vec2.subtract(tempVec2, v1, v2);
-              vec2.scaleAndAdd(v1, v1, tempVec2, scale);
-              vec2.scaleAndAdd(v2, v2, tempVec2, -scale);
+            const v1Locked = lockedIndices.includes(p1);
+            const v2Locked = lockedIndices.includes(p2);
+            if (v1Locked && v2Locked) break;
 
+            const distance = vec2.distance(v1, v2);
+            if (equals(distance, constraint.data)) break;
+
+            solved = false;
+            const scale = (constraint.data - distance) * (v1Locked || v2Locked ? 0.5 : 0.25);
+            vec2.subtract(tempVec2, v1, v2);
+
+            if (!v1Locked) {
+              vec2.scaleAndAdd(v1, v1, tempVec2, scale);
               const el1 = p1.element;
-              const el2 = p2.element;
               el1.data[p1.offset] = v1[0];
               el1.data[p1.offset + 1] = v1[1];
+            }
+            if (!v2Locked) {
+              vec2.scaleAndAdd(v2, v2, tempVec2, -scale);
+              const el2 = p2.element;
               el2.data[p2.offset] = v2[0];
               el2.data[p2.offset + 1] = v2[1];
             }
