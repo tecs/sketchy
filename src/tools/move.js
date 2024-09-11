@@ -94,26 +94,33 @@ export default (engine) => {
     },
     start() {
       released = false;
-      const { selectedInstance, hoveredInstance, enteredInstance } = scene;
+      const {
+        currentStep,
+        selectedInstance,
+        hoveredInstance,
+        enteredInstance,
+        hoveredPointIndex,
+        hoveredLineIndex,
+      } = scene;
 
-      const sketch = scene.currentStep ?? enteredInstance?.body.step ?? null;
+      const sketch = currentStep ?? enteredInstance?.body.step ?? null;
       let movementSelection = /** @type {Selection | null} */ (null);
 
-      const candidatePointIndex = scene.selectedPointIndex ?? (selectedInstance ? null : scene.hoveredPointIndex);
-      const candidateLineIndex = scene.selectedLineIndex ?? (selectedInstance ? null : scene.hoveredLineIndex);
+      const candidatePointIndex = selectedInstance ? null : hoveredPointIndex;
+      const candidateLineIndex = selectedInstance ? null : hoveredLineIndex;
 
       mat4.identity(transformation);
       if (sketch instanceof Sketch && candidatePointIndex !== null) {
         const line = sketch.getLineForPoint(candidatePointIndex);
         if (line) {
-          const instance = scene.currentStep?.body.instances[0] ?? enteredInstance;
+          const instance = currentStep?.body.instances[0] ?? enteredInstance;
           mat4.multiply(transformation, instance?.Placement.inverseTrs ?? mat4.create(), sketch.toSketch);
           movementSelection = { type: 'point', sketch, line: line[0], offset: line[1] };
         }
       } else if (sketch instanceof Sketch && candidateLineIndex !== null) {
         const line = sketch.getLine(candidateLineIndex);
         if (line) {
-          const instance = scene.currentStep?.body.instances[0] ?? enteredInstance;
+          const instance = currentStep?.body.instances[0] ?? enteredInstance;
           mat4.multiply(transformation, instance?.Placement.inverseTrs ?? mat4.create(), sketch.toSketch);
           movementSelection = { type: 'line', sketch, line };
         }
@@ -146,10 +153,12 @@ export default (engine) => {
       if (!historyAction) return;
 
       if (movementSelection.type !== 'instance') {
-        if (!scene.currentStep) scene.setCurrentStep(sketch);
+        if (!currentStep) scene.setCurrentStep(sketch);
         if (candidatePointIndex !== null) scene.setCurrentPoint(candidatePointIndex);
         else scene.setCurrentLine(candidateLineIndex);
       }
+      scene.setSelectedLine(null);
+      scene.setSelectedPoint(null);
 
       vec3.transformMat4(origin, scene.hovered, transformation);
       emit('toolactive', move);
