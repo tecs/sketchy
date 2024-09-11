@@ -31,10 +31,16 @@ export default class Scene extends Base {
   hoveredInstance = null;
 
   /** @type {number | null} */
+  currentLineIndex = null;
+
+  /** @type {number | null} */
   selectedLineIndex = null;
 
   /** @type {number | null} */
   hoveredLineIndex = null;
+
+  /** @type {number | null} */
+  currentPointIndex = null;
 
   /** @type {number | null} */
   selectedPointIndex = null;
@@ -217,6 +223,13 @@ export default class Scene extends Base {
   /**
    * @param {number | null} lineIndex
    */
+  setCurrentLine(lineIndex) {
+    this.currentLineIndex = lineIndex;
+  }
+
+  /**
+   * @param {number | null} lineIndex
+   */
   setSelectedLine(lineIndex) {
     if (this.selectedLineIndex !== lineIndex) {
       this.selectedLineIndex = lineIndex;
@@ -225,6 +238,13 @@ export default class Scene extends Base {
       this.selectedPointIndex = null;
       this.#engine.emit('selectionchange', null, previous);
     }
+  }
+
+  /**
+   * @param {number | null} pointIndex
+   */
+  setCurrentPoint(pointIndex) {
+    this.currentPointIndex = pointIndex;
   }
 
   /**

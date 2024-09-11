@@ -132,8 +132,6 @@ export default (engine) => {
 
       if (!movementSelection) return;
 
-      if (movementSelection.type !== 'instance' && !scene.currentStep) scene.setCurrentStep(sketch);
-
       const title = `Move ${movementSelection.type} ${movementSelection.type === 'instance' ?
         `#${movementSelection.instance.Id.str}` :
         `in ${movementSelection.sketch.name}`
@@ -141,9 +139,17 @@ export default (engine) => {
 
       historyAction = history.createAction(title, { selection: movementSelection, translation: vec3.create() }, () => {
         historyAction = undefined;
+        scene.setCurrentPoint(null);
+        scene.setCurrentLine(null);
         emit('toolinactive', move);
       });
       if (!historyAction) return;
+
+      if (movementSelection.type !== 'instance') {
+        if (!scene.currentStep) scene.setCurrentStep(sketch);
+        if (candidatePointIndex !== null) scene.setCurrentPoint(candidatePointIndex);
+        else scene.setCurrentLine(candidateLineIndex);
+      }
 
       vec3.transformMat4(origin, scene.hovered, transformation);
       emit('toolactive', move);
