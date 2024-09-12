@@ -440,6 +440,16 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
   }
 
   /**
+   * @param {LineConstructionElement} line
+   * @returns {number | null}
+   */
+  getLineIndex(line) {
+    const elementIndex = this.data.elements.indexOf(line);
+    if (elementIndex === -1) return null;
+    return this.offsets.lineIndex / 2 + elementIndex;
+  }
+
+  /**
    * @param {number} index
    * @returns {[LineConstructionElement, number] | null}
    */
@@ -525,6 +535,26 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
 
     this.data.constraints.splice(index, 1);
     this.update();
+  }
+
+  /**
+   * @template {ConstructionElements["type"] | undefined} T
+   * @template {IfEquals<T, undefined, ConstructionElements, Extract<ConstructionElements, { type: T } >>} R
+   * @param {T} [type]
+   * @returns {R[]}
+   */
+  listElements(type) {
+    return /** @type {R[]} */ (type ? this.data.elements.filter(e => e.type === type) : this.data.elements);
+  }
+
+  /**
+   * @template {Constraints["type"] | undefined} T
+   * @template {IfEquals<T, undefined, Constraints, Extract<Constraints, { type: T } >>} R
+   * @param {T} [type]
+   * @returns {R[]}
+   */
+  listConstraints(type) {
+    return /** @type {R[]} */ (type ? this.data.constraints.filter(c => c.type === type) : this.data.constraints);
   }
 
   /**
