@@ -70,7 +70,7 @@ export const stringifyAngle = (value, precision) => {
  * @returns {string}
  */
 export const stringifyDistance = (value, precision) => {
-  const searchValue = value === 0 ? 1 : value * 0.1;
+  const searchValue = Math.abs(value === 0 ? 1 : value * 0.1);
   const unit = DISTANCE_UNITS.find(u => searchValue <= u.toBase) ?? DISTANCE_UNITS[0];
   value *= unit.fromBase;
   return precision === undefined ? `${value}${unit.suffix}` : `${value.toFixed(precision)}${unit.suffix}`;
