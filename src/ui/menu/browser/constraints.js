@@ -22,7 +22,7 @@ export default (engine, tabs) => {
 
     const constraints = sketch.listConstraints();
 
-    if (constraints.length) table.addRow('', 'type', 'value');
+    if (constraints.length) table.addRow('', 'type', 'value').$element({ className: 'disabled' });
     else table.addHeader('', 'No constraints yet');
 
     const { selectedLineIndex, selectedPointIndex } = engine.scene;

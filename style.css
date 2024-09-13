@@ -16,7 +16,7 @@
 
 * {
   box-sizing: border-box;
-  color: var(--textColor);
+  color: inherit;
 }
 
 html, body, canvas {

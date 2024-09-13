@@ -22,7 +22,7 @@ export default (engine, tabs) => {
     tab.rename(`Sketch (${sketch.name})`);
     const elements = sketch.listElements();
 
-    if (elements.length) table.addRow('', 'type');
+    if (elements.length) table.addRow('', 'type').$element({ className: 'disabled' });
     else table.addHeader('', 'No elements yet');
 
     const { selectedLineIndex, selectedPointIndex } = engine.scene;
