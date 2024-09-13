@@ -13,6 +13,7 @@ export default class Input {
   key = null;
 
   position = vec3.create();
+  lastClickedPosition = vec3.create();
 
   leftButton = false;
   middleButton = false;
@@ -65,8 +66,10 @@ export default class Input {
         return;
     }
 
-    if (down) this.#engine.emit('mousedown', this.button, count);
-    else this.#engine.emit('mouseup', this.button, count);
+    if (down) {
+      this.#engine.emit('mousedown', this.button, count);
+      vec3.copy(this.lastClickedPosition, this.position);
+    } else this.#engine.emit('mouseup', this.button, count);
   }
 
   /**
