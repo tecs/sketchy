@@ -25,6 +25,7 @@ export default class Camera {
 
   inverseFovScaling = vec3.create();
   screenResolution = vec3.create();
+  pixelToScreen = vec3.create();
   eye = vec3.create();
   eyeNormal = vec3.create();
 
@@ -58,6 +59,8 @@ export default class Camera {
     engine.on('viewportresize', (current) => {
       this.screenResolution[0] = current[0];
       this.screenResolution[1] = current[1];
+      this.pixelToScreen[0] = 2 / this.screenResolution[0];
+      this.pixelToScreen[1] = -2 / this.screenResolution[1];
       this.aspect = current[0] / current[1];
 
       this.recalculateProjection();
@@ -270,7 +273,7 @@ export default class Camera {
     mat4.getScaling(this.inverseFovScaling, this.projection);
     vec3.inverse(this.inverseFovScaling, this.inverseFovScaling);
 
-    const vScaling = -2 / this.screenResolution[1];
+    const [, vScaling] = this.pixelToScreen;
 
     this.pixelSize = top * vScaling;
 
@@ -309,7 +312,7 @@ export default class Camera {
     const sceneScaling = this.#engine.scene.currentInstance.Placement.scaling;
 
     mat4.getTranslation(this.eye, this.world);
-    vec3.set(this.eyeNormal, (2 * x) / this.screenResolution[0] - 1, 1 - (2 * y) / this.screenResolution[1], -1);
+    vec3.set(this.eyeNormal, x * this.pixelToScreen[0] - 1, y * this.pixelToScreen[1] + 1, -1);
     vec3.multiply(this.eyeNormal, this.eyeNormal, this.inverseFovScaling);
 
     if (this.orthographic) {
