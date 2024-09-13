@@ -38,7 +38,7 @@ export default (engine, tabs) => {
           if (detail !== 2) return;
           engine.emit('propertyrequest', { type: 'distance', value: constraint.data });
           engine.on('propertyresponse', (property) => {
-            if (property?.type !== 'distance') return;
+            if (property?.type !== 'distance' || property.value <= 0) return;
             constraint.data = property.value;
             sketch.update();
           }, true);

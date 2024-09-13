@@ -152,7 +152,7 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
 
         engine.emit('propertyrequest', { type: 'distance', value });
         engine.on('propertyresponse', (property) => {
-          if (property?.type !== 'distance') return;
+          if (property?.type !== 'distance' || property.value <= 0) return;
           if (distance) {
             distance.data = property.value;
             sketch.update();
