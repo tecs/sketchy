@@ -7,6 +7,7 @@ import renderSkybox from './passes/skybox.js';
 import renderObjects from './passes/objects.js';
 import renderLines from './passes/lines.js';
 import renderPoints from './passes/points.js';
+import renderLasso from './passes/lasso.js';
 import extractId from './passes/extractId.js';
 import extractPosition from './passes/extractPosition.js';
 
@@ -37,6 +38,7 @@ window.addEventListener('load', () => {
   engine.renderer.addToPipeline(extractPosition);
   engine.renderer.addToPipeline(renderGrid);
   engine.renderer.addToPipeline(renderAxis);
+  engine.renderer.addToPipeline(renderLasso);
 
   engine.tools.addTool(SelectTool);
   engine.tools.addTool(LineTool);

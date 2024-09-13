@@ -27,6 +27,8 @@ export default class Renderer {
     engine.on('selectionchange', () => this.render());
     engine.on('currentchange', () => this.render());
     engine.on('scenechange', () => this.render());
+    engine.on('mousedown', () => this.render());
+    engine.on('mouseup', () => this.render());
   }
 
   /**
