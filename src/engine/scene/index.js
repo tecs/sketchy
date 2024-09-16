@@ -219,6 +219,8 @@ export default class Scene extends Base {
   }
 
   clearSelection() {
+    if (!this.selection.length) return;
+
     const oldSelection = this.selection;
     this.selection = [];
     this.#engine.emit('selectionchange', this.selection, oldSelection);
@@ -233,7 +235,12 @@ export default class Scene extends Base {
     for (const element of elements) {
       if (!this.getSelectedElement(element)) this.selection.push(element);
     }
-    this.#engine.emit('selectionchange', this.selection, oldSelection);
+
+    const changed = oldSelection.length !== this.selection.length
+      || oldSelection.some(el => !this.getSelectedElement(el));
+    if (changed) {
+      this.#engine.emit('selectionchange', this.selection, oldSelection);
+    }
   }
 
   /**
@@ -242,11 +249,17 @@ export default class Scene extends Base {
   addToSelection(elements) {
     if (!elements.length) return;
 
+    let changed = false;
     const oldSelection = this.selection.slice();
     for (const element of elements) {
-      if (!this.getSelectedElement(element)) this.selection.push(element);
+      if (!this.getSelectedElement(element)) {
+        this.selection.push(element);
+        changed = true;
+      }
     }
-    this.#engine.emit('selectionchange', this.selection, oldSelection);
+    if (changed) {
+      this.#engine.emit('selectionchange', this.selection, oldSelection);
+    }
   }
 
   /**
@@ -255,14 +268,18 @@ export default class Scene extends Base {
   removeFromSelection(elements) {
     if (!elements.length) return;
 
+    let changed = false;
     const oldSelection = this.selection.slice();
     for (const element of elements) {
       const selection = this.getSelectedElement(element);
       if (!selection) continue;
       const index = this.selection.indexOf(selection);
       this.selection.splice(index, 1);
+      changed = true;
     }
-    this.#engine.emit('selectionchange', this.selection, oldSelection);
+    if (changed) {
+      this.#engine.emit('selectionchange', this.selection, oldSelection);
+    }
   }
 
   /**
