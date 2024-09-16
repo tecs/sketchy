@@ -117,34 +117,36 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
       if (!(sketch instanceof Sketch)) return;
 
       if (keyCombo === 'delete') {
-        const index = scene.selectedPointIndex ?? scene.selectedLineIndex;
-        if (index === null) return;
+        const selection = scene.selection.filter(el => el.type === 'line' || el.type === 'point');
+        const lines = selection.reduce((out, { type, index }) => {
+          const line = type === 'line' ? sketch.getLine(index) : sketch.getLineForPoint(index)?.[0];
+          if (line && !out.includes(line)) {
+            out.push(line);
+          }
+          return out;
+        }, /** @type {LineConstructionElement[]} */ ([]));
 
-        const type = scene.selectedPointIndex !== null ? 'point' : 'line';
-
-        const line = type === 'point' ? sketch.getLineForPoint(index)?.[0] : sketch.getLine(index);
-        if (!line) return;
+        if (!lines.length) return;
 
         const action = history.createAction(`Delete line from Sketch ${sketch.name}`, {});
         if (!action) return;
 
         action.append(
           () => {
-            sketch.deleteElement(line);
-            if (type === 'line') scene.setSelectedLine(null);
-            else scene.setSelectedPoint(null);
+            lines.forEach(line => sketch.deleteElement(line));
+            scene.removeFromSelection(selection);
           },
           () => {
-            sketch.addElement(line);
-            if (type === 'line') scene.setSelectedLine(index);
-            else scene.setSelectedPoint(index);
+            lines.forEach(line => sketch.addElement(line));
+            scene.addToSelection(selection);
           },
         );
         action.commit();
       } else if (keyCombo === distanceKey.value) {
-        if (scene.selectedLineIndex === null) return;
+        const selectedLine = scene.getSelectionByType('line').pop();
+        if (!selectedLine) return;
 
-        const line = sketch.getLine(scene.selectedLineIndex);
+        const line = sketch.getLine(selectedLine.index);
         if (!line) return;
 
         const distance = sketch.getConstraints(line, 'distance').pop();
@@ -295,15 +297,21 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
       }
     }
 
-    const { currentLineIndex, currentPointIndex, currentStep } = this.engine.scene;
+    const { currentStep } = this.engine.scene;
     const lockedIndices  = /** @type {PointInfo[]} */ ([]);
 
     if (this.engine.tools.isActive('move') && currentStep === this) {
-      const selectedPoint = currentPointIndex !== null ? this.getPointInfo(currentPointIndex) : null;
-      if (selectedPoint) lockedIndices.push(selectedPoint);
+      const selectedPoints = this.engine.scene.getSelectionByType('point');
+      for (const point of selectedPoints) {
+        const selectedPoint = this.getPointInfo(point.index);
+        if (selectedPoint) lockedIndices.push(selectedPoint);
+      }
 
-      const selectedLine = currentLineIndex !== null ? this.getLine(currentLineIndex) : null;
-      if (selectedLine) lockedIndices.push(...this.getPoints(selectedLine));
+      const selectedLines = this.engine.scene.getSelectionByType('line');
+      for (const line of selectedLines) {
+        const selectedLine = this.getLine(line.index);
+        if (selectedLine) lockedIndices.push(...this.getPoints(selectedLine));
+      }
     }
 
     let solved = true;

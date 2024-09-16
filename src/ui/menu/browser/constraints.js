@@ -6,12 +6,13 @@ import { stringifyDistance } from './render-properties.js';
  * @param {import("../../lib/index.js").UITabs} tabs
  */
 export default (engine, tabs) => {
+  const { scene } = engine;
   const tab = tabs.addTab('Constraints');
   const table = tab.addTable(3);
   tab.hide();
 
   const render = () => {
-    const sketch = engine.scene.currentStep;
+    const sketch = scene.currentStep;
     if (!(sketch instanceof Sketch)) {
       tab.hide();
       return;
@@ -25,18 +26,21 @@ export default (engine, tabs) => {
     if (constraints.length) table.addRow('', 'type', 'value').$element({ className: 'disabled' });
     else table.addHeader('', 'No constraints yet');
 
-    const { selectedLineIndex, selectedPointIndex } = engine.scene;
-    const selectedLine = selectedLineIndex !== null ? sketch.getLine(selectedLineIndex) : null;
-    const selectedLineConstraints = selectedLine ? sketch.getConstraints(selectedLine) : [];
+    const selectedLineConstraints = scene.getSelectionByType('line')
+      .map(({ index }) => sketch.getLine(index))
+      .flatMap(line => line ? sketch.getConstraints(line) : []);
+
+    const selectedPointIndices = scene.getSelectionByType('point').map(({ index }) => index);
+
     for (let i = 0; i < constraints.length; ++i) {
       const constraint = constraints[i];
-      const selected = (selectedPointIndex !== null && constraint.indices.includes(selectedPointIndex))
+      const selected = constraint.indices.some(index => selectedPointIndices.includes(index))
         || selectedLineConstraints.includes(constraint);
 
       table.addRow(`${i + 1}`, constraint.type, stringifyDistance(constraint.data, 3)).$element({
         onclick: ({ detail }) => {
           if (detail !== 2) return;
-          engine.emit('propertyrequest', { type: 'distance', value: constraint.data });
+          engine.emit('propertyrequest', { type: constraint.type, value: constraint.data });
           engine.on('propertyresponse', (property) => {
             if (property?.type !== 'distance' || property.value <= 0) return;
             constraint.data = property.value;

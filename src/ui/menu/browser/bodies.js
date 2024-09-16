@@ -8,38 +8,39 @@ const { vec3 } = glMatrix;
  * @param {import("../../lib/index.js").UITabs} tabs
  */
 export default (engine, tabs) => {
+  const { entities, scene, tools } = engine;
   const tab = tabs.addTab('Bodies');
 
   const render = () => {
-    const currentInstance = engine.scene.enteredInstance;
+    const currentInstance = scene.enteredInstance;
 
-    const bodies = engine.entities.values(Body);
+    const bodies = entities.values(Body);
     tab.clearChildren();
     const currentBody = currentInstance?.body;
     for (const body of bodies) {
       tab.addContainer()
         .addLabel(body.name).$element({
-          className: body === engine.scene.selectedBody ? 'selected' : '',
+          className: body === scene.selectedBody ? 'selected' : '',
           onclick: ({ detail }) => {
             switch (detail) {
-              case 1: engine.scene.setSelectedBody(body); return;
+              case 1: scene.setSelectedBody(body); return;
               case 2: break;
               default: return;
             }
 
-            const { enteredInstance } = engine.scene;
+            const { enteredInstance } = scene;
             const instance = enteredInstance
               ? enteredInstance.body.createStep(SubInstance, { bodyId: body.Id.str }).instances.at(0)
               : body.instantiate();
 
             if (!instance) return;
 
-            engine.scene.setSelectedInstance(instance);
-            engine.scene.hover(vec3.create());
+            scene.setSelection([{ type: 'instance', instance, index: instance.Id.int }]);
+            scene.hover(vec3.create());
 
-            const tool = engine.tools.tools.find(({ type }) => type === 'move');
+            const tool = tools.tools.find(({ type }) => type === 'move');
             if (tool) {
-              engine.tools.setTool(tool);
+              tools.setTool(tool);
               tool.start();
             }
           },

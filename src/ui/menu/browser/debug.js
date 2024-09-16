@@ -66,9 +66,13 @@ export default (engine, tabs) => {
   }).map(rowFn('Coordinates', 4, tab, (v) => typeof v === 'number' ? v.toFixed(3) : String(v), '', 'x', 'y', 'z'));
 
   const editorFns = Object.entries({
-    'Current': () => [scene.currentInstance.Id.int, scene.currentLineIndex, scene.currentPointIndex],
+    'Current': () => [scene.currentInstance.Id.int],
     'Hovered': () => [scene.hoveredInstance?.Id.int, scene.hoveredLineIndex, scene.hoveredPointIndex],
-    'Selected': () => [scene.selectedInstance?.Id.int, scene.selectedLineIndex, scene.selectedPointIndex],
+    'Selected': () => [
+      scene.getSelectionByType('instance').map(el => el.index).join(', '),
+      scene.getSelectionByType('line').map(el => el.index).join(', '),
+      scene.getSelectionByType('point').map(el => el.index).join(', '),
+    ],
   }).map(rowFn('Editor', 4, tab, undefined, '', 'Instance', 'Line', 'Point'));
 
   const toolFns = Object.entries({

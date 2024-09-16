@@ -14,9 +14,26 @@ const { vec3 } = glMatrix;
  * @property {import("./instance.js").InstanceState[]} instances
  */
 
+/**
+ * @template {string} T
+ * @typedef SceneElement
+ * @property {T} type
+ * @property {number} index
+ * @property {Instance} instance
+ */
+
+/** @typedef {SceneElement<"point">} Point */
+/** @typedef {SceneElement<"line">} Line */
+/** @typedef {SceneElement<"instance">} InstanceElement */
+
+/** @typedef {InstanceElement | Line | Point} SceneElements */
+
 export default class Scene extends Base {
   /** @type {Engine} */
   #engine;
+
+  /** @type {SceneElements[]} */
+  selection = [];
 
   /** @type {Instance} */
   currentInstance;
@@ -25,25 +42,10 @@ export default class Scene extends Base {
   enteredInstance = null;
 
   /** @type {Instance | null} */
-  selectedInstance = null;
-
-  /** @type {Instance | null} */
   hoveredInstance = null;
 
   /** @type {number | null} */
-  currentLineIndex = null;
-
-  /** @type {number | null} */
-  selectedLineIndex = null;
-
-  /** @type {number | null} */
   hoveredLineIndex = null;
-
-  /** @type {number | null} */
-  currentPointIndex = null;
-
-  /** @type {number | null} */
-  selectedPointIndex = null;
 
   /** @type {number | null} */
   hoveredPointIndex = null;
@@ -75,7 +77,7 @@ export default class Scene extends Base {
     this.currentInstance = this.assertProperty('currentInstance');
 
     engine.on('keyup', (_, keyCombo) => {
-      if (keyCombo === 'delete') this.deleteInstance(this.selectedInstance);
+      if (keyCombo === 'delete') this.deleteInstances(this.getSelectionByType('instance').map(({ instance }) => instance));
     });
     engine.on('entityadded', (entity) => {
       if (entity instanceof Instance) {
@@ -85,9 +87,10 @@ export default class Scene extends Base {
     engine.on('entityremoved', (entity) => {
       if (!(entity instanceof Instance)) return;
 
-      if (SubInstance.belongsTo(this.selectedInstance, entity)) {
-        this.setSelectedInstance(null);
-      }
+      const deletedSelection = this.getSelectionByType('instance')
+        .filter(({ instance }) => SubInstance.belongsTo(instance, entity));
+
+      this.removeFromSelection(deletedSelection);
 
       if (SubInstance.belongsTo(this.enteredInstance, entity)) {
         this.setEnteredInstance(SubInstance.getParent(entity)?.instance ?? null);
@@ -133,9 +136,14 @@ export default class Scene extends Base {
 
     if (shouldInstantiateEmptyBody) this.#autoSetCurrentInstance();
 
+    this.selection = [];
     this.enteredInstance = null;
-    this.selectedInstance = null;
     this.hoveredInstance = null;
+    this.hoveredLineIndex = null;
+    this.hoveredPointIndex = null;
+    this.currentStep = null;
+    this.selectedStep = null;
+    this.selectedBody = null;
 
     this.#engine.history.drop();
     this.#engine.emit('scenechange');
@@ -152,45 +160,109 @@ export default class Scene extends Base {
   }
 
   /**
-   * @param {Instance | null} instance
+   * @param {Instance[]} instances
    */
-  deleteInstance(instance) {
-    if (!instance) return;
+  deleteInstances(instances) {
+    if (!instances.length) return;
 
-    const entity = SubInstance.getParent(instance)?.subInstance ?? instance;
-    const body = entity.body;
-
+    const entities = instances.map(instance => SubInstance.getParent(instance)?.subInstance ?? instance);
     const action = this.#engine.history.createAction(
-      `Delete instance of "${instance.body.name}"${entity instanceof SubInstance ? ` from "${body.name}"` : ''}`,
-      { entity },
+      `Delete instance ${instances.map(({ name }) => name).join(', ')}`,
+      { entities },
     );
     if (!action) return;
 
     action.append(
       (data) => {
-        if (data.entity instanceof SubInstance) body.removeStep(data.entity);
-        else body.uninstantiate(data.entity);
+        for (const entity of data.entities) {
+          const body = entity.body;
+          if (entity instanceof SubInstance) body.removeStep(entity);
+          else body.uninstantiate(entity);
+        }
       },
       (data) => {
-        data.entity = data.entity instanceof SubInstance
-          ? body.createStep(SubInstance, data.entity.State.export().data)
-          : body.instantiate(data.entity.State.export());
+        for (const [i, entity] of data.entities.entries()) {
+          const body = entity.body;
+          data.entities[i] = entity instanceof SubInstance
+            ? body.createStep(SubInstance, entity.State.export().data)
+            : body.instantiate(entity.State.export());
+        }
       },
     );
+
     action.commit();
   }
 
   /**
-   * @param {Instance | null} newInstance
+   * @template {SceneElements} T
+   * @param {T} el
+   * @returns {T | null}
    */
-  setSelectedInstance(newInstance) {
-    if (newInstance !== this.selectedInstance) {
-      const previous = this.selectedInstance;
-      this.selectedInstance = newInstance;
-      this.selectedLineIndex = null;
-      this.selectedPointIndex = null;
-      this.#engine.emit('selectionchange', newInstance, previous);
+  getSelectedElement(el) {
+    if (el instanceof Instance) return this.selection.includes(el) ? el : null;
+    for (const selection of this.selection) {
+      if (selection instanceof Instance) continue;
+      if (el.type === selection.type && el.index === selection.index && el.instance === selection.instance) {
+        return /** @type {T} */ (selection);
+      }
     }
+    return null;
+  }
+
+  /**
+   * @template {SceneElements["type"]} T
+   * @param {T} type
+   * @returns {Extract<SceneElements, { type: T }>[]}
+   */
+  getSelectionByType(type) {
+    return /** @type {Extract<SceneElements, { type: T }>[]} */ (this.selection.filter(el => el.type === type));
+  }
+
+  clearSelection() {
+    const oldSelection = this.selection;
+    this.selection = [];
+    this.#engine.emit('selectionchange', this.selection, oldSelection);
+  }
+
+  /**
+   * @param {SceneElements[]} elements
+   */
+  setSelection(elements) {
+    const oldSelection = this.selection;
+    this.selection = [];
+    for (const element of elements) {
+      if (!this.getSelectedElement(element)) this.selection.push(element);
+    }
+    this.#engine.emit('selectionchange', this.selection, oldSelection);
+  }
+
+  /**
+   * @param {SceneElements[]} elements
+   */
+  addToSelection(elements) {
+    if (!elements.length) return;
+
+    const oldSelection = this.selection.slice();
+    for (const element of elements) {
+      if (!this.getSelectedElement(element)) this.selection.push(element);
+    }
+    this.#engine.emit('selectionchange', this.selection, oldSelection);
+  }
+
+  /**
+   * @param {SceneElements[]} elements
+   */
+  removeFromSelection(elements) {
+    if (!elements.length) return;
+
+    const oldSelection = this.selection.slice();
+    for (const element of elements) {
+      const selection = this.getSelectedElement(element);
+      if (!selection) continue;
+      const index = this.selection.indexOf(selection);
+      this.selection.splice(index, 1);
+    }
+    this.#engine.emit('selectionchange', this.selection, oldSelection);
   }
 
   /**
@@ -212,52 +284,12 @@ export default class Scene extends Base {
       const previous = this.enteredInstance;
       this.enteredInstance = newInstance;
       this.#engine.emit('currentchange', newInstance, previous);
-      this.setSelectedInstance(null);
+      this.clearSelection();
       this.setCurrentStep(null);
       this.setSelectedStep(null);
     }
 
     if (newInstance) this.setCurrentInstance(newInstance);
-  }
-
-  /**
-   * @param {number | null} lineIndex
-   */
-  setCurrentLine(lineIndex) {
-    this.currentLineIndex = lineIndex;
-  }
-
-  /**
-   * @param {number | null} lineIndex
-   */
-  setSelectedLine(lineIndex) {
-    if (this.selectedLineIndex !== lineIndex) {
-      this.selectedLineIndex = lineIndex;
-      const previous = this.selectedInstance;
-      this.selectedInstance = null;
-      this.selectedPointIndex = null;
-      this.#engine.emit('selectionchange', null, previous);
-    }
-  }
-
-  /**
-   * @param {number | null} pointIndex
-   */
-  setCurrentPoint(pointIndex) {
-    this.currentPointIndex = pointIndex;
-  }
-
-  /**
-   * @param {number | null} pointIndex
-   */
-  setSelectedPoint(pointIndex) {
-    if (this.selectedPointIndex !== pointIndex) {
-      this.selectedPointIndex = pointIndex;
-      const previous = this.selectedInstance;
-      this.selectedInstance = null;
-      this.selectedLineIndex = null;
-      this.#engine.emit('selectionchange', null, previous);
-    }
   }
 
   /**

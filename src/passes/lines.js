@@ -72,7 +72,10 @@ export default (engine) => {
   return {
     program,
     render() {
-      const { enteredInstance, selectedInstance, hoveredInstance, selectedLineIndex, hoveredLineIndex } = scene;
+      const { enteredInstance, hoveredInstance, hoveredLineIndex } = scene;
+      const selectedLines = scene.getSelectionByType('line');
+      const selectedInstances = scene.getSelectionByType('instance').map(({ instance }) => instance);
+
       const bodies = entities.values(Body);
       for (const { currentModel: model, instances } of bodies) {
         if (!model) continue;
@@ -86,9 +89,8 @@ export default (engine) => {
         ctx.uniformMatrix4fv(program.uLoc.u_viewProjection, false, camera.viewProjection);
 
         for (const instance of instances) {
-          const isSelected = selectedInstance && SubInstance.belongsTo(instance, selectedInstance) ? 1 : 0;
+          const isSelected = selectedInstances.some(inst => SubInstance.belongsTo(instance, inst)) ? 1 : 0;
           const isInShadow = !isSelected && !SubInstance.belongsTo(instance, enteredInstance) ? 1 : 0;
-          const selectedIndex = enteredInstance === instance ? selectedLineIndex : null;
           const hoveredIndex = enteredInstance === instance && hoveredInstance === instance ? hoveredLineIndex : null;
 
           ctx.uniformMatrix4fv(program.uLoc.u_trs, false, instance.Placement.trs);
@@ -104,33 +106,39 @@ export default (engine) => {
 
           ctx.lineWidth(1 + isSelected);
           ctx.drawElements(ctx.LINES, model.data.lineIndex.length, UNSIGNED_INDEX_TYPE, 0);
-          if (selectedIndex !== null) {
+
+          const instanceLines = selectedLines.filter(el => el.instance === instance);
+          if (instanceLines.length) {
             ctx.uniform1f(program.uLoc.u_isSelected, 1);
             ctx.lineWidth(2);
-            ctx.drawElements(ctx.LINES, 2, UNSIGNED_INDEX_TYPE, selectedIndex * UNSIGNED_INDEX_SIZE);
+            for (const selectedLine of instanceLines) {
+              ctx.drawElements(ctx.LINES, 2, UNSIGNED_INDEX_TYPE, selectedLine.index * UNSIGNED_INDEX_SIZE);
+            }
           }
         }
       }
 
-      // Draw bounding box of selected instance
-      if (selectedInstance?.body.currentModel) {
-        const { body, Placement: { trs } } = selectedInstance;
+      // Draw bounding box of selected instances
+      for (const selectedInstance of selectedInstances) {
+        if (selectedInstance.body.currentModel) {
+          const { body, Placement: { trs } } = selectedInstance;
 
-        ctx.bindBuffer(ctx.ELEMENT_ARRAY_BUFFER, boundingBoxIndexBuffer);
+          ctx.bindBuffer(ctx.ELEMENT_ARRAY_BUFFER, boundingBoxIndexBuffer);
 
-        ctx.bindBuffer(ctx.ARRAY_BUFFER, boundingBoxVertexBuffer);
-        ctx.bufferData(ctx.ARRAY_BUFFER, body.BoundingBox.data, ctx.DYNAMIC_DRAW);
-        ctx.enableVertexAttribArray(program.aLoc.a_position);
-        ctx.vertexAttribPointer(program.aLoc.a_position, 3, ctx.FLOAT, false, 0, 0);
+          ctx.bindBuffer(ctx.ARRAY_BUFFER, boundingBoxVertexBuffer);
+          ctx.bufferData(ctx.ARRAY_BUFFER, body.BoundingBox.data, ctx.DYNAMIC_DRAW);
+          ctx.enableVertexAttribArray(program.aLoc.a_position);
+          ctx.vertexAttribPointer(program.aLoc.a_position, 3, ctx.FLOAT, false, 0, 0);
 
-        ctx.uniformMatrix4fv(program.uLoc.u_trs, false, trs);
-        ctx.uniform1f(program.uLoc.u_isSelected, 1);
-        ctx.uniform1f(program.uLoc.u_isInShadow, 0);
-        ctx.uniform1f(program.uLoc.u_isHovered, 0);
+          ctx.uniformMatrix4fv(program.uLoc.u_trs, false, trs);
+          ctx.uniform1f(program.uLoc.u_isSelected, 1);
+          ctx.uniform1f(program.uLoc.u_isInShadow, 0);
+          ctx.uniform1f(program.uLoc.u_isHovered, 0);
 
-        ctx.lineWidth(2);
-        ctx.drawElements(ctx.LINES, 24, UNSIGNED_INDEX_TYPE, 0);
-        ctx.lineWidth(1);
+          ctx.lineWidth(2);
+          ctx.drawElements(ctx.LINES, 24, UNSIGNED_INDEX_TYPE, 0);
+          ctx.lineWidth(1);
+        }
       }
     },
   };

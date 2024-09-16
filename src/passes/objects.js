@@ -64,6 +64,8 @@ export default (engine) => {
     program,
     render() {
       const bodies = entities.values(Body);
+      const selectedInstances = scene.getSelectionByType('instance').map(({ instance }) => instance);
+
       for (const { currentModel: model, instances } of bodies) {
         if (!model) continue;
         ctx.bindBuffer(ctx.ELEMENT_ARRAY_BUFFER, model.buffer.index);
@@ -83,7 +85,7 @@ export default (engine) => {
         ctx.uniformMatrix4fv(program.uLoc.u_viewProjection, false, camera.viewProjection);
 
         for (const instance of instances) {
-          const isSelected = scene.selectedInstance && SubInstance.belongsTo(instance, scene.selectedInstance) ? 1 : 0;
+          const isSelected = selectedInstances.some(inst => SubInstance.belongsTo(instance, inst)) ? 1 : 0;
           const isInShadow = !isSelected && !SubInstance.belongsTo(instance, scene.enteredInstance) ? 1 : 0;
 
           ctx.uniformMatrix4fv(program.uLoc.u_trs, false, instance.Placement.trs);

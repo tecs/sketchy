@@ -7,12 +7,13 @@ import Instance from '../../../engine/scene/instance.js';
  */
 export default (engine, tabs) => {
   const tab = tabs.addTab('Scene');
+  const { entities, scene } = engine;
 
   const render = () => {
-    const instances = engine.entities.values(Instance);
+    const instances = entities.values(Instance);
     /** @type {Record<string, import("../../lib").AnyUIParent>} */
     const instanceCache = {};
-    const currentInstance = engine.scene.enteredInstance;
+    const currentInstance = scene.enteredInstance;
     tab.clearChildren();
     for (const instance of instances) {
       const parent = SubInstance.getParent(instance)?.instance;
@@ -20,15 +21,15 @@ export default (engine, tabs) => {
       const instanceContainer = parentContainer.addContainer({ className: 'tree' });
       instanceContainer.addLabel(instance.name).$element({
         onclick: ({ detail }) => {
-          if (detail === 2) return void(engine.scene.setEnteredInstance(instance));
+          if (detail === 2) return void(scene.setEnteredInstance(instance));
 
-          const { enteredInstance } = engine.scene;
+          const { enteredInstance } = scene;
           if (instance !== enteredInstance && SubInstance.belongsTo(instance, enteredInstance)) {
-            engine.scene.setSelectedInstance(instance);
+            scene.setSelection([{ type: 'instance', instance, index: instance.Id.int }]);
           }
         },
         style: { fontWeight: instance === currentInstance ? 'bold' : undefined },
-        className: instance === engine.scene.selectedInstance ? 'selected' : '',
+        className: scene.getSelectedElement({ type: 'instance', instance, index: instance.Id.int }) ? 'selected' : '',
       });
       instanceCache[instance.Id.str] = instanceContainer;
     }

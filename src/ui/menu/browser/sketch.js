@@ -5,14 +5,15 @@ import Sketch from '../../../engine/cad/sketch.js';
  * @param {import("../../lib/index.js").UITabs} tabs
  */
 export default (engine, tabs) => {
+  const { scene } = engine;
   const tab = tabs.addTab('Sketch');
-  tab.addContainer().addButton('close sketch', () => engine.scene.setCurrentStep(null));
+  tab.addContainer().addButton('close sketch', () => scene.setCurrentStep(null));
   tab.hide();
 
   const table = tab.addTable(2);
 
   const render = () => {
-    const sketch = engine.scene.currentStep;
+    const sketch = scene.currentStep;
     if (!(sketch instanceof Sketch)) {
       tab.hide();
       return;
@@ -25,14 +26,18 @@ export default (engine, tabs) => {
     if (elements.length) table.addRow('', 'type').$element({ className: 'disabled' });
     else table.addHeader('', 'No elements yet');
 
-    const { selectedLineIndex, selectedPointIndex } = engine.scene;
+    const { enteredInstance: instance } = scene;
+    if (!instance) return;
+
     for (let i = 0; i < elements.length; ++i) {
-      const lineIndex = sketch.getLineIndex(elements[i]);
-      const selected = lineIndex === selectedLineIndex
-        || sketch.getPoints(elements[i]).some(e => e.index === selectedPointIndex);
+      const index = sketch.getLineIndex(elements[i]);
+      if (!index) continue;
+
+      const selected = scene.getSelectedElement({ type: 'line', index, instance })
+        || sketch.getPoints(elements[i]).some(e => scene.getSelectedElement({ type:'point', index: e.index, instance }));
 
       table.addRow(`${i + 1}`, elements[i].type).$element({
-        onclick: () => engine.scene.setSelectedLine(lineIndex),
+        onclick: () => scene.setSelection([{ type: 'line', index, instance }]),
         style: { fontWeight: selected ? 'bold' : '' },
       });
     }

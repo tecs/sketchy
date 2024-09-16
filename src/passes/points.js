@@ -43,9 +43,11 @@ export default (engine) => {
   return {
     program,
     render() {
-      const { enteredInstance, hoveredInstance, selectedPointIndex, hoveredPointIndex } = scene;
+      const { enteredInstance, hoveredInstance, hoveredPointIndex } = scene;
       const pointIsHovered = hoveredPointIndex !== null && enteredInstance === hoveredInstance;
-      if (selectedPointIndex === null && !pointIsHovered) return;
+
+      const selectedPointIndices = scene.getSelectionByType('point').map(({ index }) => index);
+      if (!selectedPointIndices.length && !pointIsHovered) return;
 
       const model = enteredInstance?.body.currentModel;
       if (!model) return;
@@ -65,10 +67,12 @@ export default (engine) => {
         ctx.uniform1f(program.uLoc.u_isHovered, 0);
         ctx.drawArrays(ctx.POINTS, hoveredPointIndex, 1);
       }
-      if (selectedPointIndex !== null) {
+      if (selectedPointIndices.length) {
         ctx.uniform1f(program.uLoc.u_isSelected, 1);
         ctx.uniform1f(program.uLoc.u_isHovered, 0);
-        ctx.drawArrays(ctx.POINTS, selectedPointIndex, 1);
+        for (const selectedPointIndex of selectedPointIndices) {
+          ctx.drawArrays(ctx.POINTS, selectedPointIndex, 1);
+        }
       }
     },
   };

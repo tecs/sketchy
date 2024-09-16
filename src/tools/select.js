@@ -13,11 +13,14 @@ export default (engine) => {
     start() {},
     update() {},
     end(count = 1) {
-      const { enteredInstance, selectedInstance, hoveredPointIndex, hoveredLineIndex, currentStep } = scene;
+      const { enteredInstance, hoveredPointIndex, hoveredLineIndex, currentStep } = scene;
 
-      if (currentStep) {
-        scene.setSelectedPoint(hoveredPointIndex);
-        scene.setSelectedLine(hoveredLineIndex);
+      if (currentStep && enteredInstance) {
+        if (hoveredLineIndex !== null) {
+          scene.setSelection([{ type: 'line', index: hoveredLineIndex, instance: enteredInstance }]);
+        } else if (hoveredPointIndex !== null) {
+          scene.setSelection([{ type: 'point', index: hoveredPointIndex, instance: enteredInstance }]);
+        }
         return;
       }
 
@@ -28,28 +31,33 @@ export default (engine) => {
         parent = clicked ? SubInstance.getParent(clicked) : undefined;
       }
 
+      const selectedInstances = scene.getSelectionByType('instance').map(({ instance }) => instance);
+
       if (count === 1) {
-        if (selectedInstance && clicked === selectedInstance) return;
+        if (selectedInstances.length && clicked && selectedInstances.includes(clicked)) {
+          scene.setSelection([{ type: 'instance', index: clicked.Id.int, instance: clicked }]);
+          return;
+        }
         const clickedOwn = SubInstance.belongsTo(clicked, enteredInstance);
 
-        if (clicked === enteredInstance) scene.setSelectedInstance(null);
-        else if (clickedOwn) scene.setSelectedInstance(clicked);
-        else if (selectedInstance) scene.setSelectedInstance(null);
+        if (clicked === enteredInstance) scene.clearSelection();
+        else if (clickedOwn) scene.setSelection(clicked ? [{ type: 'instance', index: clicked.Id.int, instance: clicked }] : []);
+        else if (selectedInstances.length) scene.clearSelection();
 
         return;
       }
 
-      if (clicked && clicked === selectedInstance) scene.setEnteredInstance(clicked);
+      if (clicked && selectedInstances.includes(clicked)) scene.setEnteredInstance(clicked);
       else if (clicked !== enteredInstance) {
         scene.setEnteredInstance(enteredInstance ? SubInstance.getParent(enteredInstance)?.instance ?? null : null);
       }
     },
     abort() {
-      if (engine.tools.selected !== this || engine.scene.currentStep) return;
+      if (engine.tools.selected !== this) return;
 
-      if (scene.selectedInstance) {
-        scene.setSelectedInstance(null);
-      } else if (scene.enteredInstance) {
+      if (scene.selection.length) {
+        scene.clearSelection();
+      } else if (scene.enteredInstance && !engine.scene.currentStep) {
         scene.setEnteredInstance(SubInstance.getParent(scene.enteredInstance)?.instance ?? null);
       }
     },
