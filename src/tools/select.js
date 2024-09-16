@@ -2,7 +2,15 @@ import SubInstance from '../engine/cad/subinstance.js';
 
 /** @type {(engine: Engine) => Tool} */
 export default (engine) => {
-  const { scene } = engine;
+  const { scene, input } = engine;
+  /**
+   * @param {Parameters<typeof scene["addToSelection"]>[0]} selection
+   * @param {boolean} [shouldToggle]
+   */
+  const toggleOrSet = (selection, shouldToggle = false) => {
+    if (shouldToggle) scene.toggleSelection(selection);
+    else scene.setSelection(selection);
+  };
 
   /** @type {Tool} */
   const select = {
@@ -14,13 +22,14 @@ export default (engine) => {
     update() {},
     end(count = 1) {
       const { enteredInstance, hoveredPointIndex, hoveredLineIndex, currentStep } = scene;
+      const toggle = input.ctrl;
 
       if (currentStep && enteredInstance) {
         if (hoveredLineIndex !== null) {
-          scene.setSelection([{ type: 'line', index: hoveredLineIndex, instance: enteredInstance }]);
+          toggleOrSet([{ type: 'line', index: hoveredLineIndex, instance: enteredInstance }], toggle);
         } else if (hoveredPointIndex !== null) {
-          scene.setSelection([{ type: 'point', index: hoveredPointIndex, instance: enteredInstance }]);
-        }
+          toggleOrSet([{ type: 'point', index: hoveredPointIndex, instance: enteredInstance }], toggle);
+        } else if (!toggle) scene.clearSelection();
         return;
       }
 
@@ -34,15 +43,12 @@ export default (engine) => {
       const selectedInstances = scene.getSelectionByType('instance').map(({ instance }) => instance);
 
       if (count === 1) {
-        if (selectedInstances.length && clicked && selectedInstances.includes(clicked)) {
-          scene.setSelection([{ type: 'instance', index: clicked.Id.int, instance: clicked }]);
-          return;
-        }
         const clickedOwn = SubInstance.belongsTo(clicked, enteredInstance);
 
-        if (clicked === enteredInstance) scene.clearSelection();
-        else if (clickedOwn) scene.setSelection(clicked ? [{ type: 'instance', index: clicked.Id.int, instance: clicked }] : []);
-        else if (selectedInstances.length) scene.clearSelection();
+        if (clicked === enteredInstance && !toggle) scene.clearSelection();
+        else if (clicked === enteredInstance) return;
+        else if (clickedOwn) toggleOrSet(clicked ? [{ type: 'instance', index: clicked.Id.int, instance: clicked }] : [], toggle);
+        else if (selectedInstances.length && !toggle) scene.clearSelection();
 
         return;
       }
