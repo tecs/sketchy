@@ -283,6 +283,30 @@ export default class Scene extends Base {
   }
 
   /**
+   * @param {SceneElements[]} elements
+   * @param {boolean} [forceState]
+   */
+  toggleSelection(elements, forceState) {
+    elements = elements.filter((v, i, a) =>
+      a.findIndex(v2 => v.index === v2.index && v.type === v2.type && v.instance === v2.instance) === i,
+    );
+    if (!elements.length) return;
+
+    const oldSelection = this.selection.slice();
+
+    for (const element of elements) {
+      const selection = this.getSelectedElement(element);
+      if (!selection && forceState !== false) this.selection.push(element);
+      else if (selection && forceState !== true) {
+        const index = this.selection.indexOf(selection);
+        this.selection.splice(index, 1);
+      }
+    }
+
+    this.#engine.emit('selectionchange', this.selection, oldSelection);
+  }
+
+  /**
    * @param {Instance} newInstance
    */
   setCurrentInstance(newInstance) {
