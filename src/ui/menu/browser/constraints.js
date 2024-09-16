@@ -37,9 +37,9 @@ export default (engine, tabs) => {
       const selected = constraint.indices.some(index => selectedPointIndices.includes(index))
         || selectedLineConstraints.includes(constraint);
 
-      table.addRow(`${i + 1}`, constraint.type, stringifyDistance(constraint.data, 3)).$element({
+      table.addRow(`${i + 1}`, constraint.type, constraint.data !== null ? stringifyDistance(constraint.data, 3) : '').$element({
         onclick: ({ detail }) => {
-          if (detail !== 2) return;
+          if (detail !== 2 || constraint.type === 'coincident') return;
           engine.emit('propertyrequest', { type: constraint.type, value: constraint.data });
           engine.on('propertyresponse', (property) => {
             if (property?.type !== 'distance' || property.value <= 0) return;

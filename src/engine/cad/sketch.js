@@ -28,7 +28,8 @@ const { glMatrix: { equals }, vec2, vec3, mat4, quat } = glMatrix;
  */
 
 /** @typedef {Constraint<"distance", 2, number>} DistanceConstraint */
-/** @typedef {DistanceConstraint} Constraints */
+/** @typedef {Constraint<"coincident", 2, null>} CoincidentConstraint */
+/** @typedef {DistanceConstraint|CoincidentConstraint} Constraints */
 
 /**
  * @typedef PointInfo
@@ -111,6 +112,7 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
     const { scene, history, config } = engine;
 
     const distanceKey = config.createString('sketch.distance', 'Sketch constraint: distance', 'key', 'd');
+    const coincidentKey = config.createString('sketch.coincident', 'Sketch constraint: coincident point', 'key', 'c');
 
     engine.on('keydown', (_, keyCombo) => {
       const sketch = scene.currentStep ?? scene.enteredInstance?.body.step;
@@ -163,6 +165,27 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
             } else sketch.distance(property.value, line);
           }
         }, true);
+      } else if (keyCombo === coincidentKey.value) {
+        const selectedPoints = scene.getSelectionByType('point').map(({ index }) => index);
+
+        const existingConstraints = selectedPoints
+          .flatMap(idx => sketch.data.constraints.filter(({ indices, type }) => type === 'coincident' && indices.includes(idx)))
+          .filter((v, i, a) => a.indexOf(v) === i);
+
+        const newCoincidentPointSets = selectedPoints
+          .reduce((sets, idx1, i, points) => {
+            for (let k = i + 1; k < points.length; ++k) {
+              const idx2 = points[k];
+              if (!existingConstraints.some(({ indices }) => indices.includes(idx1) && indices.includes(idx2))) {
+                sets.push([idx1, idx2]);
+              }
+            }
+            return sets;
+          }, /** @type {[number, number][]} */ ([]));
+
+        for (const set of newCoincidentPointSets) {
+          sketch.coincident(set);
+        }
       }
     });
 
@@ -213,6 +236,7 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
   static makeConstraint(type, indices, data) {
     switch (type) {
       case 'distance':
+      case 'coincident':
         return /** @type {T} */ ({ type, indices, data });
       default:
         throw new Error(`Unknown constraint type "${type}"`);
@@ -324,15 +348,18 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
       iteration++;
 
       for (const constraint of this.data.constraints) {
+        const [p1, p2] = constraint.indices.map(index => this.getPointInfo(index));
+        if (!p1 || !p2) break;
+        const v1 = p1.vec2;
+        const v2 = p2.vec2;
+        const el1 = p1.element;
+        const el2 = p2.element;
+
+        const v1Locked = lockedIndices.includes(p1);
+        const v2Locked = lockedIndices.includes(p2);
+
         switch (constraint.type) {
           case 'distance': {
-            const [p1, p2] = constraint.indices.map(index => this.getPointInfo(index));
-            if (!p1 || !p2) break;
-            const v1 = p1.vec2;
-            const v2 = p2.vec2;
-
-            const v1Locked = lockedIndices.includes(p1);
-            const v2Locked = lockedIndices.includes(p2);
             if (v1Locked && v2Locked) break;
 
             const distance = vec2.distance(v1, v2);
@@ -343,21 +370,19 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
             vec2.normalize(tempVec2, tempVec2);
             vec2.scale(tempVec2, tempVec2, (constraint.data - distance) * (v1Locked || v2Locked ? 0.5 : 0.25));
 
-            if (!v1Locked) {
-              vec2.add(v1, v1, tempVec2);
-              const el1 = p1.element;
-              el1.data[p1.offset] = v1[0];
-              el1.data[p1.offset + 1] = v1[1];
-            }
-            if (!v2Locked) {
-              vec2.subtract(v2, v2, tempVec2);
-              const el2 = p2.element;
-              el2.data[p2.offset] = v2[0];
-              el2.data[p2.offset + 1] = v2[1];
-            }
+            if (!v1Locked) vec2.add(v1, v1, tempVec2);
+            if (!v2Locked) vec2.subtract(v2, v2, tempVec2);
             break;
           }
+          case 'coincident':
+            if (v1Locked) vec2.copy(v2, v1);
+            else vec2.copy(v1, v2);
+            break;
         }
+        el1.data[p1.offset] = v1[0];
+        el1.data[p1.offset + 1] = v1[1];
+        el2.data[p2.offset] = v2[0];
+        el2.data[p2.offset + 1] = v2[1];
       }
     } while (!solved && iteration < 1000);
   }
@@ -439,7 +464,25 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
 
     if (!lineOrIndices.every(idx => this.hasPoint(idx))) return null;
 
-    return this.#createConstraint('distance', lineOrIndices, length);
+    return /** @type {DistanceConstraint} */ (this.#createConstraint('distance', lineOrIndices, length));
+  }
+
+  /**
+   * @param {[number, number]} indices
+   * @returns {Readonly<CoincidentConstraint> | null}
+   */
+  coincident(indices) {
+    if (indices[0] === indices[1]) return null;
+
+    const p1 = this.getPointInfo(indices[0]);
+    if (!p1) return null;
+
+    const p2 = this.getPointInfo(indices[1]);
+    if (!p2) return null;
+
+    if (p1.element === p2.element) return null;
+
+    return /** @type {CoincidentConstraint} */ (this.#createConstraint('coincident', indices, null));
   }
 
   /**
