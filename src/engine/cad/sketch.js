@@ -143,22 +143,25 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
         );
         action.commit();
       } else if (keyCombo === distanceKey.value) {
-        const selectedLine = scene.getSelectionByType('line').pop();
-        if (!selectedLine) return;
+        const selectedLines = scene.getSelectionByType('line').reduce((lines, { index }) => {
+          const line = sketch.getLine(index);
+          if (line) lines.push([line, sketch.getConstraints(line, 'distance').pop()]);
+          return lines;
+        }, /** @type {[LineConstructionElement, DistanceConstraint?][]} */ ([]));
+        if (!selectedLines.length) return;
 
-        const line = sketch.getLine(selectedLine.index);
-        if (!line) return;
-
-        const distance = sketch.getConstraints(line, 'distance').pop();
-        const value = distance?.data ?? vec2.distance(...getLineVertices(line));
+        const value = selectedLines.find(([, distance]) => distance)?.[1]?.data
+          ?? vec2.distance(...getLineVertices(selectedLines[0][0]));
 
         engine.emit('propertyrequest', { type: 'distance', value });
         engine.on('propertyresponse', (property) => {
           if (property?.type !== 'distance' || property.value <= 0) return;
-          if (distance) {
-            distance.data = property.value;
-            sketch.update();
-          } else sketch.distance(property.value, line);
+          for (const [line, distance] of selectedLines) {
+            if (distance) {
+              distance.data = property.value;
+              sketch.update();
+            } else sketch.distance(property.value, line);
+          }
         }, true);
       }
     });
