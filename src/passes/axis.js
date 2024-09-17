@@ -113,6 +113,7 @@ export default (engine) => {
       mat4.scale(mvp, mvp, farPlaneV3);
       ctx.uniformMatrix4fv(program.uLoc.u_matrix, false, mvp);
 
+      ctx.lineWidth(1);
       ctx.drawArrays(ctx.LINES, 0, 12);
 
       ctx.disable(ctx.BLEND);

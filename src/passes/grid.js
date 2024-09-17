@@ -75,6 +75,7 @@ export default (engine) => {
       mat4.multiply(mvp, camera.viewProjection, trs);
       ctx.uniformMatrix4fv(program.uLoc.u_matrix, false, mvp);
 
+      ctx.lineWidth(1);
       ctx.drawElements(ctx.LINES, indices.length, UNSIGNED_INDEX_TYPE, 0);
     },
   };
