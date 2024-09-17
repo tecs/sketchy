@@ -137,12 +137,27 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
         );
         action.commit();
       } else if (keyCombo === distanceKey.value) {
-        const selected = selection.getByType('line').reduce((lines, { index }) => {
+        const selected = /** @type {[PointInfo, PointInfo, number?][]} */ ([]);
+        for (const { index } of selection.elements) {
           const line = sketch.getLine(index);
           const [p1, p2] = line ? sketch.getPoints(line) : [];
-          if (p1 && p2) lines.push([p1, p2, sketch.getConstraintsForPoints([p1.index, p2.index], 'distance').pop()?.data]);
-          return lines;
-        }, /** @type {[PointInfo, PointInfo, number?][]} */ ([]));
+          if (p1 && p2) {
+            selected.push([p1, p2, sketch.getConstraintsForPoints([p1.index, p2.index], 'distance').pop()?.data]);
+          }
+        };
+
+        const points = selection.getByType('point').map(({ index }) => index);
+
+        for (let i = 0; i < points.length; ++i) {
+          for (let k = i + 1; k < points.length; ++k) {
+            const p1 = sketch.getPointInfo(points[i]);
+            const p2 = sketch.getPointInfo(points[k]);
+            if (p1 && p2 && !selected.find(([pp1, pp2]) => (pp1 === p1 && pp2 === p2) || (pp1 === p2 && pp2 === p1))) {
+              selected.push([p1, p2, sketch.getConstraintsForPoints([p1.index, p2.index], 'distance').pop()?.data]);
+            }
+          }
+        }
+
         if (!selected.length) return;
 
         const value = selected.find(([,, d]) => d)?.[2] ?? vec2.distance(selected[0][0].vec2, selected[0][1].vec2);
