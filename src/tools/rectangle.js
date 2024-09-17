@@ -9,6 +9,7 @@ const { vec2, vec3, mat4 } = glMatrix;
  * @property {import("../engine/cad/sketch.js").LineConstructionElement} lineOriginHorizontal
  * @property {import("../engine/cad/sketch.js").LineConstructionElement} lineCoordVertical
  * @property {import("../engine/cad/sketch.js").LineConstructionElement} lineCoordHorizontal
+ * @property {number[]} lockedIndices
  */
 
 /** @type {(engine: Engine) => Tool} */
@@ -57,22 +58,21 @@ export default (engine) => {
         lineCoordVertical,
         lineOriginHorizontal,
         lineOriginVertical,
+        lockedIndices,
       } = historyAction.data;
 
       coord[0] = origin[0] + (coord[0] > 0 ? d1 : -d1);
       coord[1] = origin[1] + (coord[1] > 0 ? d2 : -d2);
 
       lineCoordVertical.data[0] = coord[0];
-      lineCoordVertical.data[2] = coord[0];
       lineCoordHorizontal.data[2] = coord[0];
       lineOriginHorizontal.data[2] = coord[0];
 
       lineCoordHorizontal.data[1] = coord[1];
       lineCoordHorizontal.data[3] = coord[1];
-      lineCoordVertical.data[3] = coord[1];
       lineOriginVertical.data[3] = coord[1];
 
-      sketch.update();
+      sketch.update(lockedIndices);
 
       this.end();
     },
@@ -98,13 +98,13 @@ export default (engine) => {
       vec3.transformMat4(origin, scene.hovered, transformation);
       vec3.copy(coord, origin);
 
-      const lineOriginHorizontal = Sketch.makeConstructionElement('line', [origin[0], origin[1], origin[0], origin[1]]);
       historyAction = history.createAction('Draw rectangle', {
         sketch: scene.currentStep,
-        lineOriginHorizontal,
-        lineOriginVertical: Sketch.cloneConstructionElement(lineOriginHorizontal),
-        lineCoordHorizontal: Sketch.cloneConstructionElement(lineOriginHorizontal),
-        lineCoordVertical: Sketch.cloneConstructionElement(lineOriginHorizontal),
+        lineOriginHorizontal: Sketch.makeConstructionElement('line', [origin[0], origin[1], coord[0], origin[1]]),
+        lineOriginVertical:   Sketch.makeConstructionElement('line', [origin[0], origin[1], origin[0], coord[1]]),
+        lineCoordHorizontal:  Sketch.makeConstructionElement('line', [origin[0], coord[1], coord[0], coord[1]]),
+        lineCoordVertical:    Sketch.makeConstructionElement('line', [coord[0], origin[1], coord[0], coord[1]]),
+        lockedIndices: [],
       }, () => {
         historyAction = undefined;
         emit('toolinactive', rectangle);
@@ -114,17 +114,38 @@ export default (engine) => {
       emit('toolactive', rectangle);
 
       historyAction.append(
-        (data) => {
-          data.sketch.addElement(data.lineOriginHorizontal);
-          data.sketch.addElement(data.lineOriginVertical);
-          data.sketch.addElement(data.lineCoordHorizontal);
-          data.sketch.addElement(data.lineCoordVertical);
+        ({
+          sketch,
+          lineCoordHorizontal,
+          lineCoordVertical,
+          lineOriginHorizontal,
+          lineOriginVertical,
+          lockedIndices,
+        }) => {
+          sketch.addElement(lineOriginHorizontal);
+          sketch.addElement(lineOriginVertical);
+          sketch.addElement(lineCoordHorizontal);
+          sketch.addElement(lineCoordVertical);
+
+          const pointOriginHorizontal = sketch.getPoints(lineOriginHorizontal);
+          const pointOriginVertical = sketch.getPoints(lineOriginVertical);
+          const pointCoordHorizontal = sketch.getPoints(lineCoordHorizontal);
+          const pointCoordVertical = sketch.getPoints(lineCoordVertical);
+
+          sketch.coincident([pointOriginHorizontal[0].index, pointOriginVertical[0].index]);
+          sketch.coincident([pointOriginHorizontal[1].index, pointCoordVertical[0].index]);
+          sketch.coincident([pointCoordHorizontal[0].index, pointOriginVertical[1].index]);
+          sketch.coincident([pointCoordHorizontal[1].index, pointCoordVertical[1].index]);
+
+          lockedIndices.push(pointOriginHorizontal[0].index, pointCoordHorizontal[1].index);
         },
         (data) => {
           data.sketch.deleteElement(data.lineOriginHorizontal);
           data.sketch.deleteElement(data.lineOriginVertical);
           data.sketch.deleteElement(data.lineCoordHorizontal);
           data.sketch.deleteElement(data.lineCoordVertical);
+
+          data.lockedIndices = [];
         },
       );
     },
@@ -137,21 +158,20 @@ export default (engine) => {
         lineCoordVertical,
         lineOriginHorizontal,
         lineOriginVertical,
+        lockedIndices,
       } = historyAction.data;
 
       vec3.transformMat4(coord, scene.hovered, transformation);
 
       lineCoordVertical.data[0] = coord[0];
-      lineCoordVertical.data[2] = coord[0];
       lineCoordHorizontal.data[2] = coord[0];
       lineOriginHorizontal.data[2] = coord[0];
 
       lineCoordHorizontal.data[1] = coord[1];
       lineCoordHorizontal.data[3] = coord[1];
-      lineCoordVertical.data[3] = coord[1];
       lineOriginVertical.data[3] = coord[1];
 
-      sketch.update();
+      sketch.update(lockedIndices);
     },
     end() {
       if (!historyAction) return;
