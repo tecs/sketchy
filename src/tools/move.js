@@ -39,6 +39,7 @@ export default (engine) => {
    * @typedef MoveData
    * @property {Selection[]} selection
    * @property {vec3} translation
+   * @property {number[]} lockedIndices
    */
 
   /** @type {import("../engine/history.js").HistoryAction<MoveData>|undefined} */
@@ -66,7 +67,7 @@ export default (engine) => {
     setDistance([distance]) {
       if (!historyAction) return;
 
-      const { selection, translation } = historyAction.data;
+      const { selection, translation, lockedIndices } = historyAction.data;
 
       vec3.copy(diff, translation);
       vec3.normalize(translation, translation);
@@ -84,13 +85,13 @@ export default (engine) => {
             selectionElement.line.data[1] += diff[1];
             selectionElement.line.data[2] += diff[0];
             selectionElement.line.data[3] += diff[1];
-            selectionElement.sketch.update();
+            selectionElement.sketch.update(lockedIndices);
             break;
           case 'point':
             Placement.toLocalRelativeCoords(diff, translation, transformation);
             selectionElement.line.data[0 + selectionElement.offset] += diff[0];
             selectionElement.line.data[1 + selectionElement.offset] += diff[1];
-            selectionElement.sketch.update();
+            selectionElement.sketch.update(lockedIndices);
             break;
         }
       }
@@ -120,21 +121,26 @@ export default (engine) => {
       }
 
       mat4.identity(transformation);
+      const pointIndices = /** @type {number[]} */ ([]);
       if (sketch instanceof Sketch) {
         for (const candidate of candidateLines) {
           const line = sketch.getLine(candidate.index);
-          if (line) {
-            mat4.multiply(transformation, candidate.instance.Placement.inverseTrs, sketch.toSketch);
-            movementSelection.push({ ...candidate, sketch, line });
-          }
+          if (!line) continue;
+
+          mat4.multiply(transformation, candidate.instance.Placement.inverseTrs, sketch.toSketch);
+          movementSelection.push({ ...candidate, sketch, line });
+          pointIndices.push(...sketch.getPoints(line).map(({ index }) => index));
         }
 
         for (const candidate of candidatePoints) {
+          if (pointIndices.includes(candidate.index)) continue;
+
           const line = sketch.getLineForPoint(candidate.index);
-          if (line && movementSelection.every((el => !(el.type === 'line' && el.line === line[0])))) {
-            mat4.multiply(transformation, candidate.instance.Placement.inverseTrs, sketch.toSketch);
-            movementSelection.push({ ...candidate, sketch, line: line[0], offset: line[1] });
-          }
+          if (!line) continue;
+
+          mat4.multiply(transformation, candidate.instance.Placement.inverseTrs, sketch.toSketch);
+          movementSelection.push({ ...candidate, sketch, line: line[0], offset: line[1] });
+          pointIndices.push(candidate.index);
         }
       } else {
         if (!selectedInstances.length && hoveredInstance) {
@@ -163,7 +169,11 @@ export default (engine) => {
           .join(', ')
       }`;
 
-      historyAction = history.createAction(title, { selection: movementSelection, translation: vec3.create() }, () => {
+      historyAction = history.createAction(title, {
+        selection: movementSelection,
+        translation: vec3.create(),
+        lockedIndices: pointIndices,
+      }, () => {
         historyAction = undefined;
         scene.setSelection(originalSelection);
         emit('toolinactive', move);
@@ -182,7 +192,7 @@ export default (engine) => {
       emit('toolactive', move);
 
       historyAction.append(
-        ({ selection, translation }) => {
+        ({ selection, translation, lockedIndices }) => {
           for (const selectionElement of selection) {
             switch (selectionElement.type) {
               case 'instance':
@@ -194,19 +204,19 @@ export default (engine) => {
                 selectionElement.line.data[1] += diff[1];
                 selectionElement.line.data[2] += diff[0];
                 selectionElement.line.data[3] += diff[1];
-                selectionElement.sketch.update();
+                selectionElement.sketch.update(lockedIndices);
                 break;
               case 'point':
                 Placement.toLocalRelativeCoords(diff, translation, transformation);
                 selectionElement.line.data[0 + selectionElement.offset] += diff[0];
                 selectionElement.line.data[1 + selectionElement.offset] += diff[1];
-                selectionElement.sketch.update();
+                selectionElement.sketch.update(lockedIndices);
                 break;
             }
           }
           emit('scenechange');
         },
-        ({ selection, translation }) => {
+        ({ selection, translation, lockedIndices }) => {
           const translationVecReverse = vec3.create();
           vec3.scale(translationVecReverse, translation, -1);
           for (const selectionElement of selection) {
@@ -220,13 +230,13 @@ export default (engine) => {
                 selectionElement.line.data[1] -= diff[1];
                 selectionElement.line.data[2] -= diff[0];
                 selectionElement.line.data[3] -= diff[1];
-                selectionElement.sketch.update();
+                selectionElement.sketch.update(lockedIndices);
                 break;
               case 'point':
                 Placement.toLocalRelativeCoords(diff, translation, transformation);
                 selectionElement.line.data[0 + selectionElement.offset] -= diff[0];
                 selectionElement.line.data[1 + selectionElement.offset] -= diff[1];
-                selectionElement.sketch.update();
+                selectionElement.sketch.update(lockedIndices);
                 break;
             }
           }
@@ -237,7 +247,7 @@ export default (engine) => {
     update() {
       if (!historyAction) return;
 
-      const { selection, translation } = historyAction.data;
+      const { selection, translation, lockedIndices } = historyAction.data;
 
       const old = vec3.clone(translation);
       vec3.transformMat4(diff, scene.hovered, transformation);
@@ -255,13 +265,13 @@ export default (engine) => {
             selectionElement.line.data[1] += diff[1];
             selectionElement.line.data[2] += diff[0];
             selectionElement.line.data[3] += diff[1];
-            selectionElement.sketch.update();
+            selectionElement.sketch.update(lockedIndices);
             break;
           case 'point':
             Placement.toLocalRelativeCoords(diff, diff, transformation);
             selectionElement.line.data[0 + selectionElement.offset] += diff[0];
             selectionElement.line.data[1 + selectionElement.offset] += diff[1];
-            selectionElement.sketch.update();
+            selectionElement.sketch.update(lockedIndices);
             break;
         }
       }

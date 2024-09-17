@@ -262,7 +262,7 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
     mat4.fromQuat(this.toSketch, rotation);
     mat4.invert(this.fromSketch, this.toSketch);
 
-    this.#recalculate();
+    this.#recalculate([]);
   }
 
   /**
@@ -308,7 +308,10 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
     return constraint;
   }
 
-  #solve() {
+  /**
+   * @param {number[]} lockedIndices
+   */
+  #solve(lockedIndices) {
     const firstIndex = this.offsets.vertex / 3;
     this.pointInfo = [];
     for (let elementIndex = 0; elementIndex < this.data.elements.length; ++elementIndex) {
@@ -321,23 +324,6 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
           index: firstIndex + this.pointInfo.length,
           vec2: vec2.fromValues(element.data[offset], element.data[offset + 1]),
         });
-      }
-    }
-
-    const { currentStep } = this.engine.scene;
-    const lockedIndices  = /** @type {PointInfo[]} */ ([]);
-
-    if (this.engine.tools.isActive('move') && currentStep === this) {
-      const selectedPoints = this.engine.scene.getSelectionByType('point');
-      for (const point of selectedPoints) {
-        const selectedPoint = this.getPointInfo(point.index);
-        if (selectedPoint) lockedIndices.push(selectedPoint);
-      }
-
-      const selectedLines = this.engine.scene.getSelectionByType('line');
-      for (const line of selectedLines) {
-        const selectedLine = this.getLine(line.index);
-        if (selectedLine) lockedIndices.push(...this.getPoints(selectedLine));
       }
     }
 
@@ -355,8 +341,8 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
         const el1 = p1.element;
         const el2 = p2.element;
 
-        const v1Locked = lockedIndices.includes(p1);
-        const v2Locked = lockedIndices.includes(p2);
+        const v1Locked = lockedIndices.includes(p1.index);
+        const v2Locked = lockedIndices.includes(p2.index);
 
         switch (constraint.type) {
           case 'distance': {
@@ -387,8 +373,11 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
     } while (!solved && iteration < 1000);
   }
 
-  #recalculate() {
-    this.#solve();
+  /**
+   * @param {number[]} lockedIndices
+   */
+  #recalculate(lockedIndices) {
+    this.#solve(lockedIndices);
 
     const { data } = this.model;
 
@@ -432,8 +421,11 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
     this.#recompute();
   }
 
-  update() {
-    this.#recalculate();
+  /**
+   * @param {number[]} [lockedIndices]
+   */
+  update(lockedIndices = []) {
+    this.#recalculate(lockedIndices);
     super.update();
   }
 
