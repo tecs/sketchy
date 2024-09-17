@@ -572,10 +572,19 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
     if (index === -1) return;
 
     const constraints = this.getConstraints(element);
+    const pointIndices = this.getPoints(element).map(point => point.index);
     this.data.elements.splice(index, 1);
 
     for (const constraint of constraints) {
       this.deleteConstraint(constraint);
+    }
+
+    for (const constraint of this.data.constraints) {
+      for (const pointIndex of pointIndices) {
+        for (let i = 0; i < constraint.indices.length; ++i) {
+          if (constraint.indices[i] > pointIndex) --constraint.indices[i];
+        }
+      }
     }
 
     this.update();
