@@ -7,7 +7,7 @@ import Instance from '../../../engine/scene/instance.js';
  */
 export default (engine, tabs) => {
   const tab = tabs.addTab('Scene');
-  const { entities, scene } = engine;
+  const { editor: { selection }, entities, scene } = engine;
 
   const render = () => {
     const instances = entities.values(Instance);
@@ -25,11 +25,11 @@ export default (engine, tabs) => {
 
           const { enteredInstance } = scene;
           if (instance !== enteredInstance && SubInstance.belongsTo(instance, enteredInstance)) {
-            scene.setSelection([{ type: 'instance', instance, index: instance.Id.int }]);
+            selection.set([{ type: 'instance', instance, index: instance.Id.int }]);
           }
         },
         style: { fontWeight: instance === currentInstance ? 'bold' : undefined },
-        className: scene.getSelectedElement({ type: 'instance', instance, index: instance.Id.int }) ? 'selected' : '',
+        className: selection.getElement({ type: 'instance', instance, index: instance.Id.int }) ? 'selected' : '',
       });
       instanceCache[instance.Id.str] = instanceContainer;
     }

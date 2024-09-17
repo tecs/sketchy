@@ -109,7 +109,7 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
   static register(engine) {
     super.register(engine);
 
-    const { scene, history, config } = engine;
+    const { editor: { selection }, scene, history, config } = engine;
 
     const distanceKey = config.createString('sketch.distance', 'Sketch constraint: distance', 'key', 'd');
     const coincidentKey = config.createString('sketch.coincident', 'Sketch constraint: coincident point', 'key', 'c');
@@ -119,8 +119,8 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
       if (!(sketch instanceof Sketch)) return;
 
       if (keyCombo === 'delete') {
-        const selection = scene.selection.filter(el => el.type === 'line' || el.type === 'point');
-        const lines = selection.reduce((out, { type, index }) => {
+        const elements = selection.elements.filter(el => el.type === 'line' || el.type === 'point');
+        const lines = elements.reduce((out, { type, index }) => {
           const line = type === 'line' ? sketch.getLine(index) : sketch.getLineForPoint(index)?.[0];
           if (line && !out.includes(line)) {
             out.push(line);
@@ -136,16 +136,16 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
         action.append(
           () => {
             lines.forEach(line => sketch.deleteElement(line));
-            scene.removeFromSelection(selection);
+            selection.remove(elements);
           },
           () => {
             lines.forEach(line => sketch.addElement(line));
-            scene.addToSelection(selection);
+            selection.add(elements);
           },
         );
         action.commit();
       } else if (keyCombo === distanceKey.value) {
-        const selectedLines = scene.getSelectionByType('line').reduce((lines, { index }) => {
+        const selectedLines = selection.getByType('line').reduce((lines, { index }) => {
           const line = sketch.getLine(index);
           if (line) lines.push([line, sketch.getConstraints(line, 'distance').pop()]);
           return lines;
@@ -166,7 +166,7 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
           }
         }, true);
       } else if (keyCombo === coincidentKey.value) {
-        const selectedPoints = scene.getSelectionByType('point').map(({ index }) => index);
+        const selectedPoints = selection.getByType('point').map(({ index }) => index);
 
         const existingConstraints = selectedPoints
           .flatMap(idx => sketch.data.constraints.filter(({ indices, type }) => type === 'coincident' && indices.includes(idx)))

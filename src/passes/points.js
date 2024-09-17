@@ -3,6 +3,7 @@ export default (engine) => {
   const {
     driver: { ctx, makeProgram, vert, frag },
     camera,
+    editor: { selection },
     scene,
   } = engine;
 
@@ -46,7 +47,7 @@ export default (engine) => {
       const { enteredInstance, hoveredInstance, hoveredPointIndex } = scene;
       const pointIsHovered = hoveredPointIndex !== null && enteredInstance === hoveredInstance;
 
-      const selectedPointIndices = scene.getSelectionByType('point').map(({ index }) => index);
+      const selectedPointIndices = selection.getByType('point').map(({ index }) => index);
       if (!selectedPointIndices.length && !pointIsHovered) return;
 
       const model = enteredInstance?.body.currentModel;

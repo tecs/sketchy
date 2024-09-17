@@ -6,6 +6,7 @@ export default (engine) => {
   const {
     driver: { ctx, makeProgram, vert, frag, UintIndexArray, UNSIGNED_INDEX_TYPE, UNSIGNED_INDEX_SIZE },
     camera,
+    editor: { selection },
     entities,
     scene,
   } = engine;
@@ -73,8 +74,8 @@ export default (engine) => {
     program,
     render() {
       const { enteredInstance, hoveredInstance, hoveredLineIndex } = scene;
-      const selectedLines = scene.getSelectionByType('line');
-      const selectedInstances = scene.getSelectionByType('instance').map(({ instance }) => instance);
+      const selectedLines = selection.getByType('line');
+      const selectedInstances = selection.getByType('instance').map(({ instance }) => instance);
 
       const bodies = entities.values(Body);
       for (const { currentModel: model, instances } of bodies) {

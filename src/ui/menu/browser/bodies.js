@@ -8,7 +8,7 @@ const { vec3 } = glMatrix;
  * @param {import("../../lib/index.js").UITabs} tabs
  */
 export default (engine, tabs) => {
-  const { entities, scene, tools } = engine;
+  const { editor: { selection }, entities, scene, tools } = engine;
   const tab = tabs.addTab('Bodies');
 
   const render = () => {
@@ -35,7 +35,7 @@ export default (engine, tabs) => {
 
             if (!instance) return;
 
-            scene.setSelection([{ type: 'instance', instance, index: instance.Id.int }]);
+            selection.set([{ type: 'instance', instance, index: instance.Id.int }]);
             scene.hover(vec3.create());
 
             const tool = tools.tools.find(({ type }) => type === 'move');

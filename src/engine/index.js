@@ -4,6 +4,7 @@ import Entities from './entities.js';
 import Config from './config.js';
 import History from './history.js';
 import Driver from './driver.js';
+import Editor from './editor.js';
 import Input from './input.js';
 import Camera from './3d/camera.js';
 import Renderer from './renderer.js';
@@ -19,14 +20,15 @@ import SubInstance from './cad/subinstance.js';
 /** @typedef {import("./3d/camera-types").CameraEvent} CameraEv */
 /** @typedef {import("./cad/types").CadEvent} CadEv */
 /** @typedef {import("./config-types").ConfigEvent} ConfigEv */
+/** @typedef {import("./editor-types").EditorEvent} EditorEv */
 /** @typedef {import("./entities-types").EntitiesEvent} EntitiesEv */
 /** @typedef {import("./history-types").HistoryEvent} HistoryEv */
 /** @typedef {import("./input-types").InputEvent} InputEv */
 /** @typedef {import("./scene/types").SceneEvent} SceneEv */
-/** @typedef {import("./tools-types.js").ToolEvent} ToolEv */
-/** @typedef {import("./scene/intance-types.js").InstanceEvent} InstanceEv */
+/** @typedef {import("./tools-types").ToolEvent} ToolEv */
+/** @typedef {import("./scene/intance-types").InstanceEvent} InstanceEv */
 // eslint-disable-next-line max-len
-/** @typedef {BoundingBoxEv|CadEv|CameraEv|ConfigEv|EntitiesEv|HistoryEv|InputEv|SceneEv|ToolEv|InstanceEv} EngineEvent */
+/** @typedef {BoundingBoxEv|CadEv|CameraEv|ConfigEv|EditorEv|EntitiesEv|HistoryEv|InputEv|SceneEv|ToolEv|InstanceEv} EngineEvent */
 
 /** @augments Base<EngineEvent> */
 export default class Engine extends Base {
@@ -38,6 +40,9 @@ export default class Engine extends Base {
 
   /** @type {Readonly<Driver>} */
   driver;
+
+  /** @type {Readonly<Editor>} */
+  editor;
 
   /** @type {Readonly<History>} */
   history;
@@ -66,6 +71,7 @@ export default class Engine extends Base {
     this.entities = new Entities(this);
     this.config = new Config(this);
     this.driver = new Driver(this, canvas);
+    this.editor = new Editor(this);
     this.history = new History(this);
     this.input = new Input(this);
     this.camera = new Camera(this);

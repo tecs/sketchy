@@ -6,16 +6,16 @@ const { vec3, mat4 } = glMatrix;
 
 /** @type {(engine: Engine) => Tool} */
 export default (engine) => {
-  const { scene, history, emit } = engine;
+  const { editor: { selection }, scene, history, emit } = engine;
 
   /**
-   * @typedef InstanceSelection
+   * @typedef InstanceElement
    * @property {"instance"} type
    * @property {Instance} instance
    */
 
   /**
-   * @typedef LineSelection
+   * @typedef LineElement
    * @property {"line"} type
    * @property {import("../engine/cad/sketch.js").LineConstructionElement} line
    * @property {number} index
@@ -24,7 +24,7 @@ export default (engine) => {
    */
 
   /**
-   * @typedef PointSelection
+   * @typedef PointElement
    * @property {"point"} type
    * @property {import("../engine/cad/sketch.js").LineConstructionElement} line
    * @property {number} offset
@@ -33,11 +33,11 @@ export default (engine) => {
    * @property {Sketch} sketch
    */
 
-  /** @typedef {InstanceSelection | LineSelection | PointSelection} Selection */
+  /** @typedef {InstanceElement | LineElement | PointElement} Elements */
 
   /**
    * @typedef MoveData
-   * @property {Selection[]} selection
+   * @property {Elements[]} elements
    * @property {vec3} translation
    * @property {number[]} lockedIndices
    */
@@ -67,31 +67,31 @@ export default (engine) => {
     setDistance([distance]) {
       if (!historyAction) return;
 
-      const { selection, translation, lockedIndices } = historyAction.data;
+      const { elements, translation, lockedIndices } = historyAction.data;
 
       vec3.copy(diff, translation);
       vec3.normalize(translation, translation);
       vec3.scale(translation, translation, distance);
       vec3.subtract(diff, translation, diff);
 
-      for (const selectionElement of selection) {
-        switch (selectionElement.type) {
+      for (const element of elements) {
+        switch (element.type) {
           case 'instance':
-            selectionElement.instance.translateGlobal(diff);
+            element.instance.translateGlobal(diff);
             break;
           case 'line':
             Placement.toLocalRelativeCoords(diff, translation, transformation);
-            selectionElement.line.data[0] += diff[0];
-            selectionElement.line.data[1] += diff[1];
-            selectionElement.line.data[2] += diff[0];
-            selectionElement.line.data[3] += diff[1];
-            selectionElement.sketch.update(lockedIndices);
+            element.line.data[0] += diff[0];
+            element.line.data[1] += diff[1];
+            element.line.data[2] += diff[0];
+            element.line.data[3] += diff[1];
+            element.sketch.update(lockedIndices);
             break;
           case 'point':
             Placement.toLocalRelativeCoords(diff, translation, transformation);
-            selectionElement.line.data[0 + selectionElement.offset] += diff[0];
-            selectionElement.line.data[1 + selectionElement.offset] += diff[1];
-            selectionElement.sketch.update(lockedIndices);
+            element.line.data[0 + element.offset] += diff[0];
+            element.line.data[1 + element.offset] += diff[1];
+            element.sketch.update(lockedIndices);
             break;
         }
       }
@@ -104,11 +104,11 @@ export default (engine) => {
       const { currentStep, hoveredInstance, enteredInstance, hoveredPointIndex, hoveredLineIndex } = scene;
 
       const sketch = currentStep ?? enteredInstance?.body.step ?? null;
-      const movementSelection = /** @type {Selection[]} */ ([]);
+      const movementSelection = /** @type {Elements[]} */ ([]);
 
-      const selectedInstances = scene.getSelectionByType('instance').map(({ instance }) => instance);
-      const candidatePoints = scene.getSelectionByType('point');
-      const candidateLines = scene.getSelectionByType('line');
+      const selectedInstances = selection.getByType('instance').map(({ instance }) => instance);
+      const candidatePoints = selection.getByType('point');
+      const candidateLines = selection.getByType('line');
 
       if (!selectedInstances.length && hoveredInstance === enteredInstance && hoveredInstance) {
         if (!candidatePoints.length && hoveredPointIndex !== null) {
@@ -161,7 +161,7 @@ export default (engine) => {
       }
 
       if (!movementSelection.length) return;
-      const originalSelection = scene.selection.slice();
+      const originalSelection = selection.elements.slice();
 
       const title = `Move ${
         movementSelection
@@ -170,73 +170,73 @@ export default (engine) => {
       }`;
 
       historyAction = history.createAction(title, {
-        selection: movementSelection,
+        elements: movementSelection,
         translation: vec3.create(),
         lockedIndices: pointIndices,
       }, () => {
         historyAction = undefined;
-        scene.setSelection(originalSelection);
+        selection.set(originalSelection);
         emit('toolinactive', move);
       });
       if (!historyAction) return;
 
       if (!currentStep && movementSelection.some(({ type }) => type !== 'instance')) scene.setCurrentStep(sketch);
 
-      scene.setSelection(movementSelection.map(selection => ({
-        type: selection.type,
-        index: selection.type === 'instance' ? selection.instance.Id.int : selection.index,
-        instance: selection.instance,
+      selection.set(movementSelection.map(element => ({
+        type: element.type,
+        index: element.type === 'instance' ? element.instance.Id.int : element.index,
+        instance: element.instance,
       })));
 
       vec3.transformMat4(origin, scene.hovered, transformation);
       emit('toolactive', move);
 
       historyAction.append(
-        ({ selection, translation, lockedIndices }) => {
-          for (const selectionElement of selection) {
-            switch (selectionElement.type) {
+        ({ elements, translation, lockedIndices }) => {
+          for (const element of elements) {
+            switch (element.type) {
               case 'instance':
-                selectionElement.instance.translateGlobal(translation);
+                element.instance.translateGlobal(translation);
                 break;
               case 'line':
                 Placement.toLocalRelativeCoords(diff, translation, transformation);
-                selectionElement.line.data[0] += diff[0];
-                selectionElement.line.data[1] += diff[1];
-                selectionElement.line.data[2] += diff[0];
-                selectionElement.line.data[3] += diff[1];
-                selectionElement.sketch.update(lockedIndices);
+                element.line.data[0] += diff[0];
+                element.line.data[1] += diff[1];
+                element.line.data[2] += diff[0];
+                element.line.data[3] += diff[1];
+                element.sketch.update(lockedIndices);
                 break;
               case 'point':
                 Placement.toLocalRelativeCoords(diff, translation, transformation);
-                selectionElement.line.data[0 + selectionElement.offset] += diff[0];
-                selectionElement.line.data[1 + selectionElement.offset] += diff[1];
-                selectionElement.sketch.update(lockedIndices);
+                element.line.data[0 + element.offset] += diff[0];
+                element.line.data[1 + element.offset] += diff[1];
+                element.sketch.update(lockedIndices);
                 break;
             }
           }
           emit('scenechange');
         },
-        ({ selection, translation, lockedIndices }) => {
+        ({ elements, translation, lockedIndices }) => {
           const translationVecReverse = vec3.create();
           vec3.scale(translationVecReverse, translation, -1);
-          for (const selectionElement of selection) {
-            switch (selectionElement.type) {
+          for (const element of elements) {
+            switch (element.type) {
               case 'instance':
-                selectionElement.instance.translateGlobal(translationVecReverse);
+                element.instance.translateGlobal(translationVecReverse);
                 break;
               case 'line':
                 Placement.toLocalRelativeCoords(diff, translation, transformation);
-                selectionElement.line.data[0] -= diff[0];
-                selectionElement.line.data[1] -= diff[1];
-                selectionElement.line.data[2] -= diff[0];
-                selectionElement.line.data[3] -= diff[1];
-                selectionElement.sketch.update(lockedIndices);
+                element.line.data[0] -= diff[0];
+                element.line.data[1] -= diff[1];
+                element.line.data[2] -= diff[0];
+                element.line.data[3] -= diff[1];
+                element.sketch.update(lockedIndices);
                 break;
               case 'point':
                 Placement.toLocalRelativeCoords(diff, translation, transformation);
-                selectionElement.line.data[0 + selectionElement.offset] -= diff[0];
-                selectionElement.line.data[1 + selectionElement.offset] -= diff[1];
-                selectionElement.sketch.update(lockedIndices);
+                element.line.data[0 + element.offset] -= diff[0];
+                element.line.data[1 + element.offset] -= diff[1];
+                element.sketch.update(lockedIndices);
                 break;
             }
           }
@@ -247,31 +247,31 @@ export default (engine) => {
     update() {
       if (!historyAction) return;
 
-      const { selection, translation, lockedIndices } = historyAction.data;
+      const { elements, translation, lockedIndices } = historyAction.data;
 
       const old = vec3.clone(translation);
       vec3.transformMat4(diff, scene.hovered, transformation);
       vec3.subtract(translation, diff, origin);
       vec3.subtract(diff, translation, old);
 
-      for (const selectionElement of selection) {
-        switch (selectionElement.type) {
+      for (const element of elements) {
+        switch (element.type) {
           case 'instance':
-            selectionElement.instance.translateGlobal(diff);
+            element.instance.translateGlobal(diff);
             break;
           case 'line':
             Placement.toLocalRelativeCoords(diff, diff, transformation);
-            selectionElement.line.data[0] += diff[0];
-            selectionElement.line.data[1] += diff[1];
-            selectionElement.line.data[2] += diff[0];
-            selectionElement.line.data[3] += diff[1];
-            selectionElement.sketch.update(lockedIndices);
+            element.line.data[0] += diff[0];
+            element.line.data[1] += diff[1];
+            element.line.data[2] += diff[0];
+            element.line.data[3] += diff[1];
+            element.sketch.update(lockedIndices);
             break;
           case 'point':
             Placement.toLocalRelativeCoords(diff, diff, transformation);
-            selectionElement.line.data[0 + selectionElement.offset] += diff[0];
-            selectionElement.line.data[1 + selectionElement.offset] += diff[1];
-            selectionElement.sketch.update(lockedIndices);
+            element.line.data[0 + element.offset] += diff[0];
+            element.line.data[1 + element.offset] += diff[1];
+            element.sketch.update(lockedIndices);
             break;
         }
       }

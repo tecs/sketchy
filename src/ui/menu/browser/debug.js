@@ -44,7 +44,7 @@ const { vec3, mat4 } = glMatrix;
  * @param {import("../../lib").UITabs} tabs
  */
 export default (engine, tabs) => {
-  const { camera, scene, entities } = engine;
+  const { camera, editor: { selection }, scene, entities } = engine;
 
   const tempD = vec3.create();
   const vZ = vec3.create();
@@ -69,9 +69,9 @@ export default (engine, tabs) => {
     'Current': () => [scene.currentInstance.Id.int],
     'Hovered': () => [scene.hoveredInstance?.Id.int, scene.hoveredLineIndex, scene.hoveredPointIndex],
     'Selected': () => [
-      scene.getSelectionByType('instance').map(el => el.index).join(', '),
-      scene.getSelectionByType('line').map(el => el.index).join(', '),
-      scene.getSelectionByType('point').map(el => el.index).join(', '),
+      selection.getByType('instance').map(el => el.index).join(', '),
+      selection.getByType('line').map(el => el.index).join(', '),
+      selection.getByType('point').map(el => el.index).join(', '),
     ],
   }).map(rowFn('Editor', 4, tab, undefined, '', 'Instance', 'Line', 'Point'));
 

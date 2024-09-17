@@ -5,7 +5,7 @@ import Sketch from '../../../engine/cad/sketch.js';
  * @param {import("../../lib/index.js").UITabs} tabs
  */
 export default (engine, tabs) => {
-  const { scene } = engine;
+  const { editor: { selection }, scene } = engine;
   const tab = tabs.addTab('Sketch');
   tab.addContainer().addButton('close sketch', () => scene.setCurrentStep(null));
   tab.hide();
@@ -33,11 +33,11 @@ export default (engine, tabs) => {
       const index = sketch.getLineIndex(elements[i]);
       if (index === null) continue;
 
-      const selected = scene.getSelectedElement({ type: 'line', index, instance })
-        || sketch.getPoints(elements[i]).some(e => scene.getSelectedElement({ type: 'point', index: e.index, instance }));
+      const selected = selection.getElement({ type: 'line', index, instance })
+        || sketch.getPoints(elements[i]).some(e => selection.getElement({ type: 'point', index: e.index, instance }));
 
       table.addRow(`${i + 1}`, elements[i].type).$element({
-        onclick: () => scene.setSelection([{ type: 'line', index, instance }]),
+        onclick: () => selection.set([{ type: 'line', index, instance }]),
         style: { fontWeight: selected ? 'bold' : '' },
       });
     }

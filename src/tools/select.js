@@ -2,14 +2,15 @@ import SubInstance from '../engine/cad/subinstance.js';
 
 /** @type {(engine: Engine) => Tool} */
 export default (engine) => {
-  const { scene, input } = engine;
+  const { editor: { selection }, scene, input } = engine;
+
   /**
-   * @param {Parameters<typeof scene["addToSelection"]>[0]} selection
+   * @param {Parameters<typeof selection["add"]>[0]} elements
    * @param {boolean} [shouldToggle]
    */
-  const toggleOrSet = (selection, shouldToggle = false) => {
-    if (shouldToggle) scene.toggleSelection(selection);
-    else scene.setSelection(selection);
+  const toggleOrSet = (elements, shouldToggle = false) => {
+    if (shouldToggle) selection.toggle(elements);
+    else selection.set(elements);
   };
 
   /** @type {Tool} */
@@ -29,7 +30,7 @@ export default (engine) => {
           toggleOrSet([{ type: 'line', index: hoveredLineIndex, instance: enteredInstance }], toggle);
         } else if (hoveredPointIndex !== null) {
           toggleOrSet([{ type: 'point', index: hoveredPointIndex, instance: enteredInstance }], toggle);
-        } else if (!toggle) scene.clearSelection();
+        } else if (!toggle) selection.clear();
         return;
       }
 
@@ -40,15 +41,15 @@ export default (engine) => {
         parent = clicked ? SubInstance.getParent(clicked) : undefined;
       }
 
-      const selectedInstances = scene.getSelectionByType('instance').map(({ instance }) => instance);
+      const selectedInstances = selection.getByType('instance').map(({ instance }) => instance);
 
       if (count === 1) {
         const clickedOwn = SubInstance.belongsTo(clicked, enteredInstance);
 
-        if (clicked === enteredInstance && !toggle) scene.clearSelection();
+        if (clicked === enteredInstance && !toggle) selection.clear();
         else if (clicked === enteredInstance) return;
         else if (clickedOwn) toggleOrSet(clicked ? [{ type: 'instance', index: clicked.Id.int, instance: clicked }] : [], toggle);
-        else if (selectedInstances.length && !toggle) scene.clearSelection();
+        else if (selectedInstances.length && !toggle) selection.clear();
 
         return;
       }
@@ -61,8 +62,8 @@ export default (engine) => {
     abort() {
       if (engine.tools.selected !== this) return;
 
-      if (scene.selection.length) {
-        scene.clearSelection();
+      if (selection.elements.length) {
+        selection.clear();
       } else if (scene.enteredInstance && !engine.scene.currentStep) {
         scene.setEnteredInstance(SubInstance.getParent(scene.enteredInstance)?.instance ?? null);
       }

@@ -5,11 +5,11 @@ import renderProperties from './render-properties.js';
  * @param {import("../../lib/index.js").UITabs} tabs
  */
 export default (engine, tabs) => {
-  const { scene } = engine;
+  const { editor: { selection }, scene } = engine;
   const tab = tabs.addTab('Info');
 
   const render = () => {
-    const selectedInstance = scene.getSelectionByType('instance').pop()?.instance;
+    const selectedInstance = selection.getByType('instance').pop()?.instance;
     const instance = selectedInstance ?? scene.enteredInstance;
     if (!instance) {
       tab.hide();
@@ -28,7 +28,7 @@ export default (engine, tabs) => {
    * @param {Instance} changedInstance
    */
   const repopulateSelectedMenuOnInstanceChange = (changedInstance) => {
-    const selectedInstance = scene.getSelectionByType('instance').pop()?.instance;
+    const selectedInstance = selection.getByType('instance').pop()?.instance;
     const activeInstance = selectedInstance ?? scene.enteredInstance;
     if (changedInstance === activeInstance) {
       render();

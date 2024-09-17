@@ -62,12 +62,13 @@ export default (engine) => {
       ctx.bindFramebuffer(ctx.FRAMEBUFFER, framebuffer);
       ctx.clear(ctx.COLOR_BUFFER_BIT | ctx.DEPTH_BUFFER_BIT);
 
+      const { currentModel } = scene.currentInstance.body;
       const drawing = tools.isActive('line', 'rectangle', 'move');
 
       const bodies = entities.values(Body);
       for (const { currentModel: model, instances } of bodies) {
         // Prevent self-picking when editing
-        if (!model || (drawing && scene.currentInstance.body.currentModel === model)) continue;
+        if (!model || (drawing && currentModel === model)) continue;
 
         ctx.bindBuffer(ctx.ELEMENT_ARRAY_BUFFER, model.buffer.index);
 

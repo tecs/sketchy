@@ -6,7 +6,7 @@ import { stringifyDistance } from './render-properties.js';
  * @param {import("../../lib/index.js").UITabs} tabs
  */
 export default (engine, tabs) => {
-  const { scene } = engine;
+  const { editor: { selection }, scene } = engine;
   const tab = tabs.addTab('Constraints');
   const table = tab.addTable(3);
   tab.hide();
@@ -26,11 +26,11 @@ export default (engine, tabs) => {
     if (constraints.length) table.addRow('', 'type', 'value').$element({ className: 'disabled' });
     else table.addHeader('', 'No constraints yet');
 
-    const selectedLineConstraints = scene.getSelectionByType('line')
+    const selectedLineConstraints = selection.getByType('line')
       .map(({ index }) => sketch.getLine(index))
       .flatMap(line => line ? sketch.getConstraints(line) : []);
 
-    const selectedPointIndices = scene.getSelectionByType('point').map(({ index }) => index);
+    const selectedPointIndices = selection.getByType('point').map(({ index }) => index);
 
     for (let i = 0; i < constraints.length; ++i) {
       const constraint = constraints[i];

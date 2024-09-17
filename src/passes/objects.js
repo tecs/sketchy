@@ -8,6 +8,7 @@ export default (engine) => {
   const {
     driver: { ctx, makeProgram, vert, frag, UNSIGNED_INDEX_TYPE },
     camera,
+    editor: { selection },
     entities,
     scene,
   } = engine;
@@ -64,7 +65,7 @@ export default (engine) => {
     program,
     render() {
       const bodies = entities.values(Body);
-      const selectedInstances = scene.getSelectionByType('instance').map(({ instance }) => instance);
+      const selectedInstances = selection.getByType('instance').map(({ instance }) => instance);
 
       for (const { currentModel: model, instances } of bodies) {
         if (!model) continue;
