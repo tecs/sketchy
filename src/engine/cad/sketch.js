@@ -63,14 +63,6 @@ const forward = vec3.fromValues(0, 0, 1);
 const rotation = quat.create();
 const tempVertex = vec3.create();
 
-/**
- * @param {Readonly<LineConstructionElement>} line
- * @returns {[vec2, vec2]}
- */
-const getLineVertices = ({ data: [x1, y1, x2, y2] }) => {
-  return [vec2.fromValues(x1, y1), vec2.fromValues(x2, y2)];
-};
-
 export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Step) {
   normal = vec3.create();
   toSketch = mat4.create();
@@ -145,46 +137,30 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
         );
         action.commit();
       } else if (keyCombo === distanceKey.value) {
-        const selectedLines = selection.getByType('line').reduce((lines, { index }) => {
+        const selected = selection.getByType('line').reduce((lines, { index }) => {
           const line = sketch.getLine(index);
-          if (line) lines.push([line, sketch.getConstraints(line, 'distance').pop()]);
+          const [p1, p2] = line ? sketch.getPoints(line) : [];
+          if (p1 && p2) lines.push([p1, p2, sketch.getConstraintsForPoints([p1.index, p2.index], 'distance').pop()?.data]);
           return lines;
-        }, /** @type {[LineConstructionElement, DistanceConstraint?][]} */ ([]));
-        if (!selectedLines.length) return;
+        }, /** @type {[PointInfo, PointInfo, number?][]} */ ([]));
+        if (!selected.length) return;
 
-        const value = selectedLines.find(([, distance]) => distance)?.[1]?.data
-          ?? vec2.distance(...getLineVertices(selectedLines[0][0]));
+        const value = selected.find(([,, d]) => d)?.[2] ?? vec2.distance(selected[0][0].vec2, selected[0][1].vec2);
 
         engine.emit('propertyrequest', { type: 'distance', value });
         engine.on('propertyresponse', (property) => {
           if (property?.type !== 'distance' || property.value <= 0) return;
-          for (const [line, distance] of selectedLines) {
-            if (distance) {
-              distance.data = property.value;
-              sketch.update();
-            } else sketch.distance(property.value, line);
+          for (const [p1, p2] of selected) {
+            sketch.distance(property.value, [p1.index, p2.index]);
           }
         }, true);
       } else if (keyCombo === coincidentKey.value) {
-        const selectedPoints = selection.getByType('point').map(({ index }) => index);
+        const points = selection.getByType('point').map(({ index }) => index);
 
-        const existingConstraints = selectedPoints
-          .flatMap(idx => sketch.data.constraints.filter(({ indices, type }) => type === 'coincident' && indices.includes(idx)))
-          .filter((v, i, a) => a.indexOf(v) === i);
-
-        const newCoincidentPointSets = selectedPoints
-          .reduce((sets, idx1, i, points) => {
-            for (let k = i + 1; k < points.length; ++k) {
-              const idx2 = points[k];
-              if (!existingConstraints.some(({ indices }) => indices.includes(idx1) && indices.includes(idx2))) {
-                sets.push([idx1, idx2]);
-              }
-            }
-            return sets;
-          }, /** @type {[number, number][]} */ ([]));
-
-        for (const set of newCoincidentPointSets) {
-          sketch.coincident(set);
+        for (let i = 0; i < points.length; ++i) {
+          for (let k = i + 1; k < points.length; ++k) {
+            sketch.coincident([points[i], points[k]]);
+          }
         }
       }
     });
@@ -303,6 +279,13 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
    * @returns {T}
    */
   #createConstraint(type, indices, data) {
+    const existingConstraint = this.getConstraintsForPoints(indices, type).pop();
+    if (existingConstraint) {
+      existingConstraint.data = data;
+      this.update();
+      return /** @type {T} */ (/** @type {Constraints} */ (existingConstraint));
+    }
+
     const constraint = Sketch.makeConstraint(type, indices, data);
     this.addConstraint(constraint);
     return constraint;
@@ -535,6 +518,19 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
     const indices = this.getPoints(element).map(info => info.index);
     const constraints = this.data.constraints
       .filter(constraint => constraint.indices.some(index => indices.includes(index)));
+    return /** @type {R[]} */ (type !== undefined ? constraints.filter(c => c.type === type) : constraints);
+  }
+
+  /**
+   * @template {Constraints["type"] | undefined} T
+   * @template {IfEquals<T, undefined, Constraints, Extract<Constraints, { type: T } >>} R
+   * @param {number[]} indices
+   * @param {T} [type]
+   * @returns {R[]}
+   */
+  getConstraintsForPoints(indices, type) {
+    const constraints = this.data.constraints
+      .filter(constraint => indices.every(index => constraint.indices.includes(index)));
     return /** @type {R[]} */ (type !== undefined ? constraints.filter(c => c.type === type) : constraints);
   }
 
