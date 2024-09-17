@@ -199,9 +199,7 @@ export default class Scene extends Base {
    * @returns {T | null}
    */
   getSelectedElement(el) {
-    if (el instanceof Instance) return this.selection.includes(el) ? el : null;
     for (const selection of this.selection) {
-      if (selection instanceof Instance) continue;
       if (el.type === selection.type && el.index === selection.index && el.instance === selection.instance) {
         return /** @type {T} */ (selection);
       }
