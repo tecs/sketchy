@@ -31,10 +31,10 @@ export default (engine, tabs) => {
 
     for (let i = 0; i < elements.length; ++i) {
       const index = sketch.getLineIndex(elements[i]);
-      if (!index) continue;
+      if (index === null) continue;
 
       const selected = scene.getSelectedElement({ type: 'line', index, instance })
-        || sketch.getPoints(elements[i]).some(e => scene.getSelectedElement({ type:'point', index: e.index, instance }));
+        || sketch.getPoints(elements[i]).some(e => scene.getSelectedElement({ type: 'point', index: e.index, instance }));
 
       table.addRow(`${i + 1}`, elements[i].type).$element({
         onclick: () => scene.setSelection([{ type: 'line', index, instance }]),
