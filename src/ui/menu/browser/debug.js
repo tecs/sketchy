@@ -44,7 +44,7 @@ const { vec3, mat4 } = glMatrix;
  * @param {import("../../lib").UITabs} tabs
  */
 export default (engine, tabs) => {
-  const { camera, editor: { selection }, scene, entities } = engine;
+  const { camera, editor: { edited: active, selection }, scene, entities } = engine;
 
   const tempD = vec3.create();
   const vZ = vec3.create();
@@ -72,6 +72,11 @@ export default (engine, tabs) => {
       selection.getByType('instance').map(el => el.index).join(', '),
       selection.getByType('line').map(el => el.index).join(', '),
       selection.getByType('point').map(el => el.index).join(', '),
+    ],
+    'Active': () => [
+      active.getByType('instance').map(el => el.index).join(', '),
+      active.getByType('line').map(el => el.index).join(', '),
+      active.getByType('point').map(el => el.index).join(', '),
     ],
   }).map(rowFn('Editor', 4, tab, undefined, '', 'Instance', 'Line', 'Point'));
 

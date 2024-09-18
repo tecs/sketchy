@@ -14,7 +14,7 @@ const { vec2, vec3, mat4 } = glMatrix;
 
 /** @type {(engine: Engine) => Tool} */
 export default (engine) => {
-  const { history, scene, emit } = engine;
+  const { editor: { edited: active }, history, scene, emit } = engine;
 
   /** @type {import("../engine/history.js").HistoryAction<RectData>|undefined} */
   let historyAction;
@@ -107,6 +107,7 @@ export default (engine) => {
         lockedIndices: [],
       }, () => {
         historyAction = undefined;
+        active.clear();
         emit('toolinactive', rectangle);
       });
       if (!historyAction) return;
@@ -138,6 +139,25 @@ export default (engine) => {
           sketch.coincident([pointCoordHorizontal[1].index, pointCoordVertical[1].index]);
 
           lockedIndices.push(pointOriginHorizontal[0].index, pointCoordHorizontal[1].index);
+
+          active.set([
+            lineOriginHorizontal,
+            lineOriginVertical,
+            lineCoordHorizontal,
+            lineCoordVertical,
+            pointOriginHorizontal,
+            pointOriginVertical,
+            pointCoordHorizontal,
+            pointCoordVertical,
+          ].flatMap(el => {
+            const isPoint = Array.isArray(el);
+            const type = isPoint ? 'point' : 'line';
+
+            if (isPoint) return el.map(({ index }) => ({ type, index, instance }));
+
+            const index = sketch.getLineIndex(el);
+            return index !== null ? { type, index, instance } : [];
+          }));
         },
         (data) => {
           data.sketch.deleteElement(data.lineOriginHorizontal);

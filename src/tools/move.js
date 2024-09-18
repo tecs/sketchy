@@ -6,7 +6,7 @@ const { vec3, mat4 } = glMatrix;
 
 /** @type {(engine: Engine) => Tool} */
 export default (engine) => {
-  const { editor: { selection }, scene, history, emit } = engine;
+  const { editor: { edited: active, selection }, scene, history, emit } = engine;
 
   /**
    * @typedef InstanceElement
@@ -176,6 +176,7 @@ export default (engine) => {
       }, () => {
         historyAction = undefined;
         selection.set(originalSelection);
+        active.clear();
         emit('toolinactive', move);
       });
       if (!historyAction) return;
@@ -187,6 +188,8 @@ export default (engine) => {
         index: element.type === 'instance' ? element.instance.Id.int : element.index,
         instance: element.instance,
       })));
+
+      active.set(selection.elements);
 
       vec3.transformMat4(origin, scene.hovered, transformation);
       emit('toolactive', move);

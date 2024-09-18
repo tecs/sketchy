@@ -13,7 +13,7 @@ const { vec3, mat4 } = glMatrix;
 
 /** @type {(engine: Engine) => Tool} */
 export default (engine) => {
-  const { history, scene, emit } = engine;
+  const { editor: { edited: active }, history, scene, emit } = engine;
 
   /** @type {import("../engine/history.js").HistoryAction<LineData>|undefined} */
   let historyAction;
@@ -88,6 +88,7 @@ export default (engine) => {
         lockedIndices,
       }, () => {
         historyAction = undefined;
+        active.clear();
         emit('toolinactive', lineTool);
       });
       if (!historyAction) return;
@@ -102,6 +103,14 @@ export default (engine) => {
             data.sketch.coincident([data.lockedIndices[0], points[0].index]);
           }
           data.lockedIndices.push(points[1].index);
+
+          const activeElements = data.lockedIndices.concat(points[0].index)
+            .map(index => ({ type: /** @type {"point" | "line"} */ ('point'), index, instance }));
+
+          const index = data.sketch.getLineIndex(data.line);
+          if (index !== null) activeElements.push({ type: 'line', index, instance });
+
+          active.set(activeElements);
         },
         (data) => {
           data.sketch.deleteElement(data.line);
