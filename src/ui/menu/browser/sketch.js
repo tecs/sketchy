@@ -37,7 +37,7 @@ export default (engine, tabs) => {
         || sketch.getPoints(elements[i]).some(e => selection.getElement({ type: 'point', index: e.index, instance }));
 
       table.addRow(`${i + 1}`, elements[i].type).$element({
-        onclick: () => selection.set([{ type: 'line', index, instance }]),
+        onclick: () => selection.set({ type: 'line', index, instance }),
         style: { fontWeight: selected ? 'bold' : '' },
       });
     }

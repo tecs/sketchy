@@ -27,9 +27,9 @@ export default (engine) => {
 
       if (currentStep && enteredInstance) {
         if (hoveredLineIndex !== null) {
-          toggleOrSet([{ type: 'line', index: hoveredLineIndex, instance: enteredInstance }], toggle);
+          toggleOrSet({ type: 'line', index: hoveredLineIndex, instance: enteredInstance }, toggle);
         } else if (hoveredPointIndex !== null) {
-          toggleOrSet([{ type: 'point', index: hoveredPointIndex, instance: enteredInstance }], toggle);
+          toggleOrSet({ type: 'point', index: hoveredPointIndex, instance: enteredInstance }, toggle);
         } else if (!toggle) selection.clear();
         return;
       }
@@ -48,7 +48,7 @@ export default (engine) => {
 
         if (clicked === enteredInstance && !toggle) selection.clear();
         else if (clicked === enteredInstance) return;
-        else if (clickedOwn) toggleOrSet(clicked ? [{ type: 'instance', index: clicked.Id.int, instance: clicked }] : [], toggle);
+        else if (clickedOwn) toggleOrSet(clicked ? { type: 'instance', index: clicked.Id.int, instance: clicked } : [], toggle);
         else if (selectedInstances.length && !toggle) selection.clear();
 
         return;

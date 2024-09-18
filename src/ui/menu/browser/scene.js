@@ -25,7 +25,7 @@ export default (engine, tabs) => {
 
           const { enteredInstance } = scene;
           if (instance !== enteredInstance && SubInstance.belongsTo(instance, enteredInstance)) {
-            selection.set([{ type: 'instance', instance, index: instance.Id.int }]);
+            selection.set({ type: 'instance', instance, index: instance.Id.int });
           }
         },
         style: { fontWeight: instance === currentInstance ? 'bold' : undefined },

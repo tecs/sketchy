@@ -57,9 +57,11 @@ class Collection extends Base {
   }
 
   /**
-   * @param {Elements[]} elements
+   * @param {Elements | Elements[]} elements
    */
   set(elements) {
+    if (!Array.isArray(elements)) elements = [elements];
+
     const oldElements = this.elements;
     this.elements = [];
     for (const element of elements) {
@@ -74,10 +76,11 @@ class Collection extends Base {
   }
 
   /**
-   * @param {Elements[]} elements
+   * @param {Elements | Elements[]} elements
    */
   add(elements) {
-    if (!elements.length) return;
+    if (!Array.isArray(elements)) elements = [elements];
+    else if (!elements.length) return;
 
     let changed = false;
     const oldElements = this.elements.slice();
@@ -93,10 +96,11 @@ class Collection extends Base {
   }
 
   /**
-   * @param {Elements[]} elements
+   * @param {Elements | Elements[]} elements
    */
   remove(elements) {
-    if (!elements.length) return;
+    if (!Array.isArray(elements)) elements = [elements];
+    else if (!elements.length) return;
 
     let changed = false;
     const oldElements = this.elements.slice();
@@ -113,10 +117,12 @@ class Collection extends Base {
   }
 
   /**
-   * @param {Elements[]} elements
+   * @param {Elements | Elements[]} elements
    * @param {boolean} [forceState]
    */
   toggle(elements, forceState) {
+    if (!Array.isArray(elements)) elements = [elements];
+
     elements = elements.filter((v, i, a) =>
       a.findIndex(v2 => v.index === v2.index && v.type === v2.type && v.instance === v2.instance) === i,
     );
