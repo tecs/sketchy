@@ -8,7 +8,8 @@ const { vec3, mat4 } = glMatrix;
  * @typedef LineData
  * @property {Sketch} sketch
  * @property {Line} line
- * @property {number[]} lockedIndices
+ * @property {number | undefined} startIndex
+ * @property {import("../engine/cad/sketch").PointInfo[]} points
  */
 
 /** @type {(engine: Engine) => Tool} */
@@ -24,7 +25,7 @@ export default (engine) => {
   const origin = vec3.create();
   const coord = vec3.create();
 
-  /** @type {Omit<Tool, "start"> & { start: (click?: number, pointIndex?: number) => void }} */
+  /** @type {Omit<Tool, "start"> & { start: (click?: number, startIndex?: number) => void }} */
   const lineTool = {
     type: 'line',
     name: 'Line/Arc',
@@ -52,8 +53,8 @@ export default (engine) => {
 
       this.end();
     },
-    start(_, pointIndex) {
-      released = pointIndex !== undefined;
+    start(_, startIndex) {
+      released = startIndex !== undefined;
       const instance = scene.enteredInstance ?? scene.hoveredInstance ?? scene.currentInstance;
 
       if (!(scene.currentStep instanceof Sketch)) {
@@ -71,21 +72,19 @@ export default (engine) => {
 
       if (!(scene.currentStep instanceof Sketch)) return;
 
-      const lockedIndices = /** @type {number[]} */ ([]);
-
-      if (pointIndex === undefined) {
+      if (startIndex === undefined) {
         mat4.multiply(transformation, instance.Placement.inverseTrs, scene.currentStep.toSketch);
         vec3.transformMat4(origin, scene.hovered, transformation);
         vec3.copy(coord, origin);
       } else {
         vec3.copy(origin, coord);
-        lockedIndices.push(pointIndex);
       }
 
       historyAction = history.createAction('Draw line segment', {
         sketch: scene.currentStep,
         line: Sketch.makeConstructionElement('line', [origin[0], origin[1], coord[0], coord[1]]),
-        lockedIndices,
+        startIndex,
+        points: [],
       }, () => {
         historyAction = undefined;
         active.clear();
@@ -98,24 +97,21 @@ export default (engine) => {
       historyAction.append(
         (data) => {
           data.sketch.addElement(data.line);
-          const points = data.sketch.getPoints(data.line);
-          if (data.lockedIndices.length) {
-            data.sketch.coincident([data.lockedIndices[0], points[0].index]);
+          data.points = data.sketch.getPoints(data.line);
+          const indices = data.points.map(({ index }) => index);
+          if (data.startIndex !== undefined) {
+            data.sketch.coincident([data.startIndex, indices[0]]);
+            indices.push(data.startIndex);
           }
-          data.lockedIndices.push(points[1].index);
 
-          const activeElements = data.lockedIndices.concat(points[0].index)
-            .map(index => ({ type: /** @type {"point" | "line"} */ ('point'), index, instance }));
+          const activeElements = indices.map(index => ({ type: /** @type {"point" | "line"} */ ('point'), index, instance }));
 
           const index = data.sketch.getLineIndex(data.line);
           if (index !== null) activeElements.push({ type: 'line', index, instance });
 
           active.set(activeElements);
         },
-        (data) => {
-          data.sketch.deleteElement(data.line);
-          data.lockedIndices = [];
-        },
+        (data) => data.sketch.deleteElement(data.line),
       );
     },
     update() {
@@ -135,9 +131,9 @@ export default (engine) => {
       released = true;
       if (tooShort) return;
 
-      const lastPointIndex = historyAction.data.lockedIndices.at(-1);
+      const { data } = historyAction;
       historyAction.commit();
-      this.start(1, lastPointIndex);
+      this.start(1, data.points[1].index);
     },
     abort() {
       if (engine.tools.selected?.type === 'orbit') return;
