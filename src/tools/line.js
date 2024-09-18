@@ -9,6 +9,8 @@ const { vec3, mat4 } = glMatrix;
  * @property {Sketch} sketch
  * @property {Line} line
  * @property {number | undefined} startIndex
+ * @property {number | undefined} endIndex
+ * @property {Instance} instance
  * @property {import("../engine/cad/sketch").PointInfo[]} points
  */
 
@@ -88,6 +90,8 @@ export default (engine) => {
         sketch: scene.currentStep,
         line: Sketch.makeConstructionElement('line', [origin[0], origin[1], coord[0], coord[1]]),
         startIndex,
+        endIndex: undefined,
+        instance,
         points: [],
       }, () => {
         historyAction = undefined;
@@ -136,8 +140,20 @@ export default (engine) => {
       if (tooShort) return;
 
       const { data } = historyAction;
+      const { hoveredPointIndex, hoveredInstance } = scene;
+
+      if (hoveredInstance === data.instance && hoveredPointIndex !== null && data.sketch.hasPoint(hoveredPointIndex)) {
+        data.endIndex = hoveredPointIndex;
+        historyAction.append(({ endIndex, sketch, points }) => {
+          if (endIndex !== undefined) {
+            sketch.coincident([points[1].index, endIndex]);
+          }
+        }, () => {});
+      }
+      const { endIndex } = historyAction.data;
+
       historyAction.commit();
-      this.start(1, data.points[1].index);
+      if (endIndex === undefined) this.start(1, data.points[1].index);
     },
     abort() {
       if (engine.tools.selected?.type === 'orbit') return;
