@@ -80,6 +80,10 @@ export default (engine) => {
         vec3.copy(origin, coord);
       }
 
+      if (instance === scene.hoveredInstance && scene.hoveredPointIndex !== null) {
+        startIndex ??= scene.hoveredPointIndex;
+      }
+
       historyAction = history.createAction('Draw line segment', {
         sketch: scene.currentStep,
         line: Sketch.makeConstructionElement('line', [origin[0], origin[1], coord[0], coord[1]]),
