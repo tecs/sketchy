@@ -1,11 +1,29 @@
 import Body from '../engine/cad/body.js';
+import SubInstance from '../engine/cad/subinstance.js';
 import Id from '../engine/general/id.js';
+
+/**
+ * @param {Instance[]} instances
+ * @param {Instance[]} [instancesToFindChildrenOf]
+ */
+const populateChildren = (instances, instancesToFindChildrenOf = instances) => {
+  const children = [];
+  for (const instance of instancesToFindChildrenOf) {
+    children.push(...SubInstance.getChildren(instance));
+  }
+
+  if (children.length) {
+    instances.push(...children);
+    populateChildren(instances, children);
+  }
+};
 
 /** @type {RenderingPass} */
 export default (engine) => {
   const {
     driver: { ctx, makeProgram, vert, frag, UNSIGNED_INDEX_TYPE, UNSIGNED_INDEX_SIZE },
     camera,
+    editor,
     entities,
     scene,
     tools,
@@ -62,13 +80,12 @@ export default (engine) => {
       ctx.bindFramebuffer(ctx.FRAMEBUFFER, framebuffer);
       ctx.clear(ctx.COLOR_BUFFER_BIT | ctx.DEPTH_BUFFER_BIT);
 
-      const { currentModel } = scene.currentInstance.body;
-      const drawing = tools.isActive('line', 'rectangle', 'move');
+      const activeInstances = editor.edited.getByType('instance').map(({ instance }) => instance);
+      populateChildren(activeInstances);
 
       const bodies = entities.values(Body);
       for (const { currentModel: model, instances } of bodies) {
-        // Prevent self-picking when editing
-        if (!model || (drawing && currentModel === model)) continue;
+        if (!model) continue;
 
         ctx.bindBuffer(ctx.ELEMENT_ARRAY_BUFFER, model.buffer.index);
 
@@ -81,6 +98,9 @@ export default (engine) => {
         // Geometry
         ctx.uniform1f(program.uLoc.u_offset, 0);
         for (const instance of instances) {
+          // Prevent self-picking when editing
+          if (activeInstances.includes(instance)) continue;
+
           ctx.uniformMatrix4fv(program.uLoc.u_trs, false, instance.Placement.trs);
           ctx.uniform4fv(program.uLoc.u_instanceId, instance.Id.vec4);
 
@@ -92,6 +112,9 @@ export default (engine) => {
         ctx.bindBuffer(ctx.ELEMENT_ARRAY_BUFFER, model.buffer.lineIndex);
         ctx.lineWidth(5);
         for (const instance of instances) {
+          // Prevent self-picking when editing
+          if (activeInstances.includes(instance)) continue;
+
           ctx.uniformMatrix4fv(program.uLoc.u_trs, false, instance.Placement.trs);
           ctx.uniform4fv(program.uLoc.u_instanceId, instance.Id.vec4);
 
@@ -102,6 +125,9 @@ export default (engine) => {
         // Points
         ctx.uniform1f(program.uLoc.u_offset, 2);
         for (const instance of instances) {
+          // Prevent self-picking when editing
+          if (activeInstances.includes(instance)) continue;
+
           ctx.uniformMatrix4fv(program.uLoc.u_trs, false, instance.Placement.trs);
           ctx.uniform4fv(program.uLoc.u_instanceId, instance.Id.vec4);
 
@@ -114,7 +140,11 @@ export default (engine) => {
 
       const instance = scene.hoveredInstance;
       const model = instance?.body.currentModel;
-      if (!model || drawing) return;
+      if (!model) return;
+
+      const activePoints = editor.edited.getByType('point')
+        .filter(el => el.instance === instance)
+        .map(({ index }) => index);
 
       ctx.clear(ctx.COLOR_BUFFER_BIT | ctx.DEPTH_BUFFER_BIT);
 
@@ -146,13 +176,20 @@ export default (engine) => {
       ctx.uniform1f(program.uLoc.u_offset, 2);
 
       for (let i = 0; i < model.data.vertex.length / 3; ++i) {
-        ctx.uniform4fv(program.uLoc.u_instanceId, Id.intToVec4(i + 1));
-        ctx.drawArrays(ctx.POINTS, i, 1);
+        // Prevent self-picking when editing
+        if (!activePoints.includes(i)) {
+          ctx.uniform4fv(program.uLoc.u_instanceId, Id.intToVec4(i + 1));
+          ctx.drawArrays(ctx.POINTS, i, 1);
+        }
       }
 
       ctx.readPixels(0, 0, 1, 1, ctx.RGBA, ctx.UNSIGNED_BYTE, readData);
       scene.hoverPoint(readData);
       if (scene.hoveredPointIndex !== null) return;
+
+      const activeLines = editor.edited.getByType('line')
+        .filter(el => el.instance === instance)
+        .map(({ index }) => index);
 
       ctx.clear(ctx.COLOR_BUFFER_BIT | ctx.DEPTH_BUFFER_BIT);
 
@@ -171,8 +208,11 @@ export default (engine) => {
 
       ctx.lineWidth(5);
       for (let i = 0; i < model.data.lineIndex.length / 2; ++i) {
-        ctx.uniform4fv(program.uLoc.u_instanceId, Id.intToVec4(i + 1));
-        ctx.drawElements(ctx.LINES, 2, UNSIGNED_INDEX_TYPE, i * UNSIGNED_INDEX_SIZE);
+        // Prevent self-picking when editing
+        if (!activeLines.includes(i)) {
+          ctx.uniform4fv(program.uLoc.u_instanceId, Id.intToVec4(i + 1));
+          ctx.drawElements(ctx.LINES, 2, UNSIGNED_INDEX_TYPE, i * UNSIGNED_INDEX_SIZE);
+        }
       }
       ctx.lineWidth(1);
 
