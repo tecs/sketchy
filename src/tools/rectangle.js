@@ -10,6 +10,10 @@ const { vec2, vec3, mat4 } = glMatrix;
  * @property {import("../engine/cad/sketch.js").LineConstructionElement} lineCoordVertical
  * @property {import("../engine/cad/sketch.js").LineConstructionElement} lineCoordHorizontal
  * @property {number[]} lockedIndices
+ * @property {number | undefined} startIndex
+ * @property {number | undefined} endIndex
+ * @property {Instance} instance
+ * @property {import("../engine/cad/sketch").PointInfo[]} points
  */
 
 /** @type {(engine: Engine) => Tool} */
@@ -78,7 +82,8 @@ export default (engine) => {
     },
     start() {
       released = false;
-      const instance = scene.enteredInstance ?? scene.hoveredInstance ?? scene.currentInstance;
+      const { enteredInstance, hoveredInstance, currentInstance, hoveredPointIndex } = scene;
+      const instance = enteredInstance ?? hoveredInstance ?? currentInstance;
       if (!(scene.currentStep instanceof Sketch)) {
         const normal = vec3.create();
         vec3.transformQuat(normal, scene.axisNormal, instance.Placement.inverseRotation);
@@ -98,6 +103,11 @@ export default (engine) => {
       vec3.transformMat4(origin, scene.hovered, transformation);
       vec3.copy(coord, origin);
 
+      let startingIndex = undefined;
+      if (hoveredInstance === instance && hoveredPointIndex !== null && scene.currentStep.hasPoint(hoveredPointIndex)) {
+        startingIndex = hoveredPointIndex;
+      }
+
       historyAction = history.createAction('Draw rectangle', {
         sketch: scene.currentStep,
         lineOriginHorizontal: Sketch.makeConstructionElement('line', [origin[0], origin[1], coord[0], origin[1]]),
@@ -105,6 +115,10 @@ export default (engine) => {
         lineCoordHorizontal:  Sketch.makeConstructionElement('line', [origin[0], coord[1], coord[0], coord[1]]),
         lineCoordVertical:    Sketch.makeConstructionElement('line', [coord[0], origin[1], coord[0], coord[1]]),
         lockedIndices: [],
+        startIndex: startingIndex,
+        endIndex: undefined,
+        instance,
+        points: [],
       }, () => {
         historyAction = undefined;
         active.clear();
@@ -122,6 +136,8 @@ export default (engine) => {
           lineOriginHorizontal,
           lineOriginVertical,
           lockedIndices,
+          startIndex,
+          points,
         }) => {
           sketch.addElement(lineOriginHorizontal);
           sketch.addElement(lineOriginVertical);
@@ -132,6 +148,8 @@ export default (engine) => {
           const pointOriginVertical = sketch.getPoints(lineOriginVertical);
           const pointCoordHorizontal = sketch.getPoints(lineCoordHorizontal);
           const pointCoordVertical = sketch.getPoints(lineCoordVertical);
+
+          points[0] = pointCoordHorizontal[1];
 
           sketch.coincident([pointOriginHorizontal[0].index, pointOriginVertical[0].index]);
           sketch.coincident([pointOriginHorizontal[1].index, pointCoordVertical[0].index]);
@@ -158,6 +176,11 @@ export default (engine) => {
             const index = sketch.getLineIndex(el);
             return index !== null ? { type, index, instance } : [];
           }));
+
+          if (startIndex !== undefined) {
+            sketch.coincident([startIndex, pointOriginHorizontal[0].index]);
+            active.add({ type: 'point', index: startIndex, instance });
+          }
         },
         (data) => {
           data.sketch.deleteElement(data.lineOriginHorizontal);
@@ -199,6 +222,18 @@ export default (engine) => {
       const tooShort = !released && !this.distance?.every(v => v >= 0.1);
       released = true;
       if (tooShort) return;
+
+      const { data } = historyAction;
+      const { hoveredPointIndex, hoveredInstance } = scene;
+
+      if (hoveredInstance === data.instance && hoveredPointIndex !== null && data.sketch.hasPoint(hoveredPointIndex)) {
+        data.endIndex = hoveredPointIndex;
+        historyAction.append(({ endIndex, sketch, points }) => {
+          if (endIndex !== undefined) {
+            sketch.coincident([points[0].index, endIndex]);
+          }
+        }, () => {});
+      }
 
       historyAction.commit();
     },
