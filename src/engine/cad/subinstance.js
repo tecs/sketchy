@@ -78,7 +78,7 @@ export default class SubInstance extends /** @type {typeof Step<SubInstanceState
       instance.Placement.set(transform);
     }
 
-    for (const child of this.#getChildren(instance)) this.#recalculateGlobalTrsOnly(child);
+    for (const child of this.getChildren(instance)) this.#recalculateGlobalTrsOnly(child);
   }
 
   /**
@@ -93,7 +93,7 @@ export default class SubInstance extends /** @type {typeof Step<SubInstanceState
    * @param {MaybeParentInstance} instance
    * @returns {ChildInstance[]}
    */
-  static #getChildren(instance) {
+  static getChildren(instance) {
     return instance._subInstanceChildren ?? [];
   }
 
@@ -156,7 +156,7 @@ export default class SubInstance extends /** @type {typeof Step<SubInstanceState
     engine.on('entityremoved', instance => {
       if (!(instance instanceof Instance)) return;
 
-      for (const child of this.#getChildren(instance)) {
+      for (const child of this.getChildren(instance)) {
         child.body.uninstantiate(child);
       }
     });
