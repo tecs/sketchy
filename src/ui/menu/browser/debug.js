@@ -52,7 +52,7 @@ export default (engine, tabs) => {
   const config = engine.config.createBoolean('advanced.debug', 'Show debug information', 'toggle', false);
 
   const tab = tabs.addTab('Debug', { expandParent: true });
-  tab.hide();
+  if (!config.value) tab.hide();
 
   const coordsFns = Object.entries({
     'World offset': () => [...vec3.rotateY(tempD, vec3.rotateX(tempD, mat4.getTranslation(tempD, camera.world), vZ, -camera.pitch), vZ, -camera.yaw)],
