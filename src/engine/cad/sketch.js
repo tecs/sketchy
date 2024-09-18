@@ -162,13 +162,12 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
 
         const value = selected.find(([,, d]) => d)?.[2] ?? vec2.distance(selected[0][0].vec2, selected[0][1].vec2);
 
-        engine.emit('propertyrequest', { type: 'distance', value });
-        engine.on('propertyresponse', (property) => {
-          if (property?.type !== 'distance' || property.value <= 0) return;
+        engine.emit('propertyrequest', { type: 'distance', value }, /** @param {number} newValue */ (newValue) => {
+          if (newValue <= 0) return;
           for (const [p1, p2] of selected) {
-            sketch.distance(property.value, [p1.index, p2.index]);
+            sketch.distance(newValue, [p1.index, p2.index]);
           }
-        }, true);
+        });
       } else if (keyCombo === coincidentKey.value) {
         const points = selection.getByType('point').map(({ index }) => index);
 

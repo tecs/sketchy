@@ -40,12 +40,14 @@ export default (engine, tabs) => {
       table.addRow(`${i + 1}`, constraint.type, constraint.data !== null ? stringifyDistance(constraint.data, 3) : '').$element({
         onclick: ({ detail }) => {
           if (detail !== 2 || constraint.type === 'coincident') return;
-          engine.emit('propertyrequest', { type: constraint.type, value: constraint.data });
-          engine.on('propertyresponse', (property) => {
-            if (property?.type !== 'distance' || property.value <= 0) return;
-            constraint.data = property.value;
+          engine.emit('propertyrequest', {
+            type: constraint.type,
+            value: constraint.data,
+          }, /** @param {number} value */ (value) => {
+            if (value <= 0) return;
+            constraint.data = value;
             sketch.update();
-          }, true);
+          });
         },
         style: { fontWeight: selected ? 'bold' : '' },
       });

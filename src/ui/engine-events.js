@@ -9,20 +9,12 @@ export default (engine, container) => {
   // eslint-disable-next-line no-console
   engine.on('error', console.error);
 
-  engine.on('propertyrequest', (property) => {
-    /**
-     * @param {typeof property} [prop]
-     */
-    let send = (prop) => {
-      send = () => {};
-      engine.emit('propertyresponse', prop);
-    };
-
-    const window = container.addWindow('Value', () => send());
+  engine.on('propertyrequest', (property, callback) => {
+    const window = container.addWindow('Value');
 
     const submit = () => {
       property.value = typifyString(input.value, property);
-      send(property);
+      /** @type {(value: typeof property["value"]) => void} */ (callback)(property.value);
       window.remove();
     };
 
