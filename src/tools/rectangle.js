@@ -55,7 +55,7 @@ export default (engine) => {
       return [d1, d2];
     },
     setDistance([d1, d2]) {
-      if (!historyAction) return;
+      if (!historyAction || d1 <= 0 || d2 <= 0) return;
 
       const { sketch, lineCoordHorizontal, lockedIndices } = historyAction.data;
 

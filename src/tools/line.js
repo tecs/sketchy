@@ -42,7 +42,7 @@ export default (engine) => {
       return historyAction ? [vec3.distance(origin, coord)] : undefined;
     },
     setDistance([distance]) {
-      if (!historyAction) return;
+      if (!historyAction || distance <= 0) return;
       const { sketch, line } = historyAction.data;
 
       vec3.subtract(coord, origin, coord);
