@@ -59,19 +59,19 @@ export default (engine) => {
 
       const { sketch, lineCoordHorizontal, lockedIndices } = historyAction.data;
 
-      coord[0] = origin[0] + (coord[0] > 0 ? d1 : -d1);
-      coord[1] = origin[1] + (coord[1] > 0 ? d2 : -d2);
+      coord[0] = origin[0] + (coord[0] > origin[0] ? d1 : -d1);
+      coord[1] = origin[1] + (coord[1] > origin[1] ? d2 : -d2);
 
       lineCoordHorizontal.data[2] = coord[0];
       lineCoordHorizontal.data[3] = coord[1];
+
+      sketch.update(lockedIndices);
 
       historyAction.data.length = [d1, d2];
       historyAction.append((data) => {
         data.sketch.distance(data.length[0], data.lineOriginHorizontal);
         data.sketch.distance(data.length[1], data.lineOriginVertical);
       }, () => {});
-
-      sketch.update(lockedIndices);
 
       this.end();
     },
