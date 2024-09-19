@@ -135,10 +135,10 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
 
     const { editor: { selection }, scene, history, config } = engine;
 
-    const distanceKey = config.createString('sketch.distance', 'Sketch constraint: distance', 'key', 'd');
-    const coincidentKey = config.createString('sketch.coincident', 'Sketch constraint: coincident point', 'key', 'c');
-    const horizontalKey = config.createString('sketch.horizontal', 'Sketch constraint: horizontal', 'key', 'h');
-    const verticalKey = config.createString('sketch.vertical', 'Sketch constraint: vertical', 'key', 'v');
+    const distanceKey = config.createString('shortcuts.sketch.distance', 'Sketch constraint: distance', 'key', 'd');
+    const coincidentKey = config.createString('shortcuts.sketch.coincident', 'Sketch constraint: coincident point', 'key', 'c');
+    const horizontalKey = config.createString('shortcuts.sketch.horizontal', 'Sketch constraint: horizontal', 'key', 'h');
+    const verticalKey = config.createString('shortcuts.sketch.vertical', 'Sketch constraint: vertical', 'key', 'v');
 
     engine.on('keydown', (_, keyCombo) => {
       const sketch = scene.currentStep ?? scene.enteredInstance?.body.step;
