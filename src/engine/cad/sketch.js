@@ -186,18 +186,13 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
           };
 
           const points = selection.getByType('point').map(({ index }) => index);
-
-          for (let i = 0; i < points.length; ++i) {
-            for (let k = i + 1; k < points.length; ++k) {
-              const p1 = sketch.getPointInfo(points[i]);
-              const p2 = sketch.getPointInfo(points[k]);
-              if (p1 && p2 && !selected.find(
-                ([pp1, pp2]) => (pp1 === p1 && pp2 === p2) || (pp1 === p2 && pp2 === p1),
-              )) {
-                selected.push([p1, p2, sketch.getConstraintsForPoints([p1.index, p2.index], 'distance').pop()?.data]);
-              }
+          forAllUniquePairs(points, (indices) => {
+            const p1 = sketch.getPointInfo(indices[0]);
+            const p2 = sketch.getPointInfo(indices[1]);
+            if (p1 && p2 && !selected.find(([pp1, pp2]) => (pp1 === p1 && pp2 === p2) || (pp1 === p2 && pp2 === p1))) {
+              selected.push([p1, p2, sketch.getConstraintsForPoints(indices, 'distance').pop()?.data]);
             }
-          }
+          });
 
           if (!selected.length) return;
 
@@ -382,10 +377,11 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
 
     do {
       iteration++;
+      solved = true;
 
       for (const constraint of this.data.constraints) {
         const [p1, p2] = constraint.indices.map(index => this.getPointInfo(index));
-        if (!p1 || !p2) break;
+        if (!p1 || !p2) continue;
         const v1 = p1.vec2;
         const v2 = p2.vec2;
         const el1 = p1.element;
@@ -393,35 +389,55 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
 
         const v1Locked = lockedIndices.includes(p1.index);
         const v2Locked = lockedIndices.includes(p2.index);
+        if (v1Locked && v2Locked) continue;
+
+        const incrementScale = (v1Locked || v2Locked ? 0.5 : 0.25);
 
         switch (constraint.type) {
           case 'distance': {
-            if (v1Locked && v2Locked) break;
-
             const distance = vec2.distance(v1, v2);
             if (equals(distance, constraint.data)) break;
 
             solved = false;
             vec2.subtract(tempVec2, v1, v2);
             vec2.normalize(tempVec2, tempVec2);
-            vec2.scale(tempVec2, tempVec2, (constraint.data - distance) * (v1Locked || v2Locked ? 0.5 : 0.25));
+            vec2.scale(tempVec2, tempVec2, (constraint.data - distance) * incrementScale);
 
             if (!v1Locked) vec2.add(v1, v1, tempVec2);
             if (!v2Locked) vec2.subtract(v2, v2, tempVec2);
             break;
           }
-          case 'coincident':
-            if (v1Locked) vec2.copy(v2, v1);
-            else vec2.copy(v1, v2);
+          case 'coincident': {
+            if (vec2.equals(v1, v2)) break;
+            solved = false;
+
+            vec2.subtract(tempVec2, v1, v2);
+            vec2.scale(tempVec2, tempVec2, incrementScale);
+
+            if (!v1Locked) vec2.subtract(v1, v1, tempVec2);
+            if (!v2Locked) vec2.add(v2, v2, tempVec2);
             break;
-          case 'horizontal':
-            if (v1Locked) v2[1] = v1[1];
-            else v1[1] = v2[1];
+          }
+          case 'horizontal': {
+            if (v1[1] === v2[1]) break;
+            solved = false;
+
+            const diff = (v1[1] - v2[1]) * incrementScale;
+
+            if (!v1Locked) v1[1] -= diff;
+            if (!v2Locked) v2[1] += diff;
             break;
-          case 'vertical':
-            if (v1Locked) v2[0] = v1[0];
-            else v1[0] = v2[0];
+          }
+          case 'vertical': {
+            if (v1[0] === v2[0]) break;
+            solved = false;
+
+            const diff = (v1[0] - v2[0]) * incrementScale;
+
+            if (!v1Locked) v1[0] -= diff;
+            if (!v2Locked) v2[0] += diff;
             break;
+          }
         }
         el1.data[p1.offset] = v1[0];
         el1.data[p1.offset + 1] = v1[1];
