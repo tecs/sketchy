@@ -8,6 +8,7 @@ const { vec3, mat4 } = glMatrix;
  * @typedef LineData
  * @property {Sketch} sketch
  * @property {Line} line
+ * @property {number} length
  * @property {number | undefined} startIndex
  * @property {number | undefined} endIndex
  * @property {Instance} instance
@@ -51,6 +52,10 @@ export default (engine) => {
 
       line.data[2] = coord[0];
       line.data[3] = coord[1];
+
+      historyAction.data.length = distance;
+      historyAction.append((data) => data.sketch.distance(data.length, data.line), () => {});
+
       sketch.update();
 
       this.end();
@@ -89,6 +94,7 @@ export default (engine) => {
       historyAction = history.createAction('Draw line segment', {
         sketch: scene.currentStep,
         line: Sketch.makeConstructionElement('line', [origin[0], origin[1], coord[0], coord[1]]),
+        length: 0,
         startIndex,
         endIndex: undefined,
         instance,

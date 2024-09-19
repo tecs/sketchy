@@ -10,6 +10,7 @@ const { vec2, vec3, mat4 } = glMatrix;
  * @property {import("../engine/cad/sketch.js").LineConstructionElement} lineCoordVertical
  * @property {import("../engine/cad/sketch.js").LineConstructionElement} lineCoordHorizontal
  * @property {number[]} lockedIndices
+ * @property {[number, number]} length
  * @property {number | undefined} startIndex
  * @property {number | undefined} endIndex
  * @property {Instance} instance
@@ -64,6 +65,12 @@ export default (engine) => {
       lineCoordHorizontal.data[2] = coord[0];
       lineCoordHorizontal.data[3] = coord[1];
 
+      historyAction.data.length = [d1, d2];
+      historyAction.append((data) => {
+        data.sketch.distance(data.length[0], data.lineOriginHorizontal);
+        data.sketch.distance(data.length[1], data.lineOriginVertical);
+      }, () => {});
+
       sketch.update(lockedIndices);
 
       this.end();
@@ -103,6 +110,7 @@ export default (engine) => {
         lineCoordHorizontal:  Sketch.makeConstructionElement('line', [origin[0], coord[1], coord[0], coord[1]]),
         lineCoordVertical:    Sketch.makeConstructionElement('line', [coord[0], origin[1], coord[0], coord[1]]),
         lockedIndices: [],
+        length: [0, 0],
         startIndex: startingIndex,
         endIndex: undefined,
         instance,
