@@ -56,25 +56,13 @@ export default (engine) => {
     setDistance([d1, d2]) {
       if (!historyAction) return;
 
-      const {
-        sketch,
-        lineCoordHorizontal,
-        lineCoordVertical,
-        lineOriginHorizontal,
-        lineOriginVertical,
-        lockedIndices,
-      } = historyAction.data;
+      const { sketch, lineCoordHorizontal, lockedIndices } = historyAction.data;
 
       coord[0] = origin[0] + (coord[0] > 0 ? d1 : -d1);
       coord[1] = origin[1] + (coord[1] > 0 ? d2 : -d2);
 
-      lineCoordVertical.data[0] = coord[0];
       lineCoordHorizontal.data[2] = coord[0];
-      lineOriginHorizontal.data[2] = coord[0];
-
-      lineCoordHorizontal.data[1] = coord[1];
       lineCoordHorizontal.data[3] = coord[1];
-      lineOriginVertical.data[3] = coord[1];
 
       sketch.update(lockedIndices);
 
@@ -156,6 +144,11 @@ export default (engine) => {
           sketch.coincident([pointCoordHorizontal[0].index, pointOriginVertical[1].index]);
           sketch.coincident([pointCoordHorizontal[1].index, pointCoordVertical[1].index]);
 
+          sketch.horizontal(lineOriginHorizontal);
+          sketch.horizontal(lineCoordHorizontal);
+          sketch.vertical(lineOriginVertical);
+          sketch.vertical(lineCoordVertical);
+
           lockedIndices.push(pointOriginHorizontal[0].index, pointCoordHorizontal[1].index);
 
           active.set([
@@ -195,24 +188,12 @@ export default (engine) => {
     update() {
       if (!historyAction) return;
 
-      const {
-        sketch,
-        lineCoordHorizontal,
-        lineCoordVertical,
-        lineOriginHorizontal,
-        lineOriginVertical,
-        lockedIndices,
-      } = historyAction.data;
+      const { sketch, lineCoordHorizontal, lockedIndices } = historyAction.data;
 
       vec3.transformMat4(coord, scene.hovered, transformation);
 
-      lineCoordVertical.data[0] = coord[0];
       lineCoordHorizontal.data[2] = coord[0];
-      lineOriginHorizontal.data[2] = coord[0];
-
-      lineCoordHorizontal.data[1] = coord[1];
       lineCoordHorizontal.data[3] = coord[1];
-      lineOriginVertical.data[3] = coord[1];
 
       sketch.update(lockedIndices);
     },
