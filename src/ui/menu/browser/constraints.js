@@ -39,7 +39,7 @@ export default (engine, tabs) => {
 
       table.addRow(`${i + 1}`, constraint.type, constraint.data !== null ? stringifyDistance(constraint.data, 3) : '').$element({
         onclick: ({ detail }) => {
-          if (detail !== 2 || constraint.type === 'coincident') return;
+          if (detail !== 2 || constraint.type !== 'distance') return;
           engine.emit('propertyrequest', {
             type: constraint.type,
             value: constraint.data,

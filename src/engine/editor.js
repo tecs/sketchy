@@ -21,7 +21,7 @@ import SubInstance from './cad/subinstance.js';
 /**
  * @augments Base<Changed>
  */
-class Collection extends Base {
+export class Collection extends Base {
   /** @type {Elements[]} */
   elements = [];
 

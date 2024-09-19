@@ -29,7 +29,9 @@ const { glMatrix: { equals }, vec2, vec3, mat4, quat } = glMatrix;
 
 /** @typedef {Constraint<"distance", 2, number>} DistanceConstraint */
 /** @typedef {Constraint<"coincident", 2, null>} CoincidentConstraint */
-/** @typedef {DistanceConstraint|CoincidentConstraint} Constraints */
+/** @typedef {Constraint<"horizontal", 2, null>} HorizontalConstraint */
+/** @typedef {Constraint<"vertical", 2, null>} VerticalConstraint */
+/** @typedef {DistanceConstraint|CoincidentConstraint|HorizontalConstraint|VerticalConstraint} Constraints */
 
 /**
  * @typedef PointInfo
@@ -62,6 +64,36 @@ const tempVec2 = vec2.create();
 const forward = vec3.fromValues(0, 0, 1);
 const rotation = quat.create();
 const tempVertex = vec3.create();
+
+/**
+ * @template T
+ * @param {T[]} collection
+ * @param {(pair: [T, T]) => void} fn
+ */
+const forAllUniquePairs = (collection, fn) => {
+  collection = collection.filter((v, i, a) => a.indexOf(v) === i);
+  for (let i = 0; i < collection.length; ++i) {
+    for (let k = i + 1; k < collection.length; ++k) {
+      fn([collection[i], collection[k]]);
+    }
+  }
+};
+
+/**
+ * @param {import("../editor.js").Collection} selection
+ * @param {Sketch} sketch
+ * @returns {number[]}
+ */
+const extractSelectionPoints = (selection, sketch) => selection.elements.flatMap(({ type, index }) => {
+  switch (type) {
+    case 'point': return index;
+    case 'line': {
+      const line = sketch.getLine(index);
+      return line ? sketch.getLineIndices(line) ?? [] : [];
+    }
+  }
+  return [];
+});
 
 export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Step) {
   normal = vec3.create();
@@ -105,76 +137,95 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
 
     const distanceKey = config.createString('sketch.distance', 'Sketch constraint: distance', 'key', 'd');
     const coincidentKey = config.createString('sketch.coincident', 'Sketch constraint: coincident point', 'key', 'c');
+    const horizontalKey = config.createString('sketch.horizontal', 'Sketch constraint: horizontal', 'key', 'h');
+    const verticalKey = config.createString('sketch.vertical', 'Sketch constraint: vertical', 'key', 'v');
 
     engine.on('keydown', (_, keyCombo) => {
       const sketch = scene.currentStep ?? scene.enteredInstance?.body.step;
       if (!(sketch instanceof Sketch)) return;
 
-      if (keyCombo === 'delete') {
-        const elements = selection.elements.filter(el => el.type === 'line' || el.type === 'point');
-        const lines = elements.reduce((out, { type, index }) => {
-          const line = type === 'line' ? sketch.getLine(index) : sketch.getLineForPoint(index)?.[0];
-          if (line && !out.includes(line)) {
-            out.push(line);
-          }
-          return out;
-        }, /** @type {LineConstructionElement[]} */ ([]));
+      switch (keyCombo) {
+        case 'delete': {
+          const elements = selection.elements.filter(el => el.type === 'line' || el.type === 'point');
+          const lines = elements.reduce((out, { type, index }) => {
+            const line = type === 'line' ? sketch.getLine(index) : sketch.getLineForPoint(index)?.[0];
+            if (line && !out.includes(line)) {
+              out.push(line);
+            }
+            return out;
+          }, /** @type {LineConstructionElement[]} */ ([]));
 
-        if (!lines.length) return;
+          if (!lines.length) return;
 
-        const action = history.createAction(`Delete line from Sketch ${sketch.name}`, {});
-        if (!action) return;
+          const action = history.createAction(`Delete line from Sketch ${sketch.name}`, {});
+          if (!action) return;
 
-        action.append(
-          () => {
-            lines.forEach(line => sketch.deleteElement(line));
-            selection.remove(elements);
-          },
-          () => {
-            lines.forEach(line => sketch.addElement(line));
-            selection.add(elements);
-          },
-        );
-        action.commit();
-      } else if (keyCombo === distanceKey.value) {
-        const selected = /** @type {[PointInfo, PointInfo, number?][]} */ ([]);
-        for (const { index } of selection.elements) {
-          const line = sketch.getLine(index);
-          const [p1, p2] = line ? sketch.getPoints(line) : [];
-          if (p1 && p2) {
-            selected.push([p1, p2, sketch.getConstraintsForPoints([p1.index, p2.index], 'distance').pop()?.data]);
-          }
-        };
+          action.append(
+            () => {
+              lines.forEach(line => sketch.deleteElement(line));
+              selection.remove(elements);
+            },
+            () => {
+              lines.forEach(line => sketch.addElement(line));
+              selection.add(elements);
+            },
+          );
+          action.commit();
 
-        const points = selection.getByType('point').map(({ index }) => index);
-
-        for (let i = 0; i < points.length; ++i) {
-          for (let k = i + 1; k < points.length; ++k) {
-            const p1 = sketch.getPointInfo(points[i]);
-            const p2 = sketch.getPointInfo(points[k]);
-            if (p1 && p2 && !selected.find(([pp1, pp2]) => (pp1 === p1 && pp2 === p2) || (pp1 === p2 && pp2 === p1))) {
+          break;
+        }
+        case distanceKey.value: {
+          const selected = /** @type {[PointInfo, PointInfo, number?][]} */ ([]);
+          const lines = selection.getByType('line').map(({ index }) => index);
+          for (const index of lines) {
+            const line = sketch.getLine(index);
+            const [p1, p2] = line ? sketch.getPoints(line) : [];
+            if (p1 && p2) {
               selected.push([p1, p2, sketch.getConstraintsForPoints([p1.index, p2.index], 'distance').pop()?.data]);
             }
+          };
+
+          const points = selection.getByType('point').map(({ index }) => index);
+
+          for (let i = 0; i < points.length; ++i) {
+            for (let k = i + 1; k < points.length; ++k) {
+              const p1 = sketch.getPointInfo(points[i]);
+              const p2 = sketch.getPointInfo(points[k]);
+              if (p1 && p2 && !selected.find(
+                ([pp1, pp2]) => (pp1 === p1 && pp2 === p2) || (pp1 === p2 && pp2 === p1),
+              )) {
+                selected.push([p1, p2, sketch.getConstraintsForPoints([p1.index, p2.index], 'distance').pop()?.data]);
+              }
+            }
           }
+
+          if (!selected.length) return;
+
+          const value = selected.find(([,, d]) => d)?.[2] ?? vec2.distance(selected[0][0].vec2, selected[0][1].vec2);
+
+          engine.emit('propertyrequest', { type: 'distance', value }, /** @param {number} newValue */ (newValue) => {
+            if (newValue <= 0) return;
+            for (const [p1, p2] of selected) {
+              sketch.distance(newValue, [p1.index, p2.index]);
+            }
+          });
+
+          break;
         }
-
-        if (!selected.length) return;
-
-        const value = selected.find(([,, d]) => d)?.[2] ?? vec2.distance(selected[0][0].vec2, selected[0][1].vec2);
-
-        engine.emit('propertyrequest', { type: 'distance', value }, /** @param {number} newValue */ (newValue) => {
-          if (newValue <= 0) return;
-          for (const [p1, p2] of selected) {
-            sketch.distance(newValue, [p1.index, p2.index]);
-          }
-        });
-      } else if (keyCombo === coincidentKey.value) {
-        const points = selection.getByType('point').map(({ index }) => index);
-
-        for (let i = 0; i < points.length; ++i) {
-          for (let k = i + 1; k < points.length; ++k) {
-            sketch.coincident([points[i], points[k]]);
-          }
+        case coincidentKey.value: {
+          const points = selection.getByType('point').map(({ index }) => index);
+          forAllUniquePairs(points, indices => sketch.coincident(indices));
+          break;
+        }
+        case horizontalKey.value: {
+          const points = extractSelectionPoints(selection, sketch);
+          forAllUniquePairs(points, indices => sketch.horizontal(indices));
+          break;
+        }
+        case verticalKey.value: {
+          const points = extractSelectionPoints(selection, sketch);
+          forAllUniquePairs(points, indices => sketch.vertical(indices));
+          break;
         }
       }
     });
@@ -227,6 +278,8 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
     switch (type) {
       case 'distance':
       case 'coincident':
+      case 'horizontal':
+      case 'vertical':
         return /** @type {T} */ ({ type, indices, data });
       default:
         throw new Error(`Unknown constraint type "${type}"`);
@@ -361,6 +414,14 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
             if (v1Locked) vec2.copy(v2, v1);
             else vec2.copy(v1, v2);
             break;
+          case 'horizontal':
+            if (v1Locked) v2[1] = v1[1];
+            else v1[1] = v2[1];
+            break;
+          case 'vertical':
+            if (v1Locked) v2[0] = v1[0];
+            else v1[0] = v2[0];
+            break;
         }
         el1.data[p1.offset] = v1[0];
         el1.data[p1.offset + 1] = v1[1];
@@ -444,14 +505,11 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
    */
   distance(length, lineOrIndices) {
     if (!Array.isArray(lineOrIndices)) {
-      const index = this.data.elements.indexOf(lineOrIndices);
-      if (index === -1) return null;
-      const indices = this.pointInfo.filter(info => info.elementIndex === index).map(info => info.index);
-      if (indices.length !== 2) return null;
-      lineOrIndices = /** @type {[number, number]} */ (indices);
-    }
+      const lineIndices = this.getLineIndices(lineOrIndices);
+      if (!lineIndices) return null;
 
-    if (!lineOrIndices.every(idx => this.hasPoint(idx))) return null;
+      lineOrIndices = lineIndices;
+    } else if (!lineOrIndices.every(idx => this.hasPoint(idx))) return null;
 
     return /** @type {DistanceConstraint} */ (this.#createConstraint('distance', lineOrIndices, length));
   }
@@ -475,6 +533,36 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
   }
 
   /**
+   * @param {LineConstructionElement | [number, number]} lineOrIndices
+   * @returns {Readonly<HorizontalConstraint> | null}
+   */
+  horizontal(lineOrIndices) {
+    if (!Array.isArray(lineOrIndices)) {
+      const lineIndices = this.getLineIndices(lineOrIndices);
+      if (!lineIndices) return null;
+
+      lineOrIndices = lineIndices;
+    } else if (lineOrIndices[0] === lineOrIndices[1]) return null;
+
+    return /** @type {HorizontalConstraint} */ (this.#createConstraint('horizontal', lineOrIndices, null));
+  }
+
+  /**
+   * @param {LineConstructionElement | [number, number]} lineOrIndices
+   * @returns {Readonly<VerticalConstraint> | null}
+   */
+  vertical(lineOrIndices) {
+    if (!Array.isArray(lineOrIndices)) {
+      const lineIndices = this.getLineIndices(lineOrIndices);
+      if (!lineIndices) return null;
+
+      lineOrIndices = lineIndices;
+    } else if (lineOrIndices[0] === lineOrIndices[1]) return null;
+
+    return /** @type {VerticalConstraint} */ (this.#createConstraint('vertical', lineOrIndices, null));
+  }
+
+  /**
    * @param {number} index
    * @returns {LineConstructionElement | null}
    */
@@ -491,6 +579,20 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
     const elementIndex = this.data.elements.indexOf(line);
     if (elementIndex === -1) return null;
     return this.offsets.lineIndex / 2 + elementIndex;
+  }
+
+  /**
+   * @param {LineConstructionElement} line
+   * @returns {[number, number] | null}
+   */
+  getLineIndices(line) {
+    const index = this.data.elements.indexOf(line);
+    if (index === -1) return null;
+
+    const indices = this.pointInfo.filter(info => info.elementIndex === index).map(info => info.index);
+    if (indices.length !== 2) return null;
+
+    return /** @type {[number, number]} */ (indices);
   }
 
   /**
