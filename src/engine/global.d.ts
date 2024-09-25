@@ -19,3 +19,6 @@ type ReadonlyKeys<T> = {
 }[keyof T];
 type Filter<T, F> = { [K in keyof T as T[K] extends F ? K : never]: T[K] };
 type KeyFor<T, V> = { [K in keyof T]: T[K] extends V ? K : never}[keyof T];
+type Find<U, K extends keyof U, V extends keyof M, M = {
+  [T in U as T[K] extends string | number ? T[K] : never]: T
+}> = M[V];
