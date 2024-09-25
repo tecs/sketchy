@@ -39,6 +39,7 @@ const { glMatrix: { equals }, vec2, vec3, mat4, quat } = glMatrix;
  * @property {number} elementIndex
  * @property {number} offset
  * @property {number} index
+ * @property {boolean} locked
  * @property {vec2} vec2
  */
 
@@ -60,24 +61,21 @@ const { glMatrix: { equals }, vec2, vec3, mat4, quat } = glMatrix;
 /** @typedef {Omit<SketchState, "elements" | "constraints"> & Partial<SketchState>} ConstructableSketchState */
 
 /**
- * @typedef LinesData
- * @property {PointInfo} p1
- * @property {PointInfo} p2
- * @property {boolean} v1Locked
- * @property {boolean} v2Locked
- * @property {vec2} v1
- * @property {vec2} v2
+ * @template {Constraints} C
+ * @typedef ConstraintData
+ * @property {[PointInfo, PointInfo]} elements
  * @property {number} incrementScale
+ * @property {C["data"]} value
  */
 
 /**
- * @template {Constraints["type"]} T
- * @typedef {(data: LinesData, value: Find<Constraints, "type", T>["data"], current: typeof value) => void} ApplyFn
+ * @template {Constraints} C
+ * @typedef {(data: ConstraintData<C>) => [C["data"], boolean]} CheckFn
  */
 
 /**
- * @template {Constraints["type"]} T
- * @typedef {(data: LinesData, value: Find<Constraints, "type", T>["data"]) => [typeof value, boolean]} CheckFn
+ * @template {Constraints} C
+ * @typedef {(data: ConstraintData<C>, current: C["data"]) => void} ApplyFn
  */
 
 // cached structures
@@ -117,66 +115,64 @@ const extractSelectionPoints = (selection, sketch) => selection.elements.flatMap
 });
 
 /**
- * @param {Constraints} constraint
+ * @template {Constraints} C
+ * @param {C} constraint
  * @param {Sketch} sketch
- * @param {number[]} locked
- * @returns {LinesData | null}
+ * @returns {ConstraintData<C> | null}
  */
-const getElements = (constraint, sketch, locked) => {
-  const [p1, p2] = constraint.indices.map(index => sketch.getPointInfo(index));
-  if (!p1 || !p2) return null;
+const getElements = (constraint, sketch) => {
+  const pointsInfo = constraint.indices.map(index => sketch.getPointInfo(index)).filter(p => !!p);
+  if (pointsInfo.length !== constraint.indices.length) return null;
 
-  const v1Locked = locked.includes(p1.index);
-  const v2Locked = locked.includes(p2.index);
-  if (v1Locked && v2Locked) return null;
+  const numLocked = pointsInfo.reduce((total, { locked }) => total + (locked ? 1 : 0), 0);
+  if (numLocked === pointsInfo.length) return null;
 
   return {
-    p1,
-    p2,
-    v1: p1.vec2,
-    v2: p2.vec2,
-    v1Locked,
-    v2Locked,
-    incrementScale: v1Locked || v2Locked ? 0.5 : 0.25,
+    elements: /** @type {[PointInfo, PointInfo]} */ (pointsInfo),
+    value: constraint.data,
+    incrementScale: numLocked === 0 ? 0.25 : 0.5,
   };
 };
 
-/** @type {{ [K in Constraints["type"]]: CheckFn<K> }} */
+/** @type {{ [K in Constraints["type"]]: CheckFn<Find<Constraints, "type", K>> }} */
 const checkConstraint = {
-  distance: ({ v1, v2 }, value, distance = vec2.distance(v1, v2)) => [distance, equals(distance, value)],
-  coincident: ({ v1, v2 }) => [null, vec2.equals(v1, v2)],
-  horizontal: ({ v1, v2 }) => [null, v1[1] === v2[1]],
-  vertical: ({ v1, v2 }) => [null, v1[0] === v2[0]],
+  distance({ elements: [p1, p2], value }) {
+    const current = vec2.distance(p1.vec2, p2.vec2);
+    return [current, equals(current, value)];
+  },
+  coincident: ({ elements: [p1, p2] }) => [null, vec2.equals(p1.vec2, p2.vec2)],
+  horizontal: ({ elements: [p1, p2] }) => [null, p1.vec2[1] === p2.vec2[1]],
+  vertical: ({ elements: [p1, p2] }) => [null, p1.vec2[0] === p2.vec2[0]],
 };
 
-/** @type {{ [K in Constraints["type"]]: ApplyFn<K> }} */
+/** @type {{ [K in Constraints["type"]]: ApplyFn<Find<Constraints, "type", K>> }} */
 const applyConstraint = {
-  distance({ v1Locked, v2Locked, v1, v2, incrementScale }, value, distance) {
-    vec2.subtract(tempVec2, v1, v2);
+  distance({ elements: [p1, p2], incrementScale, value }, distance) {
+    vec2.subtract(tempVec2, p1.vec2, p2.vec2);
     vec2.normalize(tempVec2, tempVec2);
     vec2.scale(tempVec2, tempVec2, (value - distance) * incrementScale);
 
-    if (!v1Locked) vec2.add(v1, v1, tempVec2);
-    if (!v2Locked) vec2.subtract(v2, v2, tempVec2);
+    if (!p1.locked) vec2.add(p1.vec2, p1.vec2, tempVec2);
+    if (!p2.locked) vec2.subtract(p2.vec2, p2.vec2, tempVec2);
   },
-  coincident({ v1Locked, v2Locked, v1, v2, incrementScale }) {
-    vec2.subtract(tempVec2, v1, v2);
+  coincident({ elements: [p1, p2], incrementScale }) {
+    vec2.subtract(tempVec2, p1.vec2, p2.vec2);
     vec2.scale(tempVec2, tempVec2, incrementScale);
 
-    if (!v1Locked) vec2.subtract(v1, v1, tempVec2);
-    if (!v2Locked) vec2.add(v2, v2, tempVec2);
+    if (!p1.locked) vec2.subtract(p1.vec2, p1.vec2, tempVec2);
+    if (!p2.locked) vec2.add(p2.vec2, p2.vec2, tempVec2);
   },
-  horizontal({ v1Locked, v2Locked, v1, v2, incrementScale }) {
-    const diff = (v1[1] - v2[1]) * incrementScale;
+  horizontal({ elements: [p1, p2], incrementScale }) {
+    const diff = (p1.vec2[1] - p2.vec2[1]) * incrementScale;
 
-    if (!v1Locked) v1[1] -= diff;
-    if (!v2Locked) v2[1] += diff;
+    if (!p1.locked) p1.vec2[1] -= diff;
+    if (!p2.locked) p2.vec2[1] += diff;
   },
-  vertical({ v1Locked, v2Locked, v1, v2, incrementScale }) {
-    const diff = (v1[0] - v2[0]) * incrementScale;
+  vertical({ elements: [p1, p2], incrementScale }) {
+    const diff = (p1.vec2[0] - p2.vec2[0]) * incrementScale;
 
-    if (!v1Locked) v1[0] -= diff;
-    if (!v2Locked) v2[0] += diff;
+    if (!p1.locked) p1.vec2[0] -= diff;
+    if (!p2.locked) p2.vec2[0] += diff;
   },
 };
 
@@ -447,11 +443,13 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
     for (let elementIndex = 0; elementIndex < this.data.elements.length; ++elementIndex) {
       const element = this.data.elements[elementIndex];
       for (let offset = 0; offset < element.data.length; offset += 2) {
+        const index = firstIndex + this.pointInfo.length;
         this.pointInfo.push({
           element,
           elementIndex,
           offset,
-          index: firstIndex + this.pointInfo.length,
+          index,
+          locked: lockedIndices.includes(index),
           vec2: vec2.fromValues(element.data[offset], element.data[offset + 1]),
         });
       }
@@ -465,24 +463,22 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
       solved = true;
 
       for (const constraint of this.data.constraints) {
-        const elements = getElements(constraint, this, lockedIndices);
-        if (!elements) continue;
+        const constraintData = getElements(constraint, this);
+        if (!constraintData) continue;
 
-        const [currentValue, passes] = /** @type {CheckFn<typeof constraint["type"]>} */
-          (checkConstraint[constraint.type])(elements, constraint.data);
+        const [currentValue, passes] = /** @type {CheckFn<typeof constraint>} */
+          (checkConstraint[constraint.type])(constraintData);
 
         if (passes) continue;
         solved = false;
 
-        /** @type {ApplyFn<typeof constraint["type"]>} */
-        (applyConstraint[constraint.type])(elements, constraint.data, currentValue);
+        /** @type {ApplyFn<typeof constraint>} */
+        (applyConstraint[constraint.type])(constraintData, currentValue);
 
-        const { element: { data: d1 }, offset: o1, vec2: v1 } = elements.p1;
-        const { element: { data: d2 }, offset: o2, vec2: v2 } = elements.p2;
-        d1[o1] = v1[0];
-        d1[o1 + 1] = v1[1];
-        d2[o2] = v2[0];
-        d2[o2 + 1] = v2[1];
+        for (const { element: { data }, offset, vec2: vec } of constraintData.elements) {
+          data[offset] = vec[0];
+          data[offset + 1] = vec[1];
+        }
       }
     } while (!solved && iteration < 1000);
   }
