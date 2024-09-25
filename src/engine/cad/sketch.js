@@ -5,6 +5,7 @@ const { glMatrix: { equals }, vec2, vec3, mat4, quat } = glMatrix;
 
 /** @typedef {import("./step.js").BaseParams<SketchState>} BaseParams */
 /** @typedef {import("./step.js").BaseParams<ConstructableSketchState>} PartialBaseParams */
+/** @typedef {import("../general/state.js").Value} Value */
 
 /**
  * @template {string} T
@@ -20,18 +21,24 @@ const { glMatrix: { equals }, vec2, vec3, mat4, quat } = glMatrix;
 /**
  * @template {string} T
  * @template {number} I
- * @template {import('../general/state.js').Value} [D=null]
+ * @template {Value} [D=null]
+ * @template [S=D]
  * @typedef Constraint
  * @property {T} type
  * @property {Tuple<number, I>} indices
  * @property {D} data
+ * @property {S} _current
  */
 
 /** @typedef {Constraint<"distance", 2, number>} DistanceConstraint */
 /** @typedef {Constraint<"coincident", 2>} CoincidentConstraint */
 /** @typedef {Constraint<"horizontal", 2>} HorizontalConstraint */
 /** @typedef {Constraint<"vertical", 2>} VerticalConstraint */
-/** @typedef {DistanceConstraint|CoincidentConstraint|HorizontalConstraint|VerticalConstraint} Constraints */
+/** @typedef {Constraint<"equal", 4, null, [number, number]>} EqualConstraint */
+
+/** @typedef {DistanceConstraint|EqualConstraint} DistanceConstraints */
+/** @typedef {HorizontalConstraint|VerticalConstraint} OrientationConstraints */
+/** @typedef {DistanceConstraints|CoincidentConstraint|OrientationConstraints} Constraints */
 
 /**
  * @typedef PointInfo
@@ -63,19 +70,19 @@ const { glMatrix: { equals }, vec2, vec3, mat4, quat } = glMatrix;
 /**
  * @template {Constraints} C
  * @typedef ConstraintData
- * @property {[PointInfo, PointInfo]} elements
+ * @property {Tuple<PointInfo, C["indices"]["length"]>} elements
  * @property {number} incrementScale
  * @property {C["data"]} value
  */
 
 /**
  * @template {Constraints} C
- * @typedef {(data: ConstraintData<C>) => [C["data"], boolean]} CheckFn
+ * @typedef {(data: ConstraintData<C>) => [C["_current"], boolean]} CheckFn
  */
 
 /**
  * @template {Constraints} C
- * @typedef {(data: ConstraintData<C>, current: C["data"]) => void} ApplyFn
+ * @typedef {(data: ConstraintData<C>, current: C["_current"]) => void} ApplyFn
  */
 
 // cached structures
@@ -128,9 +135,9 @@ const getElements = (constraint, sketch) => {
   if (numLocked === pointsInfo.length) return null;
 
   return {
-    elements: /** @type {[PointInfo, PointInfo]} */ (pointsInfo),
+    elements: /** @type {ConstraintData<C>["elements"]} */ (pointsInfo),
     value: constraint.data,
-    incrementScale: numLocked === 0 ? 0.25 : 0.5,
+    incrementScale: 0.5 / (pointsInfo.length - numLocked),
   };
 };
 
@@ -143,6 +150,11 @@ const checkConstraint = {
   coincident: ({ elements: [p1, p2] }) => [null, vec2.equals(p1.vec2, p2.vec2)],
   horizontal: ({ elements: [p1, p2] }) => [null, p1.vec2[1] === p2.vec2[1]],
   vertical: ({ elements: [p1, p2] }) => [null, p1.vec2[0] === p2.vec2[0]],
+  equal: ({ elements: [p1, p2, p3, p4] }) => {
+    const distance1 = vec2.distance(p1.vec2, p2.vec2);
+    const distance2 = vec2.distance(p3.vec2, p4.vec2);
+    return [[distance1, distance2], distance1 === distance2];
+  },
 };
 
 /** @type {{ [K in Constraints["type"]]: ApplyFn<Find<Constraints, "type", K>> }} */
@@ -173,6 +185,25 @@ const applyConstraint = {
 
     if (!p1.locked) p1.vec2[0] -= diff;
     if (!p2.locked) p2.vec2[0] += diff;
+  },
+  equal({ elements: [p1, p2, p3, p4], incrementScale }, [distance1, distance2]) {
+    if (!p1.locked || !p2.locked) {
+      vec2.subtract(tempVec2, p1.vec2, p2.vec2);
+      vec2.normalize(tempVec2, tempVec2);
+      vec2.scale(tempVec2, tempVec2, (distance2 - distance1) * incrementScale);
+
+      if (!p1.locked) vec2.add(p1.vec2, p1.vec2, tempVec2);
+      if (!p2.locked) vec2.subtract(p2.vec2, p2.vec2, tempVec2);
+    }
+
+    if (!p3.locked || !p4.locked) {
+      vec2.subtract(tempVec2, p3.vec2, p4.vec2);
+      vec2.normalize(tempVec2, tempVec2);
+      vec2.scale(tempVec2, tempVec2, (distance1 - distance2) * incrementScale);
+
+      if (!p3.locked) vec2.add(p3.vec2, p3.vec2, tempVec2);
+      if (!p4.locked) vec2.subtract(p4.vec2, p4.vec2, tempVec2);
+    }
   },
 };
 
@@ -220,6 +251,7 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
     const coincidentKey = config.createString('shortcuts.sketch.coincident', 'Sketch constraint: coincident point', 'key', 'c');
     const horizontalKey = config.createString('shortcuts.sketch.horizontal', 'Sketch constraint: horizontal', 'key', 'h');
     const verticalKey = config.createString('shortcuts.sketch.vertical', 'Sketch constraint: vertical', 'key', 'v');
+    const equalKey = config.createString('shortcuts.sketch.equal', 'Sketch constraint: equal', 'key', 'e');
 
     engine.on('keydown', (_, keyCombo) => {
       const sketch = scene.currentStep ?? scene.enteredInstance?.body.step;
@@ -287,6 +319,10 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
           });
 
           break;
+        }
+        case equalKey.value: {
+          const lines = selection.getByType('line').map(({ index }) => sketch.getLine(index)).filter(line => line !== null);
+          forAllUniquePairs(lines, linePairs => sketch.equal(linePairs));
         }
         case coincidentKey.value: {
           const points = selection.getByType('point').map(({ index }) => index);
@@ -356,6 +392,7 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
       case 'coincident':
       case 'horizontal':
       case 'vertical':
+      case 'equal':
         return /** @type {T} */ ({ type, indices, data });
       default:
         throw new Error(`Unknown constraint type "${type}"`);
@@ -561,9 +598,22 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
       if (!lineIndices) return null;
 
       lineOrIndices = lineIndices;
-    } else if (!lineOrIndices.every(idx => this.hasPoint(idx))) return null;
+    } else if (lineOrIndices.some(idx => !this.hasPoint(idx))) return null;
 
     return /** @type {DistanceConstraint} */ (this.#createConstraint('distance', lineOrIndices, length));
+  }
+
+  /**
+   * @param {[LineConstructionElement, LineConstructionElement]} lines
+   * @returns {Readonly<EqualConstraint> | null}
+   */
+  equal(lines) {
+    if (lines[0] === lines[1] || lines.some(line => !this.data.elements.includes(line))) return null;
+    const indices = lines.flatMap(line => this.getPoints(line) ?? []).map(({ index }) => index);
+
+    return /** @type {EqualConstraint} */ (
+      this.#createConstraint('equal', /** @type {[number, number, number, number]}*/ (indices), null)
+    );
   }
 
   /**
