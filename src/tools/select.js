@@ -3,6 +3,7 @@ import SubInstance from '../engine/cad/subinstance.js';
 /** @type {(engine: Engine) => Tool} */
 export default (engine) => {
   const { editor: { selection }, scene, input } = engine;
+  let lasso = false;
 
   /**
    * @param {Parameters<typeof selection["add"]>[0]} elements
@@ -19,9 +20,15 @@ export default (engine) => {
     name: 'Select',
     shortcut: ' ',
     icon: '🮰',
-    start() {},
-    update() {},
+    start() {
+      lasso = false;
+    },
+    update() {
+      if (input.leftButton) lasso = true;
+    },
     end(count = 1) {
+      if (lasso) return;
+
       const { enteredInstance, hoveredPointIndex, hoveredLineIndex, currentStep } = scene;
       const toggle = input.ctrl;
 
@@ -61,6 +68,10 @@ export default (engine) => {
     },
     abort() {
       if (engine.tools.selected !== this) return;
+      if (lasso) {
+        input.setButton(0, false, 1);
+        return;
+      }
 
       if (selection.elements.length) {
         selection.clear();
