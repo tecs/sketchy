@@ -83,7 +83,7 @@ export default (engine) => {
 
         ctx.bindBuffer(ctx.ELEMENT_ARRAY_BUFFER, model.buffer.lineIndex);
 
-        ctx.bindBuffer(ctx.ARRAY_BUFFER, model.buffer.vertex);
+        ctx.bindBuffer(ctx.ARRAY_BUFFER, model.buffer.lineVertex);
         ctx.enableVertexAttribArray(program.aLoc.a_position);
         ctx.vertexAttribPointer(program.aLoc.a_position, 3, ctx.FLOAT, false, 0, 0);
 

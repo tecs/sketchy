@@ -92,6 +92,41 @@ const rotation = quat.create();
 const tempVertex = vec3.create();
 
 /**
+ * @param {number[]} flatBuffer
+ * @param {ReadonlyMat4} transform
+ * @returns {Float32Array}
+ */
+const transformFlatBuffer = (flatBuffer, transform) => {
+  const nVertices = flatBuffer.length / 2;
+  const buffer = new Float32Array(nVertices * 3);
+
+  /** @type {[x: number, y: number, index: number][]} */
+  const verticesCache = [];
+
+  for (let i = 0; i < nVertices; ++i) {
+    const flatIndex = i * 2;
+    const index = i * 3;
+
+    const dataX = flatBuffer[flatIndex];
+    const dataY = flatBuffer[flatIndex + 1];
+
+    const cacheIndex = verticesCache.find(([x, y]) => x === dataX && y === dataY)?.[2];
+    if (cacheIndex !== undefined) {
+      buffer.copyWithin(index, cacheIndex, cacheIndex + 3);
+      continue;
+    }
+
+    vec3.set(tempVertex, dataX, dataY, 0);
+    vec3.transformMat4(tempVertex, tempVertex, transform);
+
+    verticesCache.push([dataX, dataY, index]);
+    buffer.set(tempVertex, index);
+  }
+
+  return buffer;
+};
+
+/**
  * @template T
  * @param {T[]} collection
  * @param {(pair: [T, T]) => void} fn
@@ -475,7 +510,7 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
    * @param {number[]} lockedIndices
    */
   #solve(lockedIndices) {
-    const firstIndex = this.offsets.vertex / 3;
+    const firstIndex = this.offsets.lineVertex / 3;
     this.pointInfo = [];
     for (let elementIndex = 0; elementIndex < this.data.elements.length; ++elementIndex) {
       const element = this.data.elements[elementIndex];
@@ -529,38 +564,26 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
     const { data } = this.model;
 
     this.#resizeModelBuffer('lineIndex', this.data.elements.length * 2);
-    this.#resizeModelBuffer('vertex', this.pointInfo.length * 3);
 
     let lineIndexOffset = this.offsets.lineIndex;
 
-    /** @type {number | undefined} */
-    let cacheIndex = undefined;
-
-    /** @type {[x: number, y: number, index: number][]} */
-    const verticesCache = [];
+    const vertices2D = /** @type {number[]} */ ([]);
+    const lineIndices = /** @type {number[]} */ ([]);
 
     for (const { element, vec2: [dataX, dataY], index } of this.pointInfo) {
-      const coordIndex = index * 3;
       switch (element.type) {
         case 'line':
+          lineIndices.push(vertices2D.length / 2);
+          vertices2D.push(dataX, dataY);
           data.lineIndex[lineIndexOffset++] = index;
-          cacheIndex = verticesCache.find(([x, y]) => x === dataX && y === dataY)?.[2];
-          if (cacheIndex) {
-            data.vertex.copyWithin(coordIndex, cacheIndex, cacheIndex + 3);
-            break;
-          }
-
-          vec3.set(tempVertex, dataX, dataY, 0);
-          vec3.transformMat4(tempVertex, tempVertex, this.fromSketch);
-
-          verticesCache.push([dataX, dataY, coordIndex]);
-          data.vertex.set(tempVertex, coordIndex);
-
           break;
       }
     }
 
-    this.model.update('lineIndex', 'vertex');
+    const vertices3D = transformFlatBuffer(vertices2D, this.fromSketch);
+    this.#resizeModelBuffer('lineVertex', vertices3D);
+
+    this.model.update('lineIndex', 'lineVertex');
   }
 
   recompute() {

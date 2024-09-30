@@ -53,7 +53,7 @@ export default (engine) => {
       const model = enteredInstance?.body.currentModel;
       if (!model) return;
 
-      ctx.bindBuffer(ctx.ARRAY_BUFFER, model.buffer.vertex);
+      ctx.bindBuffer(ctx.ARRAY_BUFFER, model.buffer.lineVertex);
       ctx.enableVertexAttribArray(program.aLoc.a_position);
       ctx.vertexAttribPointer(program.aLoc.a_position, 3, ctx.FLOAT, false, 0, 0);
 

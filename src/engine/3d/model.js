@@ -8,6 +8,7 @@ import BoundingBox from './bounding-box.js';
  * @property {Float32Array} normal
  * @property {Uint8Array} color
  * @property {Uint16Array|Uint32Array} lineIndex
+ * @property {Float32Array} lineVertex
  */
 
 /** @typedef {Record<keyof ModelData, number[]>} PlainModelData */
@@ -48,6 +49,7 @@ export default class Model extends Base.implement({ BoundingBox }) {
       normal: this.#ctx.createBuffer(),
       color: this.#ctx.createBuffer(),
       lineIndex: this.#ctx.createBuffer(),
+      lineVertex: this.#ctx.createBuffer(),
     };
 
     this.import(data);
@@ -65,6 +67,7 @@ export default class Model extends Base.implement({ BoundingBox }) {
       color: new Uint8Array(data?.color ?? []),
       index: new this.#driver.UintIndexArray(data?.index ?? []),
       lineIndex: new this.#driver.UintIndexArray(data?.lineIndex ?? []),
+      lineVertex: new Float32Array(data?.lineVertex ?? []),
     };
 
     this.#ctx.bindBuffer(this.#ctx.ELEMENT_ARRAY_BUFFER, this.buffer.index);
@@ -82,6 +85,9 @@ export default class Model extends Base.implement({ BoundingBox }) {
     this.#ctx.bindBuffer(this.#ctx.ELEMENT_ARRAY_BUFFER, this.buffer.lineIndex);
     this.#ctx.bufferData(this.#ctx.ELEMENT_ARRAY_BUFFER, this.data.lineIndex, this.#ctx.STATIC_DRAW);
 
+    this.#ctx.bindBuffer(this.#ctx.ARRAY_BUFFER, this.buffer.lineVertex);
+    this.#ctx.bufferData(this.#ctx.ARRAY_BUFFER, this.data.lineVertex, this.#ctx.STATIC_DRAW);
+
     if (data) this.recalculateBoundingBox();
   }
 
@@ -95,12 +101,14 @@ export default class Model extends Base.implement({ BoundingBox }) {
       color: [...this.data.color],
       index: [...this.data.index],
       lineIndex: [...this.data.lineIndex],
+      lineVertex: [...this.data.lineVertex],
     }, this.body, this.#driver);
   }
 
   recalculateBoundingBox() {
     this.BoundingBox.reset();
     this.BoundingBox.expand(this.data.vertex);
+    this.BoundingBox.expand(this.data.lineVertex);
 
     this.body.recalculateBoundingBox();
   }
@@ -116,6 +124,6 @@ export default class Model extends Base.implement({ BoundingBox }) {
       this.#ctx.bufferData(BUFFER_TYPE, this.data[part], this.#ctx.STATIC_DRAW);
     }
 
-    if (parts.includes('vertex')) this.recalculateBoundingBox();
+    if (parts.includes('vertex') || parts.includes('lineVertex')) this.recalculateBoundingBox();
   }
 }

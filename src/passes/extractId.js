@@ -108,6 +108,10 @@ export default (engine) => {
         }
 
         // Lines
+        ctx.bindBuffer(ctx.ARRAY_BUFFER, model.buffer.lineVertex);
+        ctx.enableVertexAttribArray(program.aLoc.a_position);
+        ctx.vertexAttribPointer(program.aLoc.a_position, 3, ctx.FLOAT, false, 0, 0);
+
         ctx.uniform1f(program.uLoc.u_offset, 1);
         ctx.bindBuffer(ctx.ELEMENT_ARRAY_BUFFER, model.buffer.lineIndex);
         ctx.lineWidth(5);
@@ -131,7 +135,7 @@ export default (engine) => {
           ctx.uniformMatrix4fv(program.uLoc.u_trs, false, instance.Placement.trs);
           ctx.uniform4fv(program.uLoc.u_instanceId, instance.Id.vec4);
 
-          ctx.drawArrays(ctx.POINTS, 0, model.data.vertex.length / 3);
+          ctx.drawArrays(ctx.POINTS, 0, model.data.lineVertex.length / 3);
         }
       }
 
@@ -151,11 +155,11 @@ export default (engine) => {
       ctx.uniformMatrix4fv(program.uLoc.u_viewProjection, false, camera.frustum);
       ctx.uniformMatrix4fv(program.uLoc.u_trs, false, instance.Placement.trs);
 
+      // Geometry
       ctx.bindBuffer(ctx.ARRAY_BUFFER, model.buffer.vertex);
       ctx.enableVertexAttribArray(program.aLoc.a_position);
       ctx.vertexAttribPointer(program.aLoc.a_position, 3, ctx.FLOAT, false, 0, 0);
 
-      // Geometry
       ctx.uniform1f(program.uLoc.u_offset, 0);
 
       ctx.bindBuffer(ctx.ELEMENT_ARRAY_BUFFER, model.buffer.index);
@@ -164,6 +168,10 @@ export default (engine) => {
       ctx.drawElements(ctx.TRIANGLES, model.data.index.length, UNSIGNED_INDEX_TYPE, 0);
 
       // Lines
+      ctx.bindBuffer(ctx.ARRAY_BUFFER, model.buffer.lineVertex);
+      ctx.enableVertexAttribArray(program.aLoc.a_position);
+      ctx.vertexAttribPointer(program.aLoc.a_position, 3, ctx.FLOAT, false, 0, 0);
+
       ctx.uniform1f(program.uLoc.u_offset, 1);
 
       ctx.bindBuffer(ctx.ELEMENT_ARRAY_BUFFER, model.buffer.lineIndex);
@@ -175,7 +183,7 @@ export default (engine) => {
       // Points
       ctx.uniform1f(program.uLoc.u_offset, 2);
 
-      for (let i = 0; i < model.data.vertex.length / 3; ++i) {
+      for (let i = 0; i < model.data.lineVertex.length / 3; ++i) {
         // Prevent self-picking when editing
         if (!activePoints.includes(i)) {
           ctx.uniform4fv(program.uLoc.u_instanceId, Id.intToVec4(i + 1));

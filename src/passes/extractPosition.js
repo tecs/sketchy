@@ -100,26 +100,30 @@ export default (engine) => {
       ctx.bindFramebuffer(ctx.FRAMEBUFFER, framebuffer);
       ctx.clear(ctx.COLOR_BUFFER_BIT | ctx.DEPTH_BUFFER_BIT);
 
-      ctx.enableVertexAttribArray(program.aLoc.a_position);
       ctx.uniformMatrix4fv(program.uLoc.u_trs, false, scene.hoveredInstance.Placement.trs);
       ctx.uniformMatrix4fv(program.uLoc.u_viewProjection, false, camera.viewProjection);
       ctx.uniformMatrix4fv(program.uLoc.u_frustum, false, camera.frustum);
 
+      // Geometry
+      ctx.enableVertexAttribArray(program.aLoc.a_position);
       ctx.bindBuffer(ctx.ARRAY_BUFFER, model.buffer.vertex);
       ctx.vertexAttribPointer(program.aLoc.a_position, 3, ctx.FLOAT, false, 0, 0);
 
-      // Geometry
       ctx.bindBuffer(ctx.ELEMENT_ARRAY_BUFFER, model.buffer.index);
       ctx.drawElements(ctx.TRIANGLES, model.data.index.length, UNSIGNED_INDEX_TYPE, 0);
 
       // Lines
+      ctx.enableVertexAttribArray(program.aLoc.a_position);
+      ctx.bindBuffer(ctx.ARRAY_BUFFER, model.buffer.lineVertex);
+      ctx.vertexAttribPointer(program.aLoc.a_position, 3, ctx.FLOAT, false, 0, 0);
+
       ctx.bindBuffer(ctx.ELEMENT_ARRAY_BUFFER, model.buffer.lineIndex);
       ctx.lineWidth(5);
       ctx.drawElements(ctx.LINES, model.data.lineIndex.length, UNSIGNED_INDEX_TYPE, 0);
       ctx.lineWidth(1);
 
       // Points
-      ctx.drawArrays(ctx.POINTS, 0, model.data.vertex.length / 3);
+      ctx.drawArrays(ctx.POINTS, 0, model.data.lineVertex.length / 3);
 
       // requires OES_texture_float
       ctx.readPixels(0, 0, 1, 1, ctx.RGBA, ctx.FLOAT, coords);
