@@ -884,6 +884,6 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
    * @returns {boolean}
    */
   hasPoint(index) {
-    return this.indexBelongsTo('vertex', index * 3);
+    return this.indexBelongsTo('lineVertex', index * 3);
   }
 }
