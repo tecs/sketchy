@@ -1,5 +1,6 @@
 import { Properties } from '../general/properties.js';
 import Step from './step.js';
+import triangulate from './triangulate.js';
 
 const { glMatrix: { equals }, vec2, vec3, mat4, quat } = glMatrix;
 
@@ -561,29 +562,49 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
   #recalculate(lockedIndices) {
     this.#solve(lockedIndices);
 
-    const { data } = this.model;
-
-    this.#resizeModelBuffer('lineIndex', this.data.elements.length * 2);
-
-    let lineIndexOffset = this.offsets.lineIndex;
-
-    const vertices2D = /** @type {number[]} */ ([]);
+    const lineVertices2D = /** @type {number[]} */ ([]);
     const lineIndices = /** @type {number[]} */ ([]);
+    const uniqueVertices2D = /** @type {[number,number][]} */ ([]);
+    const loopIndices = /** @type {number[]} */ ([]);
 
     for (const { element, vec2: [dataX, dataY], index } of this.pointInfo) {
       switch (element.type) {
         case 'line':
-          lineIndices.push(vertices2D.length / 2);
-          vertices2D.push(dataX, dataY);
-          data.lineIndex[lineIndexOffset++] = index;
+          lineVertices2D.push(dataX, dataY);
+          const idx = uniqueVertices2D.findIndex(([x, y]) => equals(x, dataX) && equals(y, dataY));
+          if (idx === -1) {
+            loopIndices.push(uniqueVertices2D.length);
+            uniqueVertices2D.push([dataX, dataY]);
+          } else {
+            loopIndices.push(idx);
+          }
+          lineIndices.push(index);
           break;
       }
     }
 
-    const vertices3D = transformFlatBuffer(vertices2D, this.fromSketch);
-    this.#resizeModelBuffer('lineVertex', vertices3D);
+    const lineVertices = transformFlatBuffer(lineVertices2D, this.fromSketch);
 
-    this.model.update('lineIndex', 'lineVertex');
+    const vertices2D = uniqueVertices2D.flat();
+    const indices = triangulate(vertices2D, loopIndices);
+
+    const vertices = transformFlatBuffer(vertices2D, this.fromSketch);
+
+    const normals = new Uint8Array(vertices.length);
+    for (let i = 0; i < normals.length; i += 3) {
+      normals.set(this.data.attachment.normal, i);
+    }
+
+    const startingVertex = this.offsets.vertex / 3;
+
+    this.#resizeModelBuffer('lineVertex', lineVertices);
+    this.#resizeModelBuffer('lineIndex', lineIndices);
+    this.#resizeModelBuffer('vertex', vertices);
+    this.#resizeModelBuffer('index', indices.map(i => i + startingVertex));
+    this.#resizeModelBuffer('normal', normals);
+    this.#resizeModelBuffer('color', new Array(vertices.length).fill(255));
+
+    this.model.update('lineVertex', 'lineIndex', 'vertex', 'index', 'normal', 'color');
   }
 
   recompute() {
