@@ -188,11 +188,21 @@ const findLoops = (lines) => {
  * @returns {number[]} Polygon indices
  */
 export default (vertices, lineIndices) => {
-  // remove zero-length lines
+  // remove duplicate and zero-length lines
   const sanitizedIndices = /** @type {number[]} */ ([]);
   for (let i = 1; i < lineIndices.length; i += 2) {
-    if (lineIndices[i] !== lineIndices[i - 1]) {
-      sanitizedIndices.push(lineIndices[i], lineIndices[i - 1]);
+    const low = lineIndices[i - 1] < lineIndices[i] ? lineIndices[i - 1] : lineIndices[i];
+    const high = lineIndices[i] > lineIndices[i - 1] ? lineIndices[i] : lineIndices[i - 1];
+    let invalid = low === high;
+
+    for (let k = 1; k < sanitizedIndices.length && !invalid; k += 2) {
+      if (sanitizedIndices[k - 1] === low && sanitizedIndices[k] === high) {
+        invalid = true;
+      }
+    }
+
+    if (!invalid) {
+      sanitizedIndices.push(low, high);
     }
   }
 
