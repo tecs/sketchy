@@ -139,6 +139,7 @@ const findLoops = (lines) => {
       const i2 = tmpLoop.indexOf(idxL2);
 
       if (i1 === -1 && i2 === -1) continue;
+      found = true;
 
       if (i1 !== -1 && i2 !== -1) {
         const iLow = i1 < i2 ? i1 : i2;
@@ -156,13 +157,21 @@ const findLoops = (lines) => {
         tempLoops.splice(k, 1);
         closedLoops.push(tmpLoop);
         k--;
-      } else if (i1 === lastIndex || i2 === lastIndex) {
-        tmpLoop.push(i1 === lastIndex ? idxL2 : idxL1);
-      } else if (i1 === 0 || i2 === 0) {
-        tmpLoop.unshift(i1 === 0 ? idxL2 : idxL1);
+        continue;
       }
 
-      found = true;
+      const iMatch = i1 !== -1 ? i1 : i2;
+      const idxOther = i1 !== -1 ? idxL2 : idxL1;
+
+      if (iMatch === lastIndex) {
+        tmpLoop.push(idxOther);
+      } else if (iMatch === 0) {
+        tmpLoop.unshift(idxOther);
+      } else {
+        const newLoop1 = tmpLoop.slice(0, iMatch + 1).concat(idxOther);
+        const newLoop2 = [idxOther, ...tmpLoop.slice(iMatch)];
+        tempLoops.push(newLoop1, newLoop2);
+      }
     }
 
     if (!found) {
