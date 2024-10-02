@@ -388,6 +388,11 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
       if (hoveredLineIndex !== null && sketch.hasLine(hoveredLineIndex)) scene.setCurrentStep(sketch);
       else if (hoveredPointIndex !== null && sketch.hasPoint(hoveredPointIndex)) scene.setCurrentStep(sketch);
     });
+
+    engine.on('stepchange', (current, previous) => {
+      if (current instanceof Sketch) current.#recalculate([]);
+      if (previous instanceof Sketch) previous.#recalculate([]);
+    });
   }
 
   /**
@@ -584,25 +589,33 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
     }
 
     const lineVertices = transformFlatBuffer(lineVertices2D, this.fromSketch);
-
-    const vertices2D = uniqueVertices2D.flat();
-    const indices = triangulate(vertices2D, loopIndices);
-
-    const vertices = transformFlatBuffer(vertices2D, this.fromSketch);
-
-    const normals = new Uint8Array(vertices.length);
-    for (let i = 0; i < normals.length; i += 3) {
-      normals.set(this.data.attachment.normal, i);
-    }
-
-    const startingVertex = this.offsets.vertex / 3;
-
     this.#resizeModelBuffer('lineVertex', lineVertices);
     this.#resizeModelBuffer('lineIndex', lineIndices);
-    this.#resizeModelBuffer('vertex', vertices);
-    this.#resizeModelBuffer('index', indices.map(i => i + startingVertex));
-    this.#resizeModelBuffer('normal', normals);
-    this.#resizeModelBuffer('color', new Array(vertices.length).fill(255));
+
+    // don't triangulate while editing the sketch
+    if (this.engine.scene.currentStep === this) {
+      this.#resizeModelBuffer('vertex', 0);
+      this.#resizeModelBuffer('index', 0);
+      this.#resizeModelBuffer('normal', 0);
+      this.#resizeModelBuffer('color', 0);
+    } else {
+      const vertices2D = uniqueVertices2D.flat();
+      const indices = triangulate(vertices2D, loopIndices);
+
+      const vertices = transformFlatBuffer(vertices2D, this.fromSketch);
+
+      const normals = new Uint8Array(vertices.length);
+      for (let i = 0; i < normals.length; i += 3) {
+        normals.set(this.data.attachment.normal, i);
+      }
+
+      const startingVertex = this.offsets.vertex / 3;
+
+      this.#resizeModelBuffer('vertex', vertices);
+      this.#resizeModelBuffer('index', indices.map(i => i + startingVertex));
+      this.#resizeModelBuffer('normal', normals);
+      this.#resizeModelBuffer('color', new Array(vertices.length).fill(255));
+    }
 
     this.model.update('lineVertex', 'lineIndex', 'vertex', 'index', 'normal', 'color');
   }
