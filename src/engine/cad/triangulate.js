@@ -133,29 +133,33 @@ const findLoops = (lines) => {
 
     for (let k = 0; k < tempLoops.length; ++k) {
       const tmpLoop = tempLoops[k];
-      const idxS = tmpLoop[0];
-      const idxE = tmpLoop[tmpLoop.length - 1];
+      const lastIndex = tmpLoop.length - 1;
 
-      const startMatches1 = idxS === idxL1;
-      const startMatches2 = idxS === idxL2;
-      const startMatches = startMatches1 || startMatches2;
+      const i1 = tmpLoop.indexOf(idxL1);
+      const i2 = tmpLoop.indexOf(idxL2);
 
-      const endMatches1 = idxE === idxL1;
-      const endMatches2 = idxE === idxL2;
-      const endMatches = endMatches1 || endMatches2;
+      if (i1 === -1 && i2 === -1) continue;
 
-      if (!startMatches && !endMatches) {
-        continue;
-      }
+      if (i1 !== -1 && i2 !== -1) {
+        const iLow = i1 < i2 ? i1 : i2;
+        const iHigh = i1 < i2 ? i2 : i1;
 
-      if (startMatches && endMatches) {
+        // ignore overlapping lines
+        if (iHigh - iLow === 1) continue;
+
+        if (iLow !== 0 || iHigh !== lastIndex) {
+          const newLoop = [tmpLoop[iLow], tmpLoop[iHigh]].concat(tmpLoop.splice(iHigh + 1));
+          newLoop.unshift(...tmpLoop.splice(0, iLow));
+          tempLoops.push(newLoop);
+        }
+
         tempLoops.splice(k, 1);
         closedLoops.push(tmpLoop);
         k--;
-      } else if (endMatches) {
-        tmpLoop.push(endMatches1 ? idxL2 : idxL1);
-      } else if (startMatches) {
-        tmpLoop.unshift(startMatches1 ? idxL2 : idxL1);
+      } else if (i1 === lastIndex || i2 === lastIndex) {
+        tmpLoop.push(i1 === lastIndex ? idxL2 : idxL1);
+      } else if (i1 === 0 || i2 === 0) {
+        tmpLoop.unshift(i1 === 0 ? idxL2 : idxL1);
       }
 
       found = true;
@@ -171,11 +175,19 @@ const findLoops = (lines) => {
 
 /**
  * @param {Readonly<number[]>} vertices
- * @param {Readonly<number[]>} indices A-B-C-D-...
+ * @param {Readonly<number[]>} lineIndices A-B,B-C,C-D,...
  * @returns {number[]} Polygon indices
  */
-export default (vertices, indices) => {
-  const loops = findLoops(indices);
+export default (vertices, lineIndices) => {
+  // remove zero-length lines
+  const sanitizedIndices = /** @type {number[]} */ ([]);
+  for (let i = 1; i < lineIndices.length; i += 2) {
+    if (lineIndices[i] !== lineIndices[i - 1]) {
+      sanitizedIndices.push(lineIndices[i], lineIndices[i - 1]);
+    }
+  }
+
+  const loops = findLoops(sanitizedIndices);
 
   const meshIndices = /** @type {number[]} */ ([]);
   for (const loop of loops) {
