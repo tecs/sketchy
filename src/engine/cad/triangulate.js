@@ -116,6 +116,23 @@ const triangulateFace = (vertices, indices) => {
 };
 
 /**
+ * @param {number[]} loop
+ * @param {number[][]} loops
+ */
+const addLoop = (loop, loops) => {
+  for (const existingLoop of loops) {
+    if (existingLoop.length !== loop.length) continue;
+    if (loop === existingLoop) return;
+    let matches = true;
+    for (let i = 0; matches && i < existingLoop.length; ++i) {
+      matches = loop[i] !== existingLoop[i];
+    }
+    if (matches) return;
+  }
+  loops.push(loop);
+};
+
+/**
  * @param {Readonly<number[]>} lines
  * @returns {number[][]}
  */
@@ -151,11 +168,11 @@ const findLoops = (lines) => {
         if (iLow !== 0 || iHigh !== lastIndex) {
           const newLoop = [tmpLoop[iLow], tmpLoop[iHigh]].concat(tmpLoop.splice(iHigh + 1));
           newLoop.unshift(...tmpLoop.splice(0, iLow));
-          tempLoops.push(newLoop);
+          addLoop(newLoop, tempLoops);
         }
 
         tempLoops.splice(k, 1);
-        closedLoops.push(tmpLoop);
+        addLoop(tmpLoop, closedLoops);
         k--;
         continue;
       }
@@ -170,7 +187,8 @@ const findLoops = (lines) => {
       } else {
         const newLoop1 = tmpLoop.slice(0, iMatch + 1).concat(idxOther);
         const newLoop2 = [idxOther, ...tmpLoop.slice(iMatch)];
-        tempLoops.push(newLoop1, newLoop2);
+        addLoop(newLoop1, tempLoops);
+        addLoop(newLoop2, tempLoops);
       }
     }
 
