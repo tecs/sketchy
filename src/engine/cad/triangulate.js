@@ -243,6 +243,27 @@ export default (vertices, lineIndices) => {
     }
   }
 
+  // remove lines with unconnected nodes
+  let hasDangling = true;
+  while (hasDangling) {
+    hasDangling = false;
+    for (let i = lines.length - 1; i >= 0; --i) {
+      const [idx1, idx2] = lines[i];
+      let found1 = false;
+      let found2 = false;
+      for (let k = 0; k < lines.length && (!found1 || !found2); ++k) {
+        if (i === k) continue;
+        const [idx1_, idx2_] = lines[k];
+        found1 ||= idx1_ === idx1 || idx2_ === idx1;
+        found2 ||= idx1_ === idx2 || idx2_ === idx2;
+      }
+      if (!found1 || !found2) {
+        hasDangling = true;
+        lines.splice(i, 1);
+      }
+    }
+  }
+
   const loops = findLoops(lines);
 
   const meshIndices = /** @type {number[]} */ ([]);
