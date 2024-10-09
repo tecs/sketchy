@@ -137,6 +137,16 @@ const addLoop = (loop, loops) => {
 };
 
 /**
+ * @template T
+ * @param {T} el
+ * @param {T[]} arr
+ */
+const removeElement = (el, arr) => {
+  const index = arr.indexOf(el);
+  if (index !== -1) arr.splice(index, 1);
+};
+
+/**
  * @param {Readonly<Line[]>} lines
  * @returns {number[][]}
  */
@@ -178,7 +188,7 @@ const findLoops = (lines) => {
       if (!nextLine) {
         current.pop();
         if (current.length === 0) {
-          remaining.splice(remaining.indexOf(currentLine), 1);
+          removeElement(currentLine, remaining);
           break;
         }
 
@@ -197,7 +207,7 @@ const findLoops = (lines) => {
       const closed = [nextIndex];
       for (let i = connectedIndex; i < current.length; ++i) {
         const line = current[i];
-        remaining.splice(remaining.indexOf(line), 1);
+        removeElement(line, remaining);
 
         const index = closed[closed.length - 1] === line[0] ? line[1] : line[0];
         if (index !== nextIndex) closed.push(index);
