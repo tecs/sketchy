@@ -1,3 +1,7 @@
+/** @typedef {[i1: number, i2: number, angle: number]} Line */
+
+const twoPI = Math.PI * 2;
+
 /**
  * @param {number} i
  * @param {number} l
@@ -133,67 +137,73 @@ const addLoop = (loop, loops) => {
 };
 
 /**
- * @param {Readonly<number[]>} lines
+ * @param {Readonly<Line[]>} lines
  * @returns {number[][]}
  */
 const findLoops = (lines) => {
-  const nLines = lines.length / 2;
-
+  const remaining = lines.slice();
   const closedLoops = /** @type {number[][]} */ ([]);
-  const tempLoops = /** @type {number[][]} */ ([]);
 
-  for (let i = 0; i < nLines; ++i) {
-    const idxL1 = lines[i * 2];
-    const idxL2 = lines[i * 2 + 1];
+  while (remaining.length) {
+    const current = [remaining[0]];
+    let open = true;
+    let nextIndex = remaining[0][1];
+    let skipLine = /** @type {Line?} */ (null);
 
-    let found = false;
+    while (open) {
+      const currentLine = current[current.length - 1];
+      let currentLineAngle = currentLine[2];
+      if (currentLine[1] === nextIndex) {
+        currentLineAngle += currentLineAngle < Math.PI ? Math.PI : -Math.PI;
+      }
 
-    for (let k = 0; k < tempLoops.length; ++k) {
-      const tmpLoop = tempLoops[k];
-      const lastIndex = tmpLoop.length - 1;
+      const candidates = /** @type {[line: Line, diff: number][]} */ ([]);
 
-      const i1 = tmpLoop.indexOf(idxL1);
-      const i2 = tmpLoop.indexOf(idxL2);
+      for (const line of lines) {
+        const connectedIdx = line[0] === nextIndex ? 0 : 1;
+        if (line[connectedIdx] !== nextIndex || current.includes(line)) continue;
 
-      if (i1 === -1 && i2 === -1) continue;
-      found = true;
+        let angle = line[2];
+        if (connectedIdx === 1) {
+          angle += angle < Math.PI ? Math.PI : -Math.PI;
+        }
+        const diff = (angle >= currentLineAngle ? angle : twoPI - angle) - currentLineAngle;
+        candidates.push([line, diff]);
+      }
 
-      if (i1 !== -1 && i2 !== -1) {
-        const iLow = i1 < i2 ? i1 : i2;
-        const iHigh = i1 < i2 ? i2 : i1;
+      const sortedCandidates = candidates.sort(([, a], [, b]) => a - b);
+      const nextCandidateIndex = sortedCandidates.findIndex(([line]) => line === skipLine) + 1;
+      const [nextLine] = sortedCandidates.at(nextCandidateIndex) ?? [];
 
-        // ignore overlapping lines
-        if (iHigh - iLow === 1) continue;
-
-        if (iLow !== 0 || iHigh !== lastIndex) {
-          const newLoop = [tmpLoop[iLow], tmpLoop[iHigh]].concat(tmpLoop.splice(iHigh + 1));
-          newLoop.unshift(...tmpLoop.splice(0, iLow));
-          addLoop(newLoop, tempLoops);
+      if (!nextLine) {
+        current.pop();
+        if (current.length === 0) {
+          remaining.splice(remaining.indexOf(currentLine), 1);
+          break;
         }
 
-        tempLoops.splice(k, 1);
-        addLoop(tmpLoop, closedLoops);
-        k--;
+        skipLine = currentLine;
         continue;
       }
 
-      const iMatch = i1 !== -1 ? i1 : i2;
-      const idxOther = i1 !== -1 ? idxL2 : idxL1;
+      current.push(nextLine);
+      skipLine = null;
 
-      if (iMatch === lastIndex) {
-        tmpLoop.push(idxOther);
-      } else if (iMatch === 0) {
-        tmpLoop.unshift(idxOther);
-      } else {
-        const newLoop1 = tmpLoop.slice(0, iMatch + 1).concat(idxOther);
-        const newLoop2 = [idxOther, ...tmpLoop.slice(iMatch)];
-        addLoop(newLoop1, tempLoops);
-        addLoop(newLoop2, tempLoops);
+      nextIndex = nextLine[0] === nextIndex ? nextLine[1] : nextLine[0];
+      const connectedIndex = current.slice(0, -2).findIndex(([i1, i2]) => i1 === nextIndex || i2 === nextIndex);
+
+      if (connectedIndex === -1) continue;
+
+      const closed = [nextIndex];
+      for (let i = connectedIndex; i < current.length; ++i) {
+        const line = current[i];
+        remaining.splice(remaining.indexOf(line), 1);
+
+        const index = closed[closed.length - 1] === line[0] ? line[1] : line[0];
+        if (index !== nextIndex) closed.push(index);
       }
-    }
-
-    if (!found) {
-      tempLoops.push([idxL1, idxL2]);
+      closedLoops.push(closed);
+      open = false;
     }
   }
 
@@ -207,24 +217,23 @@ const findLoops = (lines) => {
  */
 export default (vertices, lineIndices) => {
   // remove duplicate and zero-length lines
-  const sanitizedIndices = /** @type {number[]} */ ([]);
+  const lines = /** @type {Line[]} */ ([]);
   for (let i = 1; i < lineIndices.length; i += 2) {
     const low = lineIndices[i - 1] < lineIndices[i] ? lineIndices[i - 1] : lineIndices[i];
     const high = lineIndices[i] > lineIndices[i - 1] ? lineIndices[i] : lineIndices[i - 1];
-    let invalid = low === high;
+    const valid = low !== high && lines.every(line => line[0] !== low || line[1] !== high);
 
-    for (let k = 1; k < sanitizedIndices.length && !invalid; k += 2) {
-      if (sanitizedIndices[k - 1] === low && sanitizedIndices[k] === high) {
-        invalid = true;
-      }
-    }
-
-    if (!invalid) {
-      sanitizedIndices.push(low, high);
+    if (valid) {
+      const x = vertices[high * 2] - vertices[low * 2];
+      const y = vertices[high * 2 - 1] - vertices[low * 2 - 1];
+      let angle = Math.atan(y / x);
+      if (x < 0) angle += Math.PI;
+      else if (y < 0) angle += twoPI;
+      lines.push([low, high, angle]);
     }
   }
 
-  const loops = findLoops(sanitizedIndices);
+  const loops = findLoops(lines);
 
   const meshIndices = /** @type {number[]} */ ([]);
   for (const loop of loops) {
