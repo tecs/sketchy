@@ -223,24 +223,29 @@ const findLoops = (lines) => {
 /**
  * @param {Readonly<number[]>} vertices
  * @param {Readonly<number[]>} lineIndices A-B,B-C,C-D,...
- * @returns {number[]} Polygon indices
+ * @returns {number[][]} Polygon indices
  */
 export default (vertices, lineIndices) => {
+  // TODO dedup vertices
+
   // remove duplicate and zero-length lines
   const lines = /** @type {Line[]} */ ([]);
   for (let i = 1; i < lineIndices.length; i += 2) {
-    const low = lineIndices[i - 1] < lineIndices[i] ? lineIndices[i - 1] : lineIndices[i];
-    const high = lineIndices[i] > lineIndices[i - 1] ? lineIndices[i] : lineIndices[i - 1];
-    const valid = low !== high && lines.every(line => line[0] !== low || line[1] !== high);
+    if (lineIndices[i - 1] === lineIndices[i]) continue;
 
-    if (valid) {
-      const x = vertices[high * 2] - vertices[low * 2];
-      const y = vertices[high * 2 - 1] - vertices[low * 2 - 1];
-      let angle = Math.atan(y / x);
-      if (x < 0) angle += Math.PI;
-      else if (y < 0) angle += twoPI;
-      lines.push([low, high, angle]);
-    }
+    const x1 = vertices[lineIndices[i - 1] * 2];
+    const y1 = vertices[lineIndices[i - 1] * 2 + 1];
+    const x2 = vertices[lineIndices[i] * 2];
+    const y2 = vertices[lineIndices[i] * 2 + 1];
+
+    const low = x1 < x2 || (x1 === x2 && y1 > y2) ? lineIndices[i - 1] : lineIndices[i];
+    const high = lineIndices[i] === low ? lineIndices[i - 1] : lineIndices[i];
+    if (lines.some(line => line[0] === low && line[1] === high)) continue;
+
+    const x = vertices[high * 2] - vertices[low * 2];
+    const y = vertices[high * 2 - 1] - vertices[low * 2 - 1];
+    const angle = Math.atan(y / x) + (y < 0 ? twoPI : 0);
+    lines.push([low, high, angle]);
   }
 
   // remove lines with unconnected nodes
@@ -263,6 +268,12 @@ export default (vertices, lineIndices) => {
       }
     }
   }
+
+  lines.sort(([a], [b]) => (
+    vertices[a * 2] === vertices[b * 2]
+      ? vertices[b * 2 + 1] - vertices[a * 2 + 1]
+      : vertices[a * 2] - vertices[b * 2]
+  ));
 
   const loops = findLoops(lines);
 
