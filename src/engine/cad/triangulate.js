@@ -203,9 +203,14 @@ const findLoops = (lines) => {
       const connectedIndex = current.slice(0, -2).findIndex(([i1, i2]) => i1 === nextIndex || i2 === nextIndex);
 
       if (connectedIndex === -1) continue;
+      if (connectedIndex !== 0) {
+        removeElement(current[0], remaining);
+        break;
+
+      }
 
       const closed = [nextIndex];
-      for (let i = connectedIndex; i < current.length; ++i) {
+      for (let i = 0; i < current.length; ++i) {
         const line = current[i];
         removeElement(line, remaining);
 
@@ -269,11 +274,18 @@ export default (vertices, lineIndices) => {
     }
   }
 
-  lines.sort(([a], [b]) => (
-    vertices[a * 2] === vertices[b * 2]
-      ? vertices[b * 2 + 1] - vertices[a * 2 + 1]
-      : vertices[a * 2] - vertices[b * 2]
-  ));
+  lines.sort(([i1,, a1], [i2,, a2]) => {
+    const x1 = vertices[i1 * 2];
+    const x2 = vertices[i2 * 2];
+    if (x1 !== x2) return x1 - x2;
+
+    const y1 = vertices[i1 * 2 + 1];
+    const y2 = vertices[i2 * 2 + 1];
+    if (y1 !== y2) return y2 - y1;
+
+    if ((a1 > Math.PI && a2 > Math.PI) || (a1 < Math.PI && a2 < Math.PI)) return a1 - a2;
+    return a2 - a1;
+  });
 
   const loops = findLoops(lines);
 
