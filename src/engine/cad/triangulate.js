@@ -102,7 +102,7 @@ const earClip = (vertices, sortedIndices, loop) => {
 
 /**
  * @param {Readonly<number[]>} vertices
- * @param {Readonly<number[]>} indices
+ * @param {Readonly<number[]>} indices A-B-C-D-...
  * @returns {number[]}
  */
 const triangulateFace = (vertices, indices) => {
@@ -120,30 +120,29 @@ const triangulateFace = (vertices, indices) => {
 };
 
 /**
- * @param {number[]} loop
- * @param {number[][]} loops
+ * @param {Line[]} lines
  */
-const addLoop = (loop, loops) => {
-  for (const existingLoop of loops) {
-    if (existingLoop.length !== loop.length) continue;
-    if (loop === existingLoop) return;
-    let matches = true;
-    for (let i = 0; matches && i < existingLoop.length; ++i) {
-      matches = loop[i] !== existingLoop[i];
+const removeDangling = (lines) => {
+  // remove lines with unconnected nodes
+  let hasDangling = true;
+  while (hasDangling) {
+    hasDangling = false;
+    for (let i = lines.length - 1; i >= 0; --i) {
+      const [idx1, idx2] = lines[i];
+      let found1 = false;
+      let found2 = false;
+      for (let k = 0; k < lines.length && !(found1 && found2); ++k) {
+        if (i === k) continue;
+        const [idx1_, idx2_] = lines[k];
+        found1 ||= idx1_ === idx1 || idx2_ === idx1;
+        found2 ||= idx1_ === idx2 || idx2_ === idx2;
+      }
+      if (!found1 || !found2) {
+        hasDangling = true;
+        lines.splice(i, 1);
+      }
     }
-    if (matches) return;
   }
-  loops.push(loop);
-};
-
-/**
- * @template T
- * @param {T} el
- * @param {T[]} arr
- */
-const removeElement = (el, arr) => {
-  const index = arr.indexOf(el);
-  if (index !== -1) arr.splice(index, 1);
 };
 
 /**
@@ -154,13 +153,17 @@ const findLoops = (lines) => {
   const remaining = lines.slice();
   const closedLoops = /** @type {number[][]} */ ([]);
 
-  while (remaining.length) {
-    const current = [remaining[0]];
-    let open = true;
-    let nextIndex = remaining[0][1];
+  while (true) {
+    removeDangling(remaining);
+
+    const startingLine = remaining.shift();
+    if (!startingLine) break;
+
+    const current = [startingLine];
+    let nextIndex = startingLine[1];
     let skipLine = /** @type {Line?} */ (null);
 
-    while (open) {
+    while (true) {
       const currentLine = current[current.length - 1];
       let currentLineAngle = currentLine[2];
       if (currentLine[1] === nextIndex) {
@@ -169,7 +172,7 @@ const findLoops = (lines) => {
 
       const candidates = /** @type {[line: Line, diff: number][]} */ ([]);
 
-      for (const line of lines) {
+      for (const line of remaining) {
         const connectedIdx = line[0] === nextIndex ? 0 : 1;
         if (line[connectedIdx] !== nextIndex || current.includes(line)) continue;
 
@@ -187,10 +190,7 @@ const findLoops = (lines) => {
 
       if (!nextLine) {
         current.pop();
-        if (current.length === 0) {
-          removeElement(currentLine, remaining);
-          break;
-        }
+        if (current.length === 0) break;
 
         skipLine = currentLine;
         continue;
@@ -203,22 +203,17 @@ const findLoops = (lines) => {
       const connectedIndex = current.slice(0, -2).findIndex(([i1, i2]) => i1 === nextIndex || i2 === nextIndex);
 
       if (connectedIndex === -1) continue;
-      if (connectedIndex !== 0) {
-        removeElement(current[0], remaining);
-        break;
-
-      }
+      if (connectedIndex !== 0) break;
 
       const closed = [nextIndex];
       for (let i = 0; i < current.length; ++i) {
         const line = current[i];
-        removeElement(line, remaining);
-
         const index = closed[closed.length - 1] === line[0] ? line[1] : line[0];
         if (index !== nextIndex) closed.push(index);
       }
       closedLoops.push(closed);
-      open = false;
+
+      break;
     }
   }
 
@@ -251,27 +246,6 @@ export default (vertices, lineIndices) => {
     const y = vertices[high * 2 + 1] - vertices[low * 2 + 1];
     const angle = Math.atan(y / x) + (y < 0 ? twoPI : 0);
     lines.push([low, high, angle]);
-  }
-
-  // remove lines with unconnected nodes
-  let hasDangling = true;
-  while (hasDangling) {
-    hasDangling = false;
-    for (let i = lines.length - 1; i >= 0; --i) {
-      const [idx1, idx2] = lines[i];
-      let found1 = false;
-      let found2 = false;
-      for (let k = 0; k < lines.length && (!found1 || !found2); ++k) {
-        if (i === k) continue;
-        const [idx1_, idx2_] = lines[k];
-        found1 ||= idx1_ === idx1 || idx2_ === idx1;
-        found2 ||= idx1_ === idx2 || idx2_ === idx2;
-      }
-      if (!found1 || !found2) {
-        hasDangling = true;
-        lines.splice(i, 1);
-      }
-    }
   }
 
   lines.sort(([i1,, a1], [i2,, a2]) => {
