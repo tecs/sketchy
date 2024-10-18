@@ -248,7 +248,7 @@ export default (vertices, lineIndices) => {
     if (lines.some(line => line[0] === low && line[1] === high)) continue;
 
     const x = vertices[high * 2] - vertices[low * 2];
-    const y = vertices[high * 2 - 1] - vertices[low * 2 - 1];
+    const y = vertices[high * 2 + 1] - vertices[low * 2 + 1];
     const angle = Math.atan(y / x) + (y < 0 ? twoPI : 0);
     lines.push([low, high, angle]);
   }
