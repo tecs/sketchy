@@ -180,7 +180,7 @@ const findLoops = (lines) => {
         if (connectedIdx === 1) {
           angle += angle < Math.PI ? Math.PI : -Math.PI;
         }
-        const diff = (angle >= currentLineAngle ? angle : twoPI - angle) - currentLineAngle;
+        const diff = (currentLineAngle >= angle ? 0 : twoPI) + currentLineAngle - angle;
         candidates.push([line, diff]);
       }
 
