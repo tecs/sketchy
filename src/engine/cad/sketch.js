@@ -184,12 +184,12 @@ const checkConstraint = {
     return [current, equals(current, value)];
   },
   coincident: ({ elements: [p1, p2] }) => [null, vec2.equals(p1.vec2, p2.vec2)],
-  horizontal: ({ elements: [p1, p2] }) => [null, p1.vec2[1] === p2.vec2[1]],
-  vertical: ({ elements: [p1, p2] }) => [null, p1.vec2[0] === p2.vec2[0]],
+  horizontal: ({ elements: [p1, p2] }) => [null, equals(p1.vec2[1], p2.vec2[1])],
+  vertical: ({ elements: [p1, p2] }) => [null, equals(p1.vec2[0], p2.vec2[0])],
   equal: ({ elements: [p1, p2, p3, p4] }) => {
     const distance1 = vec2.distance(p1.vec2, p2.vec2);
     const distance2 = vec2.distance(p3.vec2, p4.vec2);
-    return [[distance1, distance2], distance1 === distance2];
+    return [[distance1, distance2], equals(distance1, distance2)];
   },
 };
 
