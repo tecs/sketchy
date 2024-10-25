@@ -569,20 +569,11 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
 
     const lineVertices2D = /** @type {number[]} */ ([]);
     const lineIndices = /** @type {number[]} */ ([]);
-    const uniqueVertices2D = /** @type {[number,number][]} */ ([]);
-    const loopIndices = /** @type {number[]} */ ([]);
 
     for (const { element, vec2: [dataX, dataY], index } of this.pointInfo) {
       switch (element.type) {
         case 'line':
           lineVertices2D.push(dataX, dataY);
-          const idx = uniqueVertices2D.findIndex(([x, y]) => equals(x, dataX) && equals(y, dataY));
-          if (idx === -1) {
-            loopIndices.push(uniqueVertices2D.length);
-            uniqueVertices2D.push([dataX, dataY]);
-          } else {
-            loopIndices.push(idx);
-          }
           lineIndices.push(index);
           break;
       }
@@ -599,9 +590,7 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
       this.#resizeModelBuffer('normal', 0);
       this.#resizeModelBuffer('color', 0);
     } else {
-      const vertices2D = uniqueVertices2D.flat();
-      const indices = triangulate(vertices2D, loopIndices);
-
+      const [indices, vertices2D] = triangulate(lineVertices2D, lineIndices);
       const vertices = transformFlatBuffer(vertices2D, this.fromSketch);
 
       const normals = new Uint8Array(vertices.length);

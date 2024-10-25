@@ -1,3 +1,5 @@
+const { glMatrix: { equals }} = glMatrix;
+
 /** @typedef {[i1: number, i2: number, angle: number]} Line */
 
 const twoPI = Math.PI * 2;
@@ -223,40 +225,48 @@ const findLoops = (lines) => {
 /**
  * @param {Readonly<number[]>} vertices
  * @param {Readonly<number[]>} lineIndices A-B,B-C,C-D,...
- * @returns {number[][]} Polygon indices
+ * @returns {[indices: number[], vertices: number[]]}
  */
 export default (vertices, lineIndices) => {
-  // TODO dedup vertices
-
-  // remove duplicate and zero-length lines
   const lines = /** @type {Line[]} */ ([]);
-  for (let i = 1; i < lineIndices.length; i += 2) {
-    if (lineIndices[i - 1] === lineIndices[i]) continue;
+  const uniqueVertices = /** @type {PlainVec2[]} */ ([]);
 
+  // remove duplicate and zero-length lines and duplicate vertices
+  for (let i = 1; i < lineIndices.length; i += 2) {
     const x1 = vertices[lineIndices[i - 1] * 2];
     const y1 = vertices[lineIndices[i - 1] * 2 + 1];
     const x2 = vertices[lineIndices[i] * 2];
     const y2 = vertices[lineIndices[i] * 2 + 1];
 
-    const low = x1 < x2 || (x1 === x2 && y1 > y2) ? lineIndices[i - 1] : lineIndices[i];
-    const high = lineIndices[i] === low ? lineIndices[i - 1] : lineIndices[i];
+    let i1 = uniqueVertices.findIndex(([x, y]) => equals(x, x1) && equals(y, y1));
+    if (i1 === -1) {
+      i1 = uniqueVertices.length;
+      uniqueVertices.push([x1, y1]);
+    }
+
+    let i2 = uniqueVertices.findIndex(([x, y]) => equals(x, x2) && equals(y, y2));
+    if (i2 === -1) {
+      i2 = uniqueVertices.length;
+      uniqueVertices.push([x2, y2]);
+    }
+
+    if (i1 === i2) continue;
+
+    const low = x1 < x2 || (x1 === x2 && y1 > y2) ? i1 : i2;
+    const high = low === i1 ? i2 : i1;
     if (lines.some(line => line[0] === low && line[1] === high)) continue;
 
-    const x = vertices[high * 2] - vertices[low * 2];
-    const y = vertices[high * 2 + 1] - vertices[low * 2 + 1];
+    const x = uniqueVertices[high][0] - uniqueVertices[low][0];
+    const y = uniqueVertices[high][1] - uniqueVertices[low][1];
     const angle = Math.atan(y / x) + (y < 0 ? twoPI : 0);
     lines.push([low, high, angle]);
   }
 
   lines.sort(([i1,, a1], [i2,, a2]) => {
-    const x1 = vertices[i1 * 2];
-    const x2 = vertices[i2 * 2];
+    const [x1, y1] = uniqueVertices[i1];
+    const [x2, y2] = uniqueVertices[i2];
     if (x1 !== x2) return x1 - x2;
-
-    const y1 = vertices[i1 * 2 + 1];
-    const y2 = vertices[i2 * 2 + 1];
     if (y1 !== y2) return y2 - y1;
-
     if ((a1 > Math.PI && a2 > Math.PI) || (a1 < Math.PI && a2 < Math.PI)) return a1 - a2;
     return a2 - a1;
   });
@@ -264,9 +274,11 @@ export default (vertices, lineIndices) => {
   const loops = findLoops(lines);
 
   const meshIndices = /** @type {number[]} */ ([]);
+
+  const flatVertices = uniqueVertices.flat();
   for (const loop of loops) {
-    meshIndices.push(...triangulateFace(vertices, loop));
+    meshIndices.push(...triangulateFace(flatVertices, loop));
   }
 
-  return meshIndices;
+  return [meshIndices, flatVertices];
 };
