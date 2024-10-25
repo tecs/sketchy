@@ -251,8 +251,10 @@ export default (vertices, lineIndices) => {
     }
 
     if (i1 === i2) continue;
+    const [xx1, yy1] = uniqueVertices[i1];
+    const [xx2, yy2] = uniqueVertices[i2];
 
-    const low = x1 < x2 || (x1 === x2 && y1 > y2) ? i1 : i2;
+    const low = xx1 < xx2 || (xx1 === xx2 && yy1 > yy2) ? i1 : i2;
     const high = low === i1 ? i2 : i1;
     if (lines.some(line => line[0] === low && line[1] === high)) continue;
 
