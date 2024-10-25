@@ -258,8 +258,8 @@ export default (vertices, lineIndices) => {
 
     const x = uniqueVertices[high][0] - uniqueVertices[low][0];
     const y = uniqueVertices[high][1] - uniqueVertices[low][1];
-    const angle = Math.atan(y / x) + (y < 0 ? twoPI : 0);
-    lines.push([low, high, angle]);
+    const angle = Math.atan(y / x);
+    lines.push([low, high, angle + (angle < 0 ? twoPI : 0)]);
   }
 
   lines.sort(([i1,, a1], [i2,, a2]) => {
