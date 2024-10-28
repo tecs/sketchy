@@ -207,6 +207,7 @@ export default class Scene extends Base {
    */
   setCurrentStep(step) {
     if (step !== this.currentStep) {
+      this.#engine.tools.selected?.abort();
       const previous = this.currentStep;
       if (step && this.enteredInstance !== this.currentInstance) {
         this.currentStep = null;
