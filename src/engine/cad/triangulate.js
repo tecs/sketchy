@@ -1,4 +1,4 @@
-const { glMatrix: { equals }} = glMatrix;
+const { glMatrix: { equals }, vec2 } = glMatrix;
 
 /** @typedef {[i1: number, i2: number, angle: number]} Line */
 
@@ -148,6 +148,126 @@ const removeDangling = (lines) => {
 };
 
 /**
+ * @param {Line[]} lines
+ * @param {PlainVec2[]} vertices
+ */
+const intersect = (lines, vertices) => {
+  const l1Coord = vec2.create();
+  const l2Coord = vec2.create();
+  const l1Offset = vec2.create();
+  const l2Offset = vec2.create();
+  const diff = vec2.create();
+
+  for (let i = 0; i < lines.length - 1; ++i) {
+    const line1 = lines[i];
+
+    let recalculateL1 = true;
+
+    for (let k = i + 1; k < lines.length; ++k) {
+      if (recalculateL1) {
+        vec2.set(l1Coord, ...vertices[line1[0]]);
+        vec2.set(l1Offset, ...vertices[line1[1]]);
+        vec2.subtract(l1Offset, l1Offset, l1Coord);
+        recalculateL1 = false;
+      }
+
+      const line2 = lines[k];
+      vec2.set(l2Coord, ...vertices[line2[0]]);
+      vec2.set(l2Offset, ...vertices[line2[1]]);
+      vec2.subtract(l2Offset, l2Offset, l2Coord);
+
+      vec2.subtract(diff, l2Coord, l1Coord);
+
+      const cross1 = l1Offset[0] * l2Offset[1] - l1Offset[1] * l2Offset[0];
+      const cross2 = diff[0] * l2Offset[1] - diff[1] * l2Offset[0];
+
+      // parallel
+      if (equals(cross1, 0)) {
+        // check if colinear
+        if (!equals(cross2, 0)) continue;
+
+        const dot = vec2.dot(l1Offset, l1Offset);
+        const t0 = vec2.dot(diff, l1Offset) / dot;
+        const t1 = t0 + vec2.dot(l2Offset, l1Offset) / dot;
+
+        // check if overlaps
+        if (t1 <= 0 || t0 >= 1) continue;
+
+        // check if duplicate
+        if (t0 === 0 && t1 === 1) {
+          lines.splice(k--, 1);
+          continue;
+        }
+
+        // lines have coincident endpoints
+        if (t0 === 0 || t1 === 1) {
+          const innerLine = t0 > 0 || t1 < 1 ? line2 : line1;
+          const outerLine = innerLine === line1 ? line2 : line1;
+          outerLine[t0 === 0 ? 0 : 1] = innerLine[t0 === 0 ? 1 : 0];
+          recalculateL1 = outerLine === line1;
+          continue;
+        }
+
+        // one line is inside the other
+        if ((t0 > 0 && t1 < 1) || (t0 < 0 && t1 > 1)) {
+          const innerLine = t0 > 0 ? line2 : line1;
+          const outerLine = innerLine === line1 ? line2 : line1;
+          lines.push([innerLine[1], outerLine[1], outerLine[2]]);
+          outerLine[1] = innerLine[0];
+          recalculateL1 = outerLine === line1;
+          continue;
+        }
+
+        // lines overlap on one side
+        const leftLine = t0 < 0 ? line2 : line1;
+        const rightLine = leftLine === line1 ? line2 : line1;
+        const index = leftLine[1];
+        lines.push([rightLine[0], index, leftLine[2]]);
+        leftLine[1] = rightLine[0];
+        rightLine[0] = index;
+        recalculateL1 = true;
+        continue;
+      }
+
+      const l1scale = cross2 / cross1;
+      const l2scale = (diff[0] * l1Offset[1] - diff[1] * l1Offset[0]) / cross1;
+
+      // check if intersects
+      const touches1 = l1scale > 0 && l1scale < 1;
+      const touches2 = l2scale > 0 && l2scale < 1;
+      if (!touches1 || !touches2) continue;
+
+      // one line's endpoint is within the other line
+      if (touches1 !== touches2) {
+        const intersectedLine = touches1 ? line1 : line2;
+        const otherLine = touches1 ? line2 : line1;
+        const index = otherLine[l1scale === 0 || l2scale === 0 ? 0 : 1];
+        lines.push([intersectedLine[1], index, intersectedLine[2]]);
+        intersectedLine[1] = index;
+        recalculateL1 = intersectedLine === line1;
+        continue;
+      }
+
+      // lines cross
+      // calculate and add intersection to vertices
+      vec2.scaleAndAdd(l1Offset, l1Coord, l1Offset, l1scale);
+      let index = vertices.findIndex(([x, y]) => equals(x, l1Offset[0]) && equals(y, l1Offset[1]));
+      if (index === -1) {
+        index = vertices.length;
+        vertices.push([l1Offset[0], l1Offset[1]]);
+      }
+      recalculateL1 = true;
+
+      lines.push([index, line1[1], line1[2]]);
+      line1[1] = index;
+
+      lines.push([index, line2[1], line2[2]]);
+      line2[1] = index;
+    }
+  }
+};
+
+/**
  * @param {Readonly<Line[]>} lines
  * @returns {number[][]}
  */
@@ -263,6 +383,8 @@ export default (vertices, lineIndices) => {
     const angle = Math.atan(y / x);
     lines.push([low, high, angle + (angle < 0 ? twoPI : 0)]);
   }
+
+  intersect(lines, uniqueVertices);
 
   lines.sort(([i1,, a1], [i2,, a2]) => {
     const [x1, y1] = uniqueVertices[i1];
