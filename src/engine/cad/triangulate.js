@@ -325,6 +325,22 @@ const intersect = (lines, vertices) => {
 };
 
 /**
+ * @param {Readonly<PlainVec2[]>} uniquePoints
+ * @param {boolean} clockwise
+ * @returns {(a: Line, b: Line) => number}
+ */
+const lineSorter = (uniquePoints, clockwise = false) => {
+  return ([i1,, a1], [i2,, a2]) => {
+    const [x1, y1] = uniquePoints[i1];
+    const [x2, y2] = uniquePoints[i2];
+    if (x1 !== x2) return x1 - x2;
+    if (y1 !== y2) return y2 - y1;
+    if (((a1 > Math.PI && a2 > Math.PI) || (a1 < Math.PI && a2 < Math.PI)) !== clockwise) return a1 - a2;
+    return a2 - a1;
+  };
+};
+
+/**
  * @param {Readonly<Line[]>} lines
  * @param {boolean} outline
  * @returns {Loop[]}
@@ -340,7 +356,7 @@ const findLoops = (lines, outline = false) => {
     if (!startingLine) break;
 
     const current = [startingLine];
-    let nextIndex = startingLine[outline ? 0 : 1];
+    let nextIndex = startingLine[1];
     let skipLine = /** @type {Line?} */ (null);
 
     while (true) {
@@ -510,6 +526,8 @@ const setHoles = (triangulations, uniqueVertices) => {
     }
   }
 
+  const cwLineSorter = lineSorter(uniqueVertices, true);
+
   // re-triangulate loops with descendents, using their outlines as holes
   for (const loop of triangulations) {
     if (loop.descendentBuckets.length === 0) continue;
@@ -518,7 +536,8 @@ const setHoles = (triangulations, uniqueVertices) => {
       if (bucket.outline.length === 0) {
         const uniqueLines = bucket.triangulations
           .flatMap(({ loop: { lines } }) => lines)
-          .filter((v, i, a) => a.indexOf(v) === i);
+          .filter((v, i, a) => a.indexOf(v) === i)
+          .sort(cwLineSorter);
         bucket.outline = findLoops(uniqueLines, true).pop()?.indices ?? [];
       }
     }
@@ -572,14 +591,7 @@ export default (vertices, lineIndices) => {
 
   intersect(lines, uniquePoints);
 
-  lines.sort(([i1,, a1], [i2,, a2]) => {
-    const [x1, y1] = uniquePoints[i1];
-    const [x2, y2] = uniquePoints[i2];
-    if (x1 !== x2) return x1 - x2;
-    if (y1 !== y2) return y2 - y1;
-    if ((a1 > Math.PI && a2 > Math.PI) || (a1 < Math.PI && a2 < Math.PI)) return a1 - a2;
-    return a2 - a1;
-  });
+  lines.sort(lineSorter(uniquePoints));
 
   const loops = findLoops(lines);
 
