@@ -23,12 +23,15 @@ import makeToolsMenu from './ui/menu/tools.js';
 import makeBrowserMenu from './ui/menu/browser/index.js';
 import makeInfoMenu from './ui/menu/info.js';
 
+import connectUserData from './user-data.js';
 import connectEngineEvents from './ui/engine-events.js';
 import connectBrowserEvents from './ui/browser-events.js';
 
 window.addEventListener('load', () => {
   const ui = new UI(document.body);
   const engine = new Engine(ui.canvas);
+
+  connectUserData(engine);
 
   engine.renderer.addToPipeline(renderSkybox);
   engine.renderer.addToPipeline(renderObjects);

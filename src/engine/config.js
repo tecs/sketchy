@@ -15,6 +15,7 @@
 /** @typedef {BaseSetting<string, "key">} StringSetting */
 /** @typedef {BaseSetting<boolean, "toggle">} BooleanSetting */
 /** @typedef {NumberSetting|StringSetting|BooleanSetting} Setting */
+/** @typedef {{ id: string, value: import("./general/state").Primitive }} Override */
 
 /** @type {(engine: Engine, setting: Setting, current: Setting["value"], previous: Setting["value"] ) => void} */
 const forceEmit = (engine, setting, current, previous) => engine.emit(
@@ -30,6 +31,9 @@ export default class Config {
 
   /** @type {Setting[]} */
   #settings = [];
+
+  /** @type {Override[]} */
+  #overrides = [];
 
   /**
    * @param {Engine} engine
@@ -51,11 +55,13 @@ export default class Config {
 
     if (this.#settings.some(setting => setting.id === id)) throw new Error(`Setting "${id}" already exists`);
 
+    const override = this.#overrides.find(o => o.id === id)?.value;
+
     const setting = /** @type {T} */ ({
       id,
       name,
       type,
-      value,
+      value: typeof value === typeof override ? override : value,
       defaultValue: value,
       /**
        * @param {T["value"]} newValue
@@ -121,5 +127,25 @@ export default class Config {
       if (b.id.startsWith('general.')) return 1;
       return this.#settings.indexOf(a) - this.#settings.indexOf(b);
     });
+  }
+
+  /**
+   * @param {Override[]} overrides
+   */
+  import(overrides) {
+    this.#overrides = overrides;
+    for (const { id, value } of overrides) {
+      const setting = this.#settings.find(s => s.id === id);
+      if (setting && typeof setting.value === typeof value && setting.value !== value) {
+        /** @type {BaseSetting<typeof value, string>} */ (setting).set(value);
+      };
+    }
+  }
+
+  /**
+   * @returns {Override[]}
+   */
+  export() {
+    return this.#settings.map(({ id, value }) => ({ id, value }));
   }
 }
