@@ -390,8 +390,8 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
     });
 
     engine.on('stepchange', (current, previous) => {
-      if (current instanceof Sketch) current.#recalculate([]);
-      if (previous instanceof Sketch) previous.#recalculate([]);
+      if (current instanceof Sketch) current.update();
+      if (previous instanceof Sketch) previous.update();
     });
   }
 
