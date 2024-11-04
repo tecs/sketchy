@@ -27,8 +27,9 @@ export default (engine, container) => {
     const forceChange = (el) => el.dispatchEvent(new Event('change'));
 
     const settingsItems = engine.config.list().map(setting => {
-      const el = $('div', { className: 'setting' });
+      const el = $('div', { className: `setting${setting.value !== setting.defaultValue ? ' changed' : ''}` });
       const originalValue = String(setting.value);
+      const defaultValue = String(setting.defaultValue);
 
       const [category] = setting.id.split('.');
       tabMap[category] ??= tabs.addTab(category);
@@ -56,8 +57,8 @@ export default (engine, container) => {
           return false;
         },
         onchange() {
-          if (setting.type === 'toggle') el.classList.toggle('changed', setting.value !== input.checked);
-          else el.classList.toggle('changed', input.value !== originalValue);
+          if (setting.type === 'toggle') el.classList.toggle('changed', input.checked !== setting.defaultValue);
+          else el.classList.toggle('changed', input.value !== defaultValue);
 
           if (setting.type !== 'key') return;
 
@@ -77,8 +78,8 @@ export default (engine, container) => {
           className: 'button reset',
           innerText: '⟲',
           onclick: () => {
-            input.value = originalValue;
-            input.checked = originalValue === 'true';
+            input.value = defaultValue;
+            input.checked = defaultValue === 'true';
             forceChange(input);
           },
         }],

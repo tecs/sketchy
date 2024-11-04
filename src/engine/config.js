@@ -67,9 +67,9 @@ export default class Config {
       },
       reset: () => {
         const oldValue = setting.value;
-        setting.value = value;
-        forceEmit(this.#engine, setting, value, oldValue);
-        return value;
+        setting.value = setting.defaultValue;
+        forceEmit(this.#engine, setting, setting.defaultValue, oldValue);
+        return setting.defaultValue;
       },
     });
 
