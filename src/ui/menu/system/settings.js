@@ -60,7 +60,7 @@ export default (engine, container) => {
           if (setting.type === 'toggle') el.classList.toggle('changed', input.checked !== setting.defaultValue);
           else el.classList.toggle('changed', input.value !== defaultValue);
 
-          if (setting.type !== 'key') return;
+          if (setting.type !== 'key' || input.value === '') return;
 
           // make sure there are no shortcut conflicts
           for (const item of settingsItems) {
