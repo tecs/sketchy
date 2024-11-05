@@ -161,6 +161,22 @@ export default class Base {
   /**
    * @template {keyof Event} T
    * @param {T} event
+   * @returns {Promise<Event[T]["params"]>}
+   */
+  waitFor(event) {
+    /** @type {Event[T]["callback"]} */
+    let handler = () => {};
+
+    /** @type {Promise<Event[T]["params"]>} */
+    const promise = new Promise(res => void(handler = res));
+    this.#handlers.push({ event, handler: (...args) => handler(args), once: true });
+
+    return promise;
+  }
+
+  /**
+   * @template {keyof Event} T
+   * @param {T} event
    * @param {Event[T]["params"]} args
    */
   emit(event, ...args) {
