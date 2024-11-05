@@ -49,6 +49,15 @@ fieldset {
   margin-bottom: 1em;
 }
 
+kbd {
+  border: 1px solid var(--borderColor);
+  background-color: var(--lightenColor);
+  padding: 0 0.25em;
+  border-radius: 0.25em;
+  box-shadow: 0 2px 0 1px var(--darkenColor);
+  margin: 0 0.25em;
+}
+
 .button {
   cursor: pointer;
   border: 1px solid var(--borderColor);
@@ -263,6 +272,15 @@ dialog::backdrop {
   display: grid;
   grid-template-columns: 1fr 1fr;
   column-gap: 1em;
+}
+
+.setting .keyInput {
+  cursor: pointer;
+  outline: 0px solid transparent;
+}
+
+.setting:hover {
+  background-color: var(--lightenColor);
 }
 
 .settingsButtons {
