@@ -1,8 +1,19 @@
 const { vec3 } = glMatrix;
 
 const PLUS_TOKEN = ' [+] ';
+const THEN_TOKEN = ' [THEN] ';
 
 /** @typedef {"left"|"middle"|"right"} MouseButton */
+/** @typedef {[string, ...string[]]} NonNullKeyboardShortcut */
+/** @typedef {string[]} KeyboardShortcut */
+/** @typedef {[KeyboardShortcut] | [NonNullKeyboardShortcut, KeyboardShortcut]} KeyboardSequence */
+/** @typedef {KeyboardSequence | KeyboardShortcut | string} KeyboardShortcutRepresentation */
+
+/** @type {(shortcut: KeyboardShortcutRepresentation) => shortcut is KeyboardShortcut} */
+export const isKeyboardShortcut = (shortcut) => Array.isArray(shortcut) && !Array.isArray(shortcut[0]);
+
+/** @type {(sequence: KeyboardShortcutRepresentation) => sequence is KeyboardSequence} */
+export const isKeyboardSequence = (sequence) => Array.isArray(sequence) && Array.isArray(sequence[0]);
 
 export default class Input {
   /** @type {Engine} */
@@ -33,33 +44,48 @@ export default class Input {
     switch (key) {
       case ' ': return 'space';
       case 'control': return 'ctrl';
+      case 'escape': return 'esc';
     }
     return key;
   }
 
   /**
    * @param {string} combo
-   * @returns {string[]}
+   * @returns {KeyboardSequence}
    */
   static parse(combo) {
-    if (combo.length === 0) return [];
-    const keys = combo.split(PLUS_TOKEN);
-    for (let i = 0; i < keys.length; ++i) {
-      keys[i] = this.normalizeKey(keys[i]);
+    const sequence = /** @type {KeyboardSequence} */ ([[]]);
+    if (combo.length === 0) return sequence;
+
+    const shortcuts = combo.split(THEN_TOKEN);
+    for (let i = 0; i < shortcuts.length; ++i) {
+      sequence[i] = [];
+      if (shortcuts[i].length === 0) continue;
+
+      const keys = shortcuts[i].split(PLUS_TOKEN);
+      for (let k = 0; k < keys.length; ++k) {
+        sequence[i][k] = this.normalizeKey(keys[k]);
+      }
     }
-    return keys;
+
+    return sequence;
   }
 
   /**
-   * @param {string[] | string} keys
+   * @param {KeyboardShortcutRepresentation} sequence
    * @returns {string}
    */
-  static stringify(keys) {
-    if (!Array.isArray(keys)) keys = [keys];
-    for (let i = 0; i < keys.length; ++i) {
-      keys[i] = this.normalizeKey(keys[i]);
+  static stringify(sequence) {
+    if (!Array.isArray(sequence)) sequence = /** @type {KeyboardSequence} */ ([[sequence]]);
+    else if (isKeyboardShortcut(sequence)) sequence = /** @type {KeyboardSequence} */ ([sequence]);
+
+    for (const shortcut of sequence) {
+      for (let i = 0; i < shortcut.length; ++i) {
+        shortcut[i] = this.normalizeKey(shortcut[i]);
+      }
     }
-    return keys.join(PLUS_TOKEN);
+
+    return sequence.map(shortcut => shortcut.join(PLUS_TOKEN)).join(THEN_TOKEN);
   }
 
   /**

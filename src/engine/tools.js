@@ -4,7 +4,7 @@ import Input from './input.js';
  * @typedef Tool
  * @property {string} type
  * @property {string} name
- * @property {string | string[]} shortcut
+ * @property {import('./input.js').KeyboardShortcutRepresentation} shortcut
  * @property {string} icon
  * @property {string} [cursor]
  * @property {boolean} [active]
