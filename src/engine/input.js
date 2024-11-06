@@ -25,6 +25,11 @@ export default class Input {
   /** @type {string|null} */
   key = null;
 
+  /** @type {{ id: string, handler: Function, sequence: string[], index: number }[]} */
+  shortcuts = [];
+
+  shortcutIndex = 0;
+
   position = vec3.create();
   lastClickedPosition = vec3.create();
 
@@ -89,10 +94,30 @@ export default class Input {
   }
 
   /**
+   * @param {string} combo
+   * @returns {string[]}
+   */
+  static stringifyShortcuts(combo) {
+    return this.parse(combo).filter(shortcut => shortcut.length > 0).map(shortcut => this.stringify(shortcut));
+  }
+
+  /**
    * @param {Engine} engine
    */
   constructor(engine) {
     this.#engine = engine;
+
+    engine.on('settingchange', (setting) => {
+      if (setting.type !== 'key') return;
+
+      const affectedShortcuts = this.shortcuts.filter(({ id }) => id === setting.id);
+      if (!affectedShortcuts) return;
+
+      for (const shortcut of affectedShortcuts) {
+        shortcut.sequence = Input.stringifyShortcuts(setting.value);
+        shortcut.index = 0;
+      }
+    });
   }
 
   /**
@@ -146,6 +171,7 @@ export default class Input {
     /** @type {string[]} */
     const combo = [];
 
+    const originalKey = key;
     key = Input.normalizeKey(key);
     switch (key) {
       case 'alt':
@@ -163,6 +189,9 @@ export default class Input {
     if (this.ctrl || key === 'ctrl') combo.unshift('ctrl');
     const keyCombo = Input.stringify(combo);
 
+    if (key === 'esc') this.#resetShortcuts();
+    else if (originalKey.length === 1 && down) this.#triggerShortcuts(keyCombo);
+
     if (down) this.#engine.emit('keydown', key, keyCombo);
     else this.#engine.emit('keyup', key, keyCombo);
   }
@@ -172,5 +201,44 @@ export default class Input {
    */
   scroll(direction) {
     this.#engine.emit('mousescroll', direction);
+  }
+
+  /**
+   * @param {Readonly<import("./config").StringSetting>} setting
+   * @param {Function} handler
+   */
+  onShortcut({ id, value }, handler) {
+    this.shortcuts.push({ id, handler, sequence: Input.stringifyShortcuts(value), index: 0 });
+  }
+
+  /**
+   * @param {string} keyCombo
+   */
+  #triggerShortcuts(keyCombo) {
+    let found = false;
+    let matched = false;
+
+    for (const shortcut of this.shortcuts) {
+      if (shortcut.index !== this.shortcutIndex || shortcut.sequence[this.shortcutIndex] !== keyCombo) {
+        continue;
+      }
+
+      matched = true;
+
+      if (shortcut.sequence.length === ++shortcut.index) {
+        found = true;
+        shortcut.handler();
+      }
+    }
+
+    this.shortcutIndex++;
+    if (found || !matched) this.#resetShortcuts();
+  }
+
+  #resetShortcuts() {
+    for (const shortcut of this.shortcuts) {
+      shortcut.index = 0;
+    }
+    this.shortcutIndex = 0;
   }
 }
