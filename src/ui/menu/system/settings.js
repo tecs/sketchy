@@ -147,6 +147,7 @@ export default (engine, container) => {
             const isSequence = parsedInput.length === 2;
             const isPendingSequence = parsedInput[1]?.length === 0;
 
+            const originalKey = key;
             key = Input.normalizeKey(key);
 
             switch (key) {
@@ -175,7 +176,7 @@ export default (engine, container) => {
             }
 
             // block non-printable keys
-            if (key.length !== 1) return false;
+            if (originalKey.length !== 1) return false;
 
             const combo = /** @type {import('../../../engine/input.js').NonNullKeyboardShortcut} */ ([key]);
             if (shiftKey) combo.unshift(Input.normalizeKey('shift'));
