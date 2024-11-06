@@ -1,8 +1,10 @@
+import Input from './input.js';
+
 /**
  * @typedef Tool
  * @property {string} type
  * @property {string} name
- * @property {string} shortcut
+ * @property {string | string[]} shortcut
  * @property {string} icon
  * @property {string} [cursor]
  * @property {boolean} [active]
@@ -66,7 +68,7 @@ export default class Tools {
       `shortcuts.${tool.type}Tool`,
       `${tool.name} tool shortcut`,
       'key',
-      tool.shortcut,
+      Input.stringify(tool.shortcut),
     ));
     if (!this.selected) this.setTool(tool);
   }

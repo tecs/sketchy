@@ -18,7 +18,7 @@ export default (engine) => {
   const select = {
     type: 'select',
     name: 'Select',
-    shortcut: ' ',
+    shortcut: 'space',
     icon: '🮰',
     start() {
       lasso = false;

@@ -1,3 +1,5 @@
+import Input from './input.js';
+
 /**
  * @typedef HistoryEvent
  * @property {string} name
@@ -51,8 +53,8 @@ export default class History {
   constructor(engine) {
     this.#engine = engine;
 
-    const undoKey = engine.config.createString('shortcuts.undo', 'Undo', 'key', 'control + z');
-    const redoKey = engine.config.createString('shortcuts.redo', 'Redo', 'key', 'control + shift + z');
+    const undoKey = engine.config.createString('shortcuts.undo', 'Undo', 'key', Input.stringify(['ctrl', 'z']));
+    const redoKey = engine.config.createString('shortcuts.redo', 'Redo', 'key', Input.stringify(['ctrl', 'shift', 'z']));
 
     engine.on('keyup', (_, keyCombo) => {
       switch (keyCombo) {

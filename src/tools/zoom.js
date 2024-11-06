@@ -1,3 +1,5 @@
+import Input from '../engine/input.js';
+
 const { vec3 } = glMatrix;
 
 /** @type {(engine: Engine) => Tool} */
@@ -22,8 +24,8 @@ export default (engine) => {
     abort() {},
   };
 
-  const zoomInKey = engine.config.createString('shortcuts.zoomIn', 'Zoom in', 'key', 'shift + +');
-  const zoomOutKey = engine.config.createString('shortcuts.zoomOut', 'Zoom out', 'key', '-');
+  const zoomInKey = engine.config.createString('shortcuts.zoomIn', 'Zoom in', 'key', Input.stringify(['shift', '+']));
+  const zoomOutKey = engine.config.createString('shortcuts.zoomOut', 'Zoom out', 'key', Input.stringify('-'));
 
   engine.on('mousescroll', (direction) => {
     const { selected } = engine.tools;

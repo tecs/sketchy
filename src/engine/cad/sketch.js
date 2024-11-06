@@ -1,4 +1,5 @@
 import { Properties } from '../general/properties.js';
+import Input from '../input.js';
 import Step from './step.js';
 import triangulate from './triangulate.js';
 
@@ -283,11 +284,11 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
 
     const { editor: { selection }, scene, history, config } = engine;
 
-    const distanceKey = config.createString('shortcuts.sketch.distance', 'Sketch constraint: distance', 'key', 'd');
-    const coincidentKey = config.createString('shortcuts.sketch.coincident', 'Sketch constraint: coincident point', 'key', 'c');
-    const horizontalKey = config.createString('shortcuts.sketch.horizontal', 'Sketch constraint: horizontal', 'key', 'h');
-    const verticalKey = config.createString('shortcuts.sketch.vertical', 'Sketch constraint: vertical', 'key', 'v');
-    const equalKey = config.createString('shortcuts.sketch.equal', 'Sketch constraint: equal', 'key', 'e');
+    const distanceKey = config.createString('shortcuts.sketch.distance', 'Sketch constraint: distance', 'key', Input.stringify('d'));
+    const coincidentKey = config.createString('shortcuts.sketch.coincident', 'Sketch constraint: coincident point', 'key', Input.stringify('c'));
+    const horizontalKey = config.createString('shortcuts.sketch.horizontal', 'Sketch constraint: horizontal', 'key', Input.stringify('h'));
+    const verticalKey = config.createString('shortcuts.sketch.vertical', 'Sketch constraint: vertical', 'key', Input.stringify('v'));
+    const equalKey = config.createString('shortcuts.sketch.equal', 'Sketch constraint: equal', 'key', Input.stringify('e'));
 
     engine.on('keydown', (_, keyCombo) => {
       const sketch = scene.currentStep ?? scene.enteredInstance?.body.step;

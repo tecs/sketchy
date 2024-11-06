@@ -44,9 +44,9 @@ window.addEventListener('load', () => {
   engine.renderer.addToPipeline(renderLasso);
 
   engine.tools.addTool(SelectTool);
+  engine.tools.addTool(MoveTool);
   engine.tools.addTool(LineTool);
   engine.tools.addTool(RectangleTool);
-  engine.tools.addTool(MoveTool);
   engine.tools.addTool(OrbitTool);
   engine.tools.addTool(ZoomTool);
 

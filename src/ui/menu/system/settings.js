@@ -1,4 +1,35 @@
+import Input from '../../../engine/input.js';
 import { $ } from '../../lib/element.js';
+
+/** @type {Record<ReturnType<Engine["config"]["list"]>[number]["type"], string>} */
+const InputTypeMap = {
+  int: 'number',
+  key: 'hidden',
+  toggle: 'checkbox',
+};
+
+/** @type {(el: HTMLElement, event: string) => boolean} */
+const dispatchEvent = (el, event) => el.dispatchEvent(new Event(event));
+
+/**
+ * @param {HTMLElement} el
+ * @param {string[]} combo
+ */
+const renderKeyCombo = (el, combo) => {
+  const elements = /** @type {import("../../lib/element.js").Opts[2] & {}} */ ([]);
+
+  for (const key of combo) {
+    if (key !== combo[0]) {
+      elements.push(['span', { innerText: '+' }]);
+    }
+    elements.push(['kbd', { innerText: key }]);
+  }
+
+  if (elements.length === 0) elements.push(['em', { innerText: '<unset>' }]);
+
+  $(el, { innerHTML: '' }, elements);
+};
+
 
 /**
  * @param {Engine} engine
@@ -13,38 +44,8 @@ export default (engine, container) => {
     tabs.$element({ className: 'settings' });
     tabs.$container({ className: 'settingsCategories' });
 
-    /** @type {Record<ReturnType<Engine["config"]["list"]>[number]["type"], string>} */
-    const InputTypeMap = {
-      int: 'number',
-      key: 'hidden',
-      toggle: 'checkbox',
-    };
-
     /** @type {Record<string, import("../../lib/index.js").AnyUIParent>} */
     const tabMap = {};
-
-    /** @type {(el: HTMLElement, event: string) => boolean} */
-    const dispatchEvent = (el, event) => el.dispatchEvent(new Event(event));
-
-    /**
-     * @param {HTMLElement} el
-     * @param {string} keyCombo
-     */
-    const renderKeyCombo = (el, keyCombo) => {
-      const elements = /** @type {import("../../lib/element.js").Opts[2] & {}} */ ([]);
-
-      const combo = keyCombo !== '' ? keyCombo.split(' + ') : [];
-      for (const key of combo) {
-        if (key !== combo[0]) {
-          elements.push(['span', { innerText: '+' }]);
-        }
-        elements.push(['kbd', { innerText: key === ' ' ? 'space' : key }]);
-      }
-
-      if (elements.length === 0) elements.push(['em', { innerText: '<unset>' }]);
-
-      $(el, { innerHTML: '' }, elements);
-    };
 
     const settingsItems = engine.config.list().map(setting => {
       const el = $('div', { className: `setting${setting.value !== setting.defaultValue ? ' changed' : ''}` });
@@ -84,7 +85,7 @@ export default (engine, container) => {
       const children = [input];
       if (setting.type === 'key') {
         children.push(keyInput);
-        renderKeyCombo(keyInput, originalValue);
+        renderKeyCombo(keyInput, Input.parse(originalValue));
         $(keyInput, {
           className: 'keyInput',
           tabIndex: 0,
@@ -98,7 +99,7 @@ export default (engine, container) => {
             if (document.activeElement === keyInput) {
               keyInput.blur();
             }
-            renderKeyCombo(keyInput, input.value);
+            renderKeyCombo(keyInput, Input.parse(input.value));
           },
           onkeydown({ key, ctrlKey, altKey, shiftKey }) {
             if (key === 'Escape') dispatchEvent(keyInput, 'blur');
@@ -115,7 +116,7 @@ export default (engine, container) => {
             if (altKey) combo.unshift('alt');
             if (ctrlKey) combo.unshift('control');
 
-            input.value = combo.join(' + ');
+            input.value = Input.stringify(combo);
             dispatchEvent(input, 'change');
 
             return false;

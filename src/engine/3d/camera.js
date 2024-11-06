@@ -1,3 +1,5 @@
+import Input from '../input.js';
+
 const { vec3, mat4, quat } = glMatrix;
 
 const PI = Math.PI;
@@ -68,13 +70,13 @@ export default class Camera {
 
     engine.on('mousemove', () => this.recalculateFrustum());
 
-    const cameraFaceXkey = config.createString('shortcuts.cameraX', 'Look along X-axis', 'key', '1');
-    const cameraFaceYkey = config.createString('shortcuts.cameraY', 'Look along Y-axis', 'key', '2');
-    const cameraFaceZkey = config.createString('shortcuts.cameraZ', 'Look along Z-axis', 'key', '3');
-    const cameraFaceReverseXkey = config.createString('shortcuts.cameraRevX', 'Look back at X-axis', 'key', '4');
-    const cameraFaceReverseYkey = config.createString('shortcuts.cameraRevY', 'Look back at Y-axis', 'key', '5');
-    const cameraFaceReverseZkey = config.createString('shortcuts.cameraRevZ', 'Look back at Z-axis', 'key', '6');
-    const cameraFaceXYZkey = config.createString('shortcuts.cameraXYZ', 'Look along XYZ-axis', 'key', '0');
+    const cameraFaceXkey = config.createString('shortcuts.cameraX', 'Look along X-axis', 'key', Input.stringify('1'));
+    const cameraFaceYkey = config.createString('shortcuts.cameraY', 'Look along Y-axis', 'key', Input.stringify('2'));
+    const cameraFaceZkey = config.createString('shortcuts.cameraZ', 'Look along Z-axis', 'key', Input.stringify('3'));
+    const cameraFaceReverseXkey = config.createString('shortcuts.cameraRevX', 'Look back at X-axis', 'key', Input.stringify('4'));
+    const cameraFaceReverseYkey = config.createString('shortcuts.cameraRevY', 'Look back at Y-axis', 'key', Input.stringify('5'));
+    const cameraFaceReverseZkey = config.createString('shortcuts.cameraRevZ', 'Look back at Z-axis', 'key', Input.stringify('6'));
+    const cameraFaceXYZkey = config.createString('shortcuts.cameraXYZ', 'Look along XYZ-axis', 'key', Input.stringify('0'));
 
     const orthoSetting = config.createBoolean('camera.ortho', 'Orthographic projection', 'toggle', this.orthographic);
     this.orthographic = orthoSetting.value;
@@ -94,7 +96,7 @@ export default class Camera {
       }
     });
 
-    const pKey = config.createString('shortcuts.changePerspective', 'Change perspective', 'key', 'p');
+    const pKey = config.createString('shortcuts.changePerspective', 'Change perspective', 'key', Input.stringify('p'));
 
     engine.on('keyup', (_, keyCombo) => {
       switch (keyCombo) {
