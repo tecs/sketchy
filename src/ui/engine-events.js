@@ -28,4 +28,6 @@ export default (engine, container) => {
     window.show();
     requestAnimationFrame(() => input.element.select());
   });
+
+  engine.on('cursorchange', cursor => void(engine.driver.canvas.style.cursor = cursor ?? 'default'));
 };

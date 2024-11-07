@@ -37,17 +37,11 @@ export default (engine) => {
   });
 
   engine.on('keyup', () => {
-    if (!input.ctrl && zoom.cursor === 'zoom-out') {
-      zoom.cursor = 'zoom-in';
-      if (engine.tools.selected === zoom) emit('toolchange', zoom, zoom);
-    }
+    if (!input.ctrl && engine.tools.selected === zoom) emit('cursorchange', 'zoom-in');
   });
 
   engine.on('keydown', () => {
-    if (input.ctrl && zoom.cursor === 'zoom-in') {
-      zoom.cursor = 'zoom-out';
-      if (engine.tools.selected === zoom) emit('toolchange', zoom, zoom);
-    }
+    if (input.ctrl && engine.tools.selected === zoom) emit('cursorchange', 'zoom-out');
   });
 
   engine.on('shortcut', setting => {

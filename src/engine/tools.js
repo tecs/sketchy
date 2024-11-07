@@ -83,6 +83,7 @@ export default class Tools {
 
     this.selected = tool;
 
+    this.#engine.emit('cursorchange', tool.cursor);
     this.#engine.emit('toolchange', tool, previous);
   }
 
