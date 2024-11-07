@@ -44,10 +44,6 @@ export default class Tools {
       if (this.selected?.active !== false) this.selected?.update(delta);
     });
 
-    engine.on('toolchange', (_, tool) => {
-      if (tool?.active !== false) tool?.abort();
-    });
-
     engine.on('keyup', (_, keyCombo) => {
       if (keyCombo === 'esc' && this.selected?.active !== false) this.selected?.abort();
     });
@@ -75,7 +71,7 @@ export default class Tools {
   }
 
   /**
-   * @param {Tool} tool
+   * @param {Tool?} tool
    */
   setTool(tool) {
     const previous = this.selected;
@@ -83,7 +79,9 @@ export default class Tools {
 
     this.selected = tool;
 
-    this.#engine.emit('cursorchange', tool.cursor);
+    if (previous && previous.active !== false) previous.abort();
+
+    this.#engine.emit('cursorchange', tool?.cursor);
     this.#engine.emit('toolchange', tool, previous);
   }
 

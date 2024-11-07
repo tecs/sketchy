@@ -39,10 +39,8 @@ export default (engine, tabs) => {
             scene.hover(vec3.create());
 
             const tool = tools.get('move');
-            if (tool) {
-              tools.setTool(tool);
-              tool.start();
-            }
+            tools.setTool(tool);
+            tool?.start();
           },
           style: { fontWeight: body === currentBody ? 'bold' : undefined },
         });
