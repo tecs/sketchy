@@ -292,7 +292,54 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
 
     engine.input.registerShortcuts(distanceKey, coincidentKey, horizontalKey, verticalKey, equalKey);
 
+    let previousTool = engine.tools.selected;
+
+    const cancellableTask = {
+      handle: { valid: false },
+
+      drop(revertTool = true) {
+        if (this.handle.valid && revertTool) {
+          engine.emit('cursorchange', previousTool?.cursor);
+          engine.tools.setTool(previousTool);
+        }
+        this.handle.valid = false;
+      },
+
+      /**
+       * @template T
+       * @param {(collection: typeof selection) => T} extractFn
+       * @param {(arg: T) => boolean} testFn
+       * @param {(arg: T) => void} thenFn
+       */
+      async exec(extractFn, testFn, thenFn) {
+        this.drop(false);
+
+        const selectTool = engine.tools.get('select');
+        previousTool = engine.tools.selected ?? selectTool;
+        engine.tools.setTool(selectTool);
+        engine.emit('cursorchange', 'context-menu');
+
+        this.handle = { valid: true };
+        const { handle } = this;
+
+        let data = extractFn(selection);
+        let pass = testFn(data);
+
+        while (!pass && handle.valid) {
+          await selection.waitFor('change');
+          if (!handle.valid) return;
+          data = extractFn(selection);
+          pass = testFn(data);
+        }
+
+        this.drop();
+        if (pass) thenFn(data);
+      },
+    };
+
     engine.on('keydown', (_, keyCombo) => {
+      if (keyCombo === 'esc') cancellableTask.drop();
+
       const sketch = scene.currentStep ?? scene.enteredInstance?.body.step;
       if (!(sketch instanceof Sketch) || keyCombo !== 'delete') return;
 
@@ -328,58 +375,70 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
       if (!(sketch instanceof Sketch)) return;
 
       switch (setting) {
-        case distanceKey: {
-          const selected = /** @type {[PointInfo, PointInfo, number?][]} */ ([]);
-          const lines = selection.getByType('line').map(({ index }) => index);
-          for (const index of lines) {
-            const line = sketch.getLine(index);
-            const [p1, p2] = line ? sketch.getPoints(line) : [];
-            if (p1 && p2) {
-              selected.push([p1, p2, sketch.getConstraintsForPoints([p1.index, p2.index], 'distance').pop()?.data]);
-            }
-          };
+        case distanceKey:
+          cancellableTask.exec(
+            s => {
+              const pairs = /** @type {[PointInfo, PointInfo, number?][]} */ ([]);
+              const lines = s.getByType('line').map(({ index }) => index);
+              for (const index of lines) {
+                const line = sketch.getLine(index);
+                const [p1, p2] = line ? sketch.getPoints(line) : [];
+                if (p1 && p2) {
+                  pairs.push([p1, p2, sketch.getConstraintsForPoints([p1.index, p2.index], 'distance').pop()?.data]);
+                }
+              };
 
-          const points = selection.getByType('point').map(({ index }) => index);
-          forAllUniquePairs(points, (indices) => {
-            const p1 = sketch.getPointInfo(indices[0]);
-            const p2 = sketch.getPointInfo(indices[1]);
-            if (p1 && p2 && !selected.find(([pp1, pp2]) => (pp1 === p1 && pp2 === p2) || (pp1 === p2 && pp2 === p1))) {
-              selected.push([p1, p2, sketch.getConstraintsForPoints(indices, 'distance').pop()?.data]);
-            }
-          });
+              const points = s.getByType('point').map(({ index }) => index);
+              forAllUniquePairs(points, (indices) => {
+                const p1 = sketch.getPointInfo(indices[0]);
+                const p2 = sketch.getPointInfo(indices[1]);
+                if (p1 && p2 && !pairs.find(([p3, p4]) => (p3 === p1 && p4 === p2) || (p3 === p2 && p4 === p1))) {
+                  pairs.push([p1, p2, sketch.getConstraintsForPoints(indices, 'distance').pop()?.data]);
+                }
+              });
+              return pairs;
+            },
+            pairs => pairs.length > 0,
+            pairs => {
+              const value = pairs.find(([,, d]) => d)?.[2] ?? vec2.distance(pairs[0][0].vec2, pairs[0][1].vec2);
 
-          if (!selected.length) return;
-
-          const value = selected.find(([,, d]) => d)?.[2] ?? vec2.distance(selected[0][0].vec2, selected[0][1].vec2);
-
-          engine.emit('propertyrequest', { type: 'distance', value }, /** @param {number} newValue */ (newValue) => {
-            if (newValue <= 0) return;
-            for (const [p1, p2] of selected) {
-              sketch.distance(newValue, [p1.index, p2.index]);
-            }
-          });
-
+              engine.emit('propertyrequest', { type: 'distance', value }, /** @param {number} newValue */ (newValue) => {
+                if (newValue <= 0) return;
+                for (const [p1, p2] of pairs) {
+                  sketch.distance(newValue, [p1.index, p2.index]);
+                }
+              });
+            },
+          );
           break;
-        }
-        case equalKey: {
-          const lines = selection.getByType('line').map(({ index }) => sketch.getLine(index)).filter(line => line !== null);
-          forAllUniquePairs(lines, linePairs => sketch.equal(linePairs));
-        }
-        case coincidentKey: {
-          const points = selection.getByType('point').map(({ index }) => index);
-          forAllUniquePairs(points, indices => sketch.coincident(indices));
+        case equalKey:
+          cancellableTask.exec(
+            s => s.getByType('line').map(({ index }) => sketch.getLine(index)).filter(line => line !== null),
+            lines => lines.length > 1,
+            lines => forAllUniquePairs(lines, linePairs => sketch.equal(linePairs)),
+          );
           break;
-        }
-        case horizontalKey: {
-          const points = extractSelectionPoints(selection, sketch);
-          forAllUniquePairs(points, indices => sketch.horizontal(indices));
+        case coincidentKey:
+          cancellableTask.exec(
+            s => s.getByType('point').map(({ index }) => index),
+            points => points.length > 1,
+            points => forAllUniquePairs(points, indices => sketch.coincident(indices)),
+          );
           break;
-        }
-        case verticalKey: {
-          const points = extractSelectionPoints(selection, sketch);
-          forAllUniquePairs(points, indices => sketch.vertical(indices));
+        case horizontalKey:
+          cancellableTask.exec(
+            s => extractSelectionPoints(s, sketch),
+            points => points.length > 1,
+            points => forAllUniquePairs(points, indices => sketch.horizontal(indices)),
+          );
           break;
-        }
+        case verticalKey:
+          cancellableTask.exec(
+            s => extractSelectionPoints(s, sketch),
+            points => points.length > 1,
+            points => forAllUniquePairs(points, indices => sketch.vertical(indices)),
+          );
+          break;
       }
     });
 
@@ -395,9 +454,12 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
     });
 
     engine.on('stepchange', (current, previous) => {
+      cancellableTask.drop();
       if (current instanceof Sketch) current.update();
       if (previous instanceof Sketch) previous.update();
     });
+
+    engine.on('toolchange', () => cancellableTask.drop(false));
   }
 
   /**
