@@ -3,6 +3,7 @@ const { vec3 } = glMatrix;
 const PLUS_TOKEN = ' [+] ';
 const THEN_TOKEN = ' [THEN] ';
 
+/** @typedef {import("./config").StringSetting} StringSetting */
 /** @typedef {"left"|"middle"|"right"} MouseButton */
 /** @typedef {[string, ...string[]]} NonNullKeyboardShortcut */
 /** @typedef {string[]} KeyboardShortcut */
@@ -25,7 +26,7 @@ export default class Input {
   /** @type {string|null} */
   key = null;
 
-  /** @type {{ id: string, handler: Function, sequence: string[], index: number }[]} */
+  /** @type {{ setting: Readonly<StringSetting>, sequence: string[], index: number }[]} */
   shortcuts = [];
 
   shortcutIndex = 0;
@@ -107,16 +108,11 @@ export default class Input {
   constructor(engine) {
     this.#engine = engine;
 
-    engine.on('settingchange', (setting) => {
-      if (setting.type !== 'key') return;
-
-      const affectedShortcuts = this.shortcuts.filter(({ id }) => id === setting.id);
-      if (!affectedShortcuts) return;
-
-      for (const shortcut of affectedShortcuts) {
-        shortcut.sequence = Input.stringifyShortcuts(setting.value);
-        shortcut.index = 0;
-      }
+    engine.on('settingchange', (changed) => {
+      const shortcut = this.shortcuts.find(({ setting }) => setting === changed);
+      if (!shortcut) return;
+      shortcut.sequence = Input.stringifyShortcuts(shortcut.setting.value);
+      shortcut.index = 0;
     });
   }
 
@@ -204,11 +200,12 @@ export default class Input {
   }
 
   /**
-   * @param {Readonly<import("./config").StringSetting>} setting
-   * @param {Function} handler
+   * @param {...Readonly<StringSetting>} settings
    */
-  onShortcut({ id, value }, handler) {
-    this.shortcuts.push({ id, handler, sequence: Input.stringifyShortcuts(value), index: 0 });
+  registerShortcuts(...settings) {
+    for (const setting of settings) {
+      this.shortcuts.push({ setting, sequence: Input.stringifyShortcuts(setting.value), index: 0 });
+    }
   }
 
   /**
@@ -227,7 +224,7 @@ export default class Input {
 
       if (shortcut.sequence.length === ++shortcut.index) {
         found = true;
-        shortcut.handler();
+        this.#engine.emit('shortcut', shortcut.setting);
       }
     }
 
