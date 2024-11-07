@@ -284,11 +284,11 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
 
     const { editor: { selection }, scene, history, config } = engine;
 
-    const distanceKey = config.createString('shortcuts.sketch.distance', 'Sketch constraint: distance', 'key', Input.stringify('d'));
-    const coincidentKey = config.createString('shortcuts.sketch.coincident', 'Sketch constraint: coincident point', 'key', Input.stringify('c'));
-    const horizontalKey = config.createString('shortcuts.sketch.horizontal', 'Sketch constraint: horizontal', 'key', Input.stringify('h'));
-    const verticalKey = config.createString('shortcuts.sketch.vertical', 'Sketch constraint: vertical', 'key', Input.stringify('v'));
-    const equalKey = config.createString('shortcuts.sketch.equal', 'Sketch constraint: equal', 'key', Input.stringify('e'));
+    const distanceKey = config.createString('shortcuts.sketch.distance', 'Sketch constraint: distance', 'key', Input.stringify([['k'], ['d']]));
+    const coincidentKey = config.createString('shortcuts.sketch.coincident', 'Sketch constraint: coincident point', 'key', Input.stringify([['k'], ['c']]));
+    const horizontalKey = config.createString('shortcuts.sketch.horizontal', 'Sketch constraint: horizontal', 'key', Input.stringify([['k'], ['h']]));
+    const verticalKey = config.createString('shortcuts.sketch.vertical', 'Sketch constraint: vertical', 'key', Input.stringify([['k'], ['v']]));
+    const equalKey = config.createString('shortcuts.sketch.equal', 'Sketch constraint: equal', 'key', Input.stringify([['k'], ['e']]));
 
     engine.input.registerShortcuts(distanceKey, coincidentKey, horizontalKey, verticalKey, equalKey);
 
