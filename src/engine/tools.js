@@ -20,14 +20,11 @@ export default class Tools {
   /** @type {Engine} */
   #engine;
 
-  /** @type {Map<import("./config").StringSetting, Tool>} */
-  #shortcuts = new Map();
+  /** @type {{ tool: Tool, shortcut: import("./config").StringSetting }[]} */
+  #tools = [];
 
   /** @type {Tool | null} */
   selected = null;
-
-  /** @type {Tool[]} */
-  tools = [];
 
   /**
    * @param {Engine} engine
@@ -56,8 +53,8 @@ export default class Tools {
     });
 
     engine.on('shortcut', setting => {
-      const tool = this.#shortcuts.get(setting);
-      if (tool) this.setTool(tool);
+      const tool = this.#tools.find(({ shortcut }) => shortcut === setting);
+      if (tool) this.setTool(tool.tool);
     });
   }
 
@@ -66,14 +63,13 @@ export default class Tools {
    */
   addTool(Tool) {
     const tool = Tool(this.#engine);
-    this.tools.push(tool);
     const shortcut = this.#engine.config.createString(
       `shortcuts.${tool.type}Tool`,
       `${tool.name} tool shortcut`,
       'key',
       Input.stringify(tool.shortcut),
     );
-    this.#shortcuts.set(shortcut, tool);
+    this.#tools.push({ tool, shortcut });
     this.#engine.input.registerShortcuts(shortcut);
     if (!this.selected) this.setTool(tool);
   }
@@ -95,9 +91,24 @@ export default class Tools {
    * @returns {boolean}
    */
   isActive(...toolTypes) {
-    for (const { type, active } of this.tools) {
+    for (const { tool: { type, active }} of this.#tools) {
       if (active && toolTypes.includes(type)) return true;
     }
     return false;
+  }
+
+  /**
+   * @returns {Tool[]}
+   */
+  list() {
+    return this.#tools.map(({ tool }) => tool);
+  }
+
+  /**
+   * @param {string} type
+   * @returns {Tool?}
+   */
+  get(type) {
+    return this.#tools.find(({ tool }) => tool.type === type)?.tool ?? null;
   }
 }

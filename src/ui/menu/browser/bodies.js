@@ -38,7 +38,7 @@ export default (engine, tabs) => {
             selection.set({ type: 'instance', instance, index: instance.Id.int });
             scene.hover(vec3.create());
 
-            const tool = tools.tools.find(({ type }) => type === 'move');
+            const tool = tools.get('move');
             if (tool) {
               tools.setTool(tool);
               tool.start();
