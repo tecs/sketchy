@@ -73,10 +73,10 @@ export default class Camera {
     const cameraFaceXkey = config.createString('shortcuts.cameraX', 'Look along X-axis', 'key', Input.stringify('1'));
     const cameraFaceYkey = config.createString('shortcuts.cameraY', 'Look along Y-axis', 'key', Input.stringify('2'));
     const cameraFaceZkey = config.createString('shortcuts.cameraZ', 'Look along Z-axis', 'key', Input.stringify('3'));
+    const cameraFaceXYZkey = config.createString('shortcuts.cameraXYZ', 'Look along XYZ-axis', 'key', Input.stringify('0'));
     const cameraFaceReverseXkey = config.createString('shortcuts.cameraRevX', 'Look back at X-axis', 'key', Input.stringify('4'));
     const cameraFaceReverseYkey = config.createString('shortcuts.cameraRevY', 'Look back at Y-axis', 'key', Input.stringify('5'));
     const cameraFaceReverseZkey = config.createString('shortcuts.cameraRevZ', 'Look back at Z-axis', 'key', Input.stringify('6'));
-    const cameraFaceXYZkey = config.createString('shortcuts.cameraXYZ', 'Look along XYZ-axis', 'key', Input.stringify('0'));
 
     const orthoSetting = config.createBoolean('camera.ortho', 'Orthographic projection', 'toggle', this.orthographic);
     this.orthographic = orthoSetting.value;
@@ -98,32 +98,27 @@ export default class Camera {
 
     const pKey = config.createString('shortcuts.changePerspective', 'Change perspective', 'key', Input.stringify('p'));
 
-    engine.on('keyup', (_, keyCombo) => {
-      switch (keyCombo) {
-        case cameraFaceXkey.value:
-          this.resetAndLookFrom(0, halfPI);
-          break;
-        case cameraFaceYkey.value:
-          this.resetAndLookFrom(halfPI, 0);
-          break;
-        case cameraFaceZkey.value:
-          this.resetAndLookFrom(0, 0);
-          break;
-        case cameraFaceReverseXkey.value:
-          this.resetAndLookFrom(0, threeFourthsPI);
-          break;
-        case cameraFaceReverseYkey.value:
-          this.resetAndLookFrom(threeFourthsPI, 0);
-          break;
-        case cameraFaceReverseZkey.value:
-          this.resetAndLookFrom(0, Math.PI);
-          break;
-        case cameraFaceXYZkey.value:
-          this.resetAndLookFrom(halfPI / 2, threeFourthsPI + halfPI / 2);
-          break;
-        case pKey.value:
-          orthoSetting.set(!orthoSetting.value);
-          break;
+    engine.input.registerShortcuts(
+      cameraFaceXkey,
+      cameraFaceYkey,
+      cameraFaceZkey,
+      cameraFaceXYZkey,
+      cameraFaceReverseXkey,
+      cameraFaceReverseYkey,
+      cameraFaceReverseZkey,
+      pKey,
+    );
+
+    engine.on('shortcut', setting => {
+      switch (setting) {
+        case cameraFaceXkey: this.resetAndLookFrom(0, halfPI); break;
+        case cameraFaceYkey: this.resetAndLookFrom(halfPI, 0); break;
+        case cameraFaceZkey: this.resetAndLookFrom(0, 0); break;
+        case cameraFaceXYZkey: this.resetAndLookFrom(halfPI / 2, threeFourthsPI + halfPI / 2); break;
+        case cameraFaceReverseXkey: this.resetAndLookFrom(0, threeFourthsPI); break;
+        case cameraFaceReverseYkey: this.resetAndLookFrom(threeFourthsPI, 0); break;
+        case cameraFaceReverseZkey: this.resetAndLookFrom(0, Math.PI); break;
+        case pKey: orthoSetting.set(!orthoSetting.value); break;
       }
     });
 

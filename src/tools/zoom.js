@@ -27,6 +27,8 @@ export default (engine) => {
   const zoomInKey = engine.config.createString('shortcuts.zoomIn', 'Zoom in', 'key', Input.stringify(['shift', '+']));
   const zoomOutKey = engine.config.createString('shortcuts.zoomOut', 'Zoom out', 'key', Input.stringify('-'));
 
+  input.registerShortcuts(zoomInKey, zoomOutKey);
+
   engine.on('mousescroll', (direction) => {
     const { selected } = engine.tools;
 
@@ -41,18 +43,17 @@ export default (engine) => {
     }
   });
 
-  engine.on('keydown', (_, keyCombo) => {
-    switch (keyCombo) {
-      case zoomInKey.value:
-        camera.zoom(-1, neutralZoomOrigin);
-        return;
-      case zoomOutKey.value:
-        camera.zoom(1, neutralZoomOrigin);
-        return;
-    }
+  engine.on('keydown', () => {
     if (input.ctrl && zoom.cursor === 'zoom-in') {
       zoom.cursor = 'zoom-out';
       if (engine.tools.selected === zoom) emit('toolchange', zoom, zoom);
+    }
+  });
+
+  engine.on('shortcut', setting => {
+    switch (setting) {
+      case zoomInKey: camera.zoom(-1, neutralZoomOrigin); break;
+      case zoomOutKey: camera.zoom(1, neutralZoomOrigin); break;
     }
   });
 

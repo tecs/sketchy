@@ -20,8 +20,8 @@ export default class Tools {
   /** @type {Engine} */
   #engine;
 
-  /** @type {Readonly<import("./config").StringSetting>[]} */
-  #shortcuts = [];
+  /** @type {Map<import("./config").StringSetting, Tool>} */
+  #shortcuts = new Map();
 
   /** @type {Tool | null} */
   selected = null;
@@ -52,9 +52,12 @@ export default class Tools {
     });
 
     engine.on('keyup', (_, keyCombo) => {
-      const index = this.#shortcuts.findIndex(({ value }) => value === keyCombo);
-      if (index > -1) this.setTool(this.tools[index]);
-      else if (keyCombo === 'escape' && this.selected?.active !== false) this.selected?.abort();
+      if (keyCombo === 'esc' && this.selected?.active !== false) this.selected?.abort();
+    });
+
+    engine.on('shortcut', setting => {
+      const tool = this.#shortcuts.get(setting);
+      if (tool) this.setTool(tool);
     });
   }
 
@@ -64,12 +67,14 @@ export default class Tools {
   addTool(Tool) {
     const tool = Tool(this.#engine);
     this.tools.push(tool);
-    this.#shortcuts.push(this.#engine.config.createString(
+    const shortcut = this.#engine.config.createString(
       `shortcuts.${tool.type}Tool`,
       `${tool.name} tool shortcut`,
       'key',
       Input.stringify(tool.shortcut),
-    ));
+    );
+    this.#shortcuts.set(shortcut, tool);
+    this.#engine.input.registerShortcuts(shortcut);
     if (!this.selected) this.setTool(tool);
   }
 

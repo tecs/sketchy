@@ -56,14 +56,12 @@ export default class History {
     const undoKey = engine.config.createString('shortcuts.undo', 'Undo', 'key', Input.stringify(['ctrl', 'z']));
     const redoKey = engine.config.createString('shortcuts.redo', 'Redo', 'key', Input.stringify(['ctrl', 'shift', 'z']));
 
-    engine.on('keyup', (_, keyCombo) => {
-      switch (keyCombo) {
-        case undoKey.value:
-          this.undo();
-          break;
-        case redoKey.value:
-          this.redo();
-          break;
+    engine.input.registerShortcuts(undoKey, redoKey);
+
+    engine.on('shortcut', (setting) => {
+      switch (setting) {
+        case undoKey: this.undo(); break;
+        case redoKey: this.redo(); break;
       }
     });
   }

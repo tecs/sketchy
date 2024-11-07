@@ -290,41 +290,45 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
     const verticalKey = config.createString('shortcuts.sketch.vertical', 'Sketch constraint: vertical', 'key', Input.stringify('v'));
     const equalKey = config.createString('shortcuts.sketch.equal', 'Sketch constraint: equal', 'key', Input.stringify('e'));
 
+    engine.input.registerShortcuts(distanceKey, coincidentKey, horizontalKey, verticalKey, equalKey);
+
     engine.on('keydown', (_, keyCombo) => {
+      const sketch = scene.currentStep ?? scene.enteredInstance?.body.step;
+      if (!(sketch instanceof Sketch) || keyCombo !== 'delete') return;
+
+      const elements = selection.elements.filter(el => el.type === 'line' || el.type === 'point');
+      const lines = elements.reduce((out, { type, index }) => {
+        const line = type === 'line' ? sketch.getLine(index) : sketch.getLineForPoint(index)?.[0];
+        if (line && !out.includes(line)) {
+          out.push(line);
+        }
+        return out;
+      }, /** @type {LineConstructionElement[]} */ ([]));
+
+      if (!lines.length) return;
+
+      const action = history.createAction(`Delete line from Sketch ${sketch.name}`, {});
+      if (!action) return;
+
+      action.append(
+        () => {
+          lines.forEach(line => sketch.deleteElement(line));
+          selection.remove(elements);
+        },
+        () => {
+          lines.forEach(line => sketch.addElement(line));
+          selection.add(elements);
+        },
+      );
+      action.commit();
+    });
+
+    engine.on('shortcut', setting => {
       const sketch = scene.currentStep ?? scene.enteredInstance?.body.step;
       if (!(sketch instanceof Sketch)) return;
 
-      switch (keyCombo) {
-        case 'delete': {
-          const elements = selection.elements.filter(el => el.type === 'line' || el.type === 'point');
-          const lines = elements.reduce((out, { type, index }) => {
-            const line = type === 'line' ? sketch.getLine(index) : sketch.getLineForPoint(index)?.[0];
-            if (line && !out.includes(line)) {
-              out.push(line);
-            }
-            return out;
-          }, /** @type {LineConstructionElement[]} */ ([]));
-
-          if (!lines.length) return;
-
-          const action = history.createAction(`Delete line from Sketch ${sketch.name}`, {});
-          if (!action) return;
-
-          action.append(
-            () => {
-              lines.forEach(line => sketch.deleteElement(line));
-              selection.remove(elements);
-            },
-            () => {
-              lines.forEach(line => sketch.addElement(line));
-              selection.add(elements);
-            },
-          );
-          action.commit();
-
-          break;
-        }
-        case distanceKey.value: {
+      switch (setting) {
+        case distanceKey: {
           const selected = /** @type {[PointInfo, PointInfo, number?][]} */ ([]);
           const lines = selection.getByType('line').map(({ index }) => index);
           for (const index of lines) {
@@ -357,21 +361,21 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
 
           break;
         }
-        case equalKey.value: {
+        case equalKey: {
           const lines = selection.getByType('line').map(({ index }) => sketch.getLine(index)).filter(line => line !== null);
           forAllUniquePairs(lines, linePairs => sketch.equal(linePairs));
         }
-        case coincidentKey.value: {
+        case coincidentKey: {
           const points = selection.getByType('point').map(({ index }) => index);
           forAllUniquePairs(points, indices => sketch.coincident(indices));
           break;
         }
-        case horizontalKey.value: {
+        case horizontalKey: {
           const points = extractSelectionPoints(selection, sketch);
           forAllUniquePairs(points, indices => sketch.horizontal(indices));
           break;
         }
-        case verticalKey.value: {
+        case verticalKey: {
           const points = extractSelectionPoints(selection, sketch);
           forAllUniquePairs(points, indices => sketch.vertical(indices));
           break;
