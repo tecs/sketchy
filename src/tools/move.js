@@ -169,6 +169,8 @@ export default (engine) => {
           .join(', ')
       }`;
 
+      if (!currentStep && movementSelection.some(({ type }) => type !== 'instance')) scene.setCurrentStep(sketch);
+
       historyAction = history.createAction(title, {
         elements: movementSelection,
         translation: vec3.create(),
@@ -180,8 +182,6 @@ export default (engine) => {
         emit('toolinactive', move);
       });
       if (!historyAction) return;
-
-      if (!currentStep && movementSelection.some(({ type }) => type !== 'instance')) scene.setCurrentStep(sketch);
 
       selection.set(movementSelection.map(element => ({
         type: element.type,
