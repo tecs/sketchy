@@ -123,8 +123,8 @@ export default class SubInstance extends /** @type {typeof Step<SubInstanceState
   }
 
   /**
-   * @param {Instance | null} child
-   * @param {Instance | null} parent
+   * @param {Instance?} child
+   * @param {Instance?} parent
    * @returns {boolean}
    */
   static belongsTo(child, parent) {

@@ -162,7 +162,7 @@ const extractSelectionPoints = (selection, sketch) => selection.elements.flatMap
  * @template {Constraints} C
  * @param {C} constraint
  * @param {Sketch} sketch
- * @returns {ConstraintData<C> | null}
+ * @returns {ConstraintData<C>?}
  */
 const getElements = (constraint, sketch) => {
   const pointsInfo = constraint.indices.map(index => sketch.getPointInfo(index)).filter(p => !!p);
@@ -641,7 +641,7 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
   /**
    * @param {number} length
    * @param {LineConstructionElement | [number, number]} lineOrIndices
-   * @returns {Readonly<DistanceConstraint> | null}
+   * @returns {Readonly<DistanceConstraint>?}
    */
   distance(length, lineOrIndices) {
     if (!Array.isArray(lineOrIndices)) {
@@ -656,7 +656,7 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
 
   /**
    * @param {[LineConstructionElement, LineConstructionElement]} lines
-   * @returns {Readonly<EqualConstraint> | null}
+   * @returns {Readonly<EqualConstraint>?}
    */
   equal(lines) {
     if (lines[0] === lines[1] || lines.some(line => !this.data.elements.includes(line))) return null;
@@ -669,7 +669,7 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
 
   /**
    * @param {[number, number]} indices
-   * @returns {Readonly<CoincidentConstraint> | null}
+   * @returns {Readonly<CoincidentConstraint>?}
    */
   coincident(indices) {
     if (indices[0] === indices[1]) return null;
@@ -687,7 +687,7 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
 
   /**
    * @param {LineConstructionElement | [number, number]} lineOrIndices
-   * @returns {Readonly<HorizontalConstraint> | null}
+   * @returns {Readonly<HorizontalConstraint>?}
    */
   horizontal(lineOrIndices) {
     if (!Array.isArray(lineOrIndices)) {
@@ -702,7 +702,7 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
 
   /**
    * @param {LineConstructionElement | [number, number]} lineOrIndices
-   * @returns {Readonly<VerticalConstraint> | null}
+   * @returns {Readonly<VerticalConstraint>?}
    */
   vertical(lineOrIndices) {
     if (!Array.isArray(lineOrIndices)) {
@@ -717,7 +717,7 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
 
   /**
    * @param {number} index
-   * @returns {LineConstructionElement | null}
+   * @returns {LineConstructionElement?}
    */
   getLine(index) {
     if (!this.hasLine(index)) return null;
@@ -726,7 +726,7 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
 
   /**
    * @param {LineConstructionElement} line
-   * @returns {number | null}
+   * @returns {number?}
    */
   getLineIndex(line) {
     const elementIndex = this.data.elements.indexOf(line);
@@ -736,7 +736,7 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
 
   /**
    * @param {LineConstructionElement} line
-   * @returns {[number, number] | null}
+   * @returns {[number, number]?}
    */
   getLineIndices(line) {
     const index = this.data.elements.indexOf(line);
@@ -750,7 +750,7 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
 
   /**
    * @param {number} index
-   * @returns {[LineConstructionElement, number] | null}
+   * @returns {[LineConstructionElement, number]?}
    */
   getLineForPoint(index) {
     const elementInfo = this.pointInfo.find(info => info.index === index);
@@ -762,7 +762,7 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
 
   /**
    * @param {number} index
-   * @returns {PointInfo | null}
+   * @returns {PointInfo?}
    */
   getPointInfo(index) {
     return this.pointInfo.find(info => info.index === index) ?? null;

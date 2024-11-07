@@ -55,7 +55,7 @@ export default class Body extends Base.implement({
     return this.#step + 1 === this.#stack.length;
   }
 
-  /** @type {Model | null} */
+  /** @type {Model?} */
   get currentModel() {
     return this.#stack[this.#step]?.model ?? null;
   }

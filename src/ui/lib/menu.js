@@ -10,7 +10,7 @@ import { $ } from './element.js';
 
 /** @augments UIContainer<"div"> */
 export default class UIMenu extends UIContainer {
-  /** @type {UIButton | null} */
+  /** @type {UIButton?} */
   selected = null;
 
   /**

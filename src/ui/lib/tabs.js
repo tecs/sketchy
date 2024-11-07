@@ -57,7 +57,7 @@ export default class UITabs extends UIContainer {
   /** @type {UIContainer<"div">} */
   contents;
 
-  /** @type {UITab | null} */
+  /** @type {UITab?} */
   selected = null;
 
   /**
@@ -82,7 +82,7 @@ export default class UITabs extends UIContainer {
   }
 
   /**
-   * @param {UITab | null} [omitTab]
+   * @param {UITab?} [omitTab]
    */
   autoselect(omitTab) {
     if (omitTab === this.selected) this.unselect(this.selected);
@@ -94,7 +94,7 @@ export default class UITabs extends UIContainer {
   }
 
   /**
-   * @param {UITab | null} tab
+   * @param {UITab?} tab
    */
   unselect(tab) {
     if (!tab || tab !== this.selected) return;

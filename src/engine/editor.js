@@ -28,7 +28,7 @@ export class Collection extends Base {
   /**
    * @template {Elements} T
    * @param {T} el
-   * @returns {T | null}
+   * @returns {T?}
    */
   getElement(el) {
     for (const element of this.elements) {

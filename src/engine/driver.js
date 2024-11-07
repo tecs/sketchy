@@ -4,8 +4,8 @@ const { vec3 } = glMatrix;
 
 /** @typedef {[TemplateStringsArray, any[]?]} TaggedTemplateParams */
 /** @typedef {Record<string, number>} AttributeLocationMap */
-/** @typedef {Record<string, WebGLUniformLocation | null>} UniformLocationMap */
-/** @typedef {WebGLBuffer | null} GLBuffer */
+/** @typedef {Record<string, WebGLUniformLocation?>} UniformLocationMap */
+/** @typedef {WebGLBuffer?} GLBuffer */
 
 /**
  * @typedef Shader

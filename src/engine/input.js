@@ -20,10 +20,10 @@ export default class Input {
   /** @type {Engine} */
   #engine;
 
-  /** @type {MouseButton|null} */
+  /** @type {MouseButton?} */
   button = null;
 
-  /** @type {string|null} */
+  /** @type {string?} */
   key = null;
 
   /** @type {{ setting: Readonly<StringSetting>, sequence: string[], index: number }[]} */

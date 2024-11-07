@@ -23,7 +23,7 @@ export default class Tools {
   /** @type {{ tool: Tool, shortcut: import("./config").StringSetting }[]} */
   #tools = [];
 
-  /** @type {Tool | null} */
+  /** @type {Tool?} */
   selected = null;
 
   /**

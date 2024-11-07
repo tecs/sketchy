@@ -21,25 +21,25 @@ export default class Scene extends Base {
   /** @type {Instance} */
   currentInstance;
 
-  /** @type {Instance | null} */
+  /** @type {Instance?} */
   enteredInstance = null;
 
-  /** @type {Instance | null} */
+  /** @type {Instance?} */
   hoveredInstance = null;
 
-  /** @type {number | null} */
+  /** @type {number?} */
   hoveredLineIndex = null;
 
-  /** @type {number | null} */
+  /** @type {number?} */
   hoveredPointIndex = null;
 
-  /** @type {AnyStep | null} */
+  /** @type {AnyStep?} */
   currentStep = null;
 
-  /** @type {AnyStep | null} */
+  /** @type {AnyStep?} */
   selectedStep = null;
 
-  /** @type {Body | null} */
+  /** @type {Body?} */
   selectedBody = null;
 
   /** @type {ReadonlyVec3} */
@@ -188,7 +188,7 @@ export default class Scene extends Base {
   }
 
   /**
-   * @param {Instance | null} newInstance
+   * @param {Instance?} newInstance
    */
   setEnteredInstance(newInstance) {
     if (newInstance !== this.enteredInstance) {
@@ -203,7 +203,7 @@ export default class Scene extends Base {
   }
 
   /**
-   * @param {AnyStep | null} step
+   * @param {AnyStep?} step
    */
   setCurrentStep(step) {
     if (step !== this.currentStep) {
@@ -219,7 +219,7 @@ export default class Scene extends Base {
   }
 
   /**
-   * @param {AnyStep | null} step
+   * @param {AnyStep?} step
    */
   setSelectedStep(step) {
     if (step !== this.selectedStep) {
@@ -230,7 +230,7 @@ export default class Scene extends Base {
   }
 
   /**
-   * @param {Body | null} body
+   * @param {Body?} body
    */
   setSelectedBody(body) {
     if (body !== this.selectedBody) {

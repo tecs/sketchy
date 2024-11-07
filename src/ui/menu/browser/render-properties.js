@@ -30,7 +30,7 @@ const ANGLE_UNITS = [
 /**
  * @param {string} value
  * @param {Unit[]} units
- * @returns {number | null}
+ * @returns {number?}
  */
 const parseUnit = (value, units) => {
   value = value.replace(/\s/g, '');
@@ -78,13 +78,13 @@ export const stringifyDistance = (value, precision) => {
 
 /**
  * @param {string} value
- * @returns {number | null}
+ * @returns {number?}
  */
 export const typifyAngle = (value) => parseUnit(value, ANGLE_UNITS);
 
 /**
  * @param {string} value
- * @returns {number | null}
+ * @returns {number?}
  */
 export const typifyDistance = (value) => parseUnit(value, DISTANCE_UNITS);
 
