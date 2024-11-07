@@ -33,12 +33,14 @@ const { glMatrix: { equals }, vec2, vec3, mat4, quat } = glMatrix;
  */
 
 /** @typedef {Constraint<"distance", 2, number>} DistanceConstraint */
+/** @typedef {Constraint<"width", 2, number>} WidthConstraint */
+/** @typedef {Constraint<"height", 2, number>} HeightConstraint */
 /** @typedef {Constraint<"coincident", 2>} CoincidentConstraint */
 /** @typedef {Constraint<"horizontal", 2>} HorizontalConstraint */
 /** @typedef {Constraint<"vertical", 2>} VerticalConstraint */
 /** @typedef {Constraint<"equal", 4, null, [number, number]>} EqualConstraint */
 
-/** @typedef {DistanceConstraint|EqualConstraint} DistanceConstraints */
+/** @typedef {DistanceConstraint|WidthConstraint|HeightConstraint|EqualConstraint} DistanceConstraints */
 /** @typedef {HorizontalConstraint|VerticalConstraint} OrientationConstraints */
 /** @typedef {DistanceConstraints|CoincidentConstraint|OrientationConstraints} Constraints */
 
@@ -159,6 +161,34 @@ const extractSelectionPoints = (selection, sketch) => selection.elements.flatMap
 });
 
 /**
+ * @param {import("../editor.js").Collection} selection
+ * @param {Sketch} sketch
+ * @param {"distance" | "width" | "height"} constraint
+ * @returns {[PointInfo, PointInfo, number?][]}
+ */
+const extractSelectionPointsWithConstraints = (selection, sketch, constraint) => {
+  const pairs = /** @type {[PointInfo, PointInfo, number?][]} */ ([]);
+  const lines = selection.getByType('line').map(({ index }) => index);
+  for (const index of lines) {
+    const line = sketch.getLine(index);
+    const [p1, p2] = line ? sketch.getPoints(line) : [];
+    if (p1 && p2) {
+      pairs.push([p1, p2, sketch.getConstraintsForPoints([p1.index, p2.index], constraint).pop()?.data]);
+    }
+  };
+
+  const points = selection.getByType('point').map(({ index }) => index);
+  forAllUniquePairs(points, (indices) => {
+    const p1 = sketch.getPointInfo(indices[0]);
+    const p2 = sketch.getPointInfo(indices[1]);
+    if (p1 && p2 && !pairs.find(([p3, p4]) => (p3 === p1 && p4 === p2) || (p3 === p2 && p4 === p1))) {
+      pairs.push([p1, p2, sketch.getConstraintsForPoints(indices, constraint).pop()?.data]);
+    }
+  });
+  return pairs;
+};
+
+/**
  * @template {Constraints} C
  * @param {C} constraint
  * @param {Sketch} sketch
@@ -184,6 +214,14 @@ const checkConstraint = {
     const current = vec2.distance(p1.vec2, p2.vec2);
     return [current, equals(current, value)];
   },
+  width({ elements: [p1, p2], value }) {
+    const current = Math.abs(p1.vec2[0] - p2.vec2[0]);
+    return [current, equals(current, value)];
+  },
+  height({ elements: [p1, p2], value }) {
+    const current = Math.abs(p1.vec2[1] - p2.vec2[1]);
+    return [current, equals(current, value)];
+  },
   coincident: ({ elements: [p1, p2] }) => [null, vec2.equals(p1.vec2, p2.vec2)],
   horizontal: ({ elements: [p1, p2] }) => [null, equals(p1.vec2[1], p2.vec2[1])],
   vertical: ({ elements: [p1, p2] }) => [null, equals(p1.vec2[0], p2.vec2[0])],
@@ -203,6 +241,18 @@ const applyConstraint = {
 
     if (!p1.locked) vec2.add(p1.vec2, p1.vec2, tempVec2);
     if (!p2.locked) vec2.subtract(p2.vec2, p2.vec2, tempVec2);
+  },
+  width({ elements: [p1, p2], incrementScale, value }, distance) {
+    const diff = (value - distance) * incrementScale * (p1.vec2[0] < p2.vec2[0] ? -1 : 1);
+
+    if (!p1.locked) p1.vec2[0] += diff;
+    if (!p2.locked) p2.vec2[0] -= diff;
+  },
+  height({ elements: [p1, p2], incrementScale, value }, distance) {
+    const diff = (value - distance) * incrementScale * (p1.vec2[1] < p2.vec2[1] ? -1 : 1);
+
+    if (!p1.locked) p1.vec2[1] += diff;
+    if (!p2.locked) p2.vec2[1] -= diff;
   },
   coincident({ elements: [p1, p2], incrementScale }) {
     vec2.subtract(tempVec2, p1.vec2, p2.vec2);
@@ -285,12 +335,22 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
     const { editor: { selection }, scene, history, config } = engine;
 
     const distanceKey = config.createString('shortcuts.sketch.distance', 'Sketch constraint: distance', 'key', Input.stringify([['k'], ['d']]));
+    const widthKey = config.createString('shortcuts.sketch.width', 'Sketch constraint: width', 'key', Input.stringify([['k'], ['l']]));
+    const heightKey = config.createString('shortcuts.sketch.height', 'Sketch constraint: height', 'key', Input.stringify([['k'], ['i']]));
     const coincidentKey = config.createString('shortcuts.sketch.coincident', 'Sketch constraint: coincident point', 'key', Input.stringify([['k'], ['c']]));
     const horizontalKey = config.createString('shortcuts.sketch.horizontal', 'Sketch constraint: horizontal', 'key', Input.stringify([['k'], ['h']]));
     const verticalKey = config.createString('shortcuts.sketch.vertical', 'Sketch constraint: vertical', 'key', Input.stringify([['k'], ['v']]));
     const equalKey = config.createString('shortcuts.sketch.equal', 'Sketch constraint: equal', 'key', Input.stringify([['k'], ['e']]));
 
-    engine.input.registerShortcuts(distanceKey, coincidentKey, horizontalKey, verticalKey, equalKey);
+    engine.input.registerShortcuts(
+      distanceKey,
+      heightKey,
+      widthKey,
+      coincidentKey,
+      horizontalKey,
+      verticalKey,
+      equalKey,
+    );
 
     let previousTool = engine.tools.selected;
 
@@ -377,27 +437,7 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
       switch (setting) {
         case distanceKey:
           cancellableTask.exec(
-            s => {
-              const pairs = /** @type {[PointInfo, PointInfo, number?][]} */ ([]);
-              const lines = s.getByType('line').map(({ index }) => index);
-              for (const index of lines) {
-                const line = sketch.getLine(index);
-                const [p1, p2] = line ? sketch.getPoints(line) : [];
-                if (p1 && p2) {
-                  pairs.push([p1, p2, sketch.getConstraintsForPoints([p1.index, p2.index], 'distance').pop()?.data]);
-                }
-              };
-
-              const points = s.getByType('point').map(({ index }) => index);
-              forAllUniquePairs(points, (indices) => {
-                const p1 = sketch.getPointInfo(indices[0]);
-                const p2 = sketch.getPointInfo(indices[1]);
-                if (p1 && p2 && !pairs.find(([p3, p4]) => (p3 === p1 && p4 === p2) || (p3 === p2 && p4 === p1))) {
-                  pairs.push([p1, p2, sketch.getConstraintsForPoints(indices, 'distance').pop()?.data]);
-                }
-              });
-              return pairs;
-            },
+            s => extractSelectionPointsWithConstraints(s, sketch, 'distance'),
             pairs => pairs.length > 0,
             pairs => {
               const value = pairs.find(([,, d]) => d)?.[2] ?? vec2.distance(pairs[0][0].vec2, pairs[0][1].vec2);
@@ -406,6 +446,38 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
                 if (newValue <= 0) return;
                 for (const [p1, p2] of pairs) {
                   sketch.distance(newValue, [p1.index, p2.index]);
+                }
+              });
+            },
+          );
+          break;
+        case widthKey:
+          cancellableTask.exec(
+            s => extractSelectionPointsWithConstraints(s, sketch, 'width'),
+            pairs => pairs.length > 0,
+            pairs => {
+              const value = pairs.find(([,, d]) => d)?.[2] ?? Math.abs(pairs[0][0].vec2[0] - pairs[0][1].vec2[0]);
+
+              engine.emit('propertyrequest', { type: 'distance', value }, /** @param {number} newValue */ (newValue) => {
+                if (newValue <= 0) return;
+                for (const [p1, p2] of pairs) {
+                  sketch.width(newValue, [p1.index, p2.index]);
+                }
+              });
+            },
+          );
+          break;
+        case heightKey:
+          cancellableTask.exec(
+            s => extractSelectionPointsWithConstraints(s, sketch, 'height'),
+            pairs => pairs.length > 0,
+            pairs => {
+              const value = pairs.find(([,, d]) => d)?.[2] ?? Math.abs(pairs[0][0].vec2[1] - pairs[0][1].vec2[1]);
+
+              engine.emit('propertyrequest', { type: 'distance', value }, /** @param {number} newValue */ (newValue) => {
+                if (newValue <= 0) return;
+                for (const [p1, p2] of pairs) {
+                  sketch.height(newValue, [p1.index, p2.index]);
                 }
               });
             },
@@ -497,6 +569,8 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
   static makeConstraint(type, indices, data) {
     switch (type) {
       case 'distance':
+      case 'width':
+      case 'height':
       case 'coincident':
       case 'horizontal':
       case 'vertical':
@@ -714,6 +788,38 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
     } else if (lineOrIndices.some(idx => !this.hasPoint(idx))) return null;
 
     return /** @type {DistanceConstraint} */ (this.#createConstraint('distance', lineOrIndices, length));
+  }
+
+  /**
+   * @param {number} length
+   * @param {LineConstructionElement | [number, number]} lineOrIndices
+   * @returns {Readonly<WidthConstraint>?}
+   */
+  width(length, lineOrIndices) {
+    if (!Array.isArray(lineOrIndices)) {
+      const lineIndices = this.getLineIndices(lineOrIndices);
+      if (!lineIndices) return null;
+
+      lineOrIndices = lineIndices;
+    } else if (lineOrIndices.some(idx => !this.hasPoint(idx))) return null;
+
+    return /** @type {WidthConstraint} */ (this.#createConstraint('width', lineOrIndices, length));
+  }
+
+  /**
+   * @param {number} length
+   * @param {LineConstructionElement | [number, number]} lineOrIndices
+   * @returns {Readonly<HeightConstraint>?}
+   */
+  height(length, lineOrIndices) {
+    if (!Array.isArray(lineOrIndices)) {
+      const lineIndices = this.getLineIndices(lineOrIndices);
+      if (!lineIndices) return null;
+
+      lineOrIndices = lineIndices;
+    } else if (lineOrIndices.some(idx => !this.hasPoint(idx))) return null;
+
+    return /** @type {HeightConstraint} */ (this.#createConstraint('height', lineOrIndices, length));
   }
 
   /**
