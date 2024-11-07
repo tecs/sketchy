@@ -174,7 +174,7 @@ const getElements = (constraint, sketch) => {
   return {
     elements: /** @type {ConstraintData<C>["elements"]} */ (pointsInfo),
     value: constraint.data,
-    incrementScale: 0.5 / (pointsInfo.length - numLocked),
+    incrementScale: 1 / (pointsInfo.length - numLocked),
   };
 };
 
