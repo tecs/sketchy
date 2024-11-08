@@ -96,6 +96,9 @@ const { glMatrix: { equals }, vec2, vec3, mat4, quat } = glMatrix;
  * @typedef {[pairs: C["indices"][], data: (C["data"] | undefined)[], type: T, sketch: Sketch]} ExecArgs
  */
 
+/** @typedef {Exclude<DistanceConstraints, EqualConstraint>["type"]} DistanceType */
+/** @typedef {Exclude<Constraints["type"], DistanceType>} ConstraintType */
+
 // cached structures
 const tempVec2 = vec2.create();
 const forward = vec3.fromValues(0, 0, 1);
@@ -403,8 +406,9 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
        * @param {C} constraintType
        * @param {(collection: typeof selection, sketch: Sketch) => ExecArgs<C>[0]} extractFn
        * @param {(...args: ExecArgs<C>) => void} thenFn
+       * @param {(...args: ExecArgs<C>) => void} undoFn
        */
-      async exec(constraintType, extractFn, thenFn) {
+      async exec(constraintType, extractFn, thenFn, undoFn) {
         this.drop(false);
 
         const sketch = scene.currentStep ?? scene.enteredInstance?.body.step;
@@ -432,44 +436,114 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
         if (!pass) return;
 
         const constraintData = data.map(indices => sketch.getConstraintsForPoints(indices, constraintType).pop()?.data);
-        thenFn(data, /** @type {ExecArgs<C>[1]} */ (constraintData), constraintType, sketch);
+        const action = history.createAction('', null);
+        if (!action) {
+          thenFn(data, /** @type {ExecArgs<C>[1]} */ (constraintData), constraintType, sketch);
+          return;
+        }
+        action.append(
+          () => {
+            thenFn(data, /** @type {ExecArgs<C>[1]} */ (constraintData), constraintType, sketch);
+          },
+          () => {
+            undoFn(data, /** @type {ExecArgs<C>[1]} */ (constraintData), constraintType, sketch);
+          },
+        );
+        action.commit();
       },
     };
 
     /**
-     * @param {0 | 1} [component]
-     * @returns {(...args: ExecArgs<"distance" | "width" | "height">) => void}
+     * @template T
+     * @template {unknown[]} A
+     * @param {(...args: A) => T} fn
+     * @returns {(...args: A) => T}
      */
-    const distanceConstraint = (component) => (pairs, _, type, sketch) => {
-      /** @type {number?} */
-      let value = null;
+    const cache = (fn) => {
+      /** @type {T?} */
+      let result = null;
+      let hydrated = false;
 
-      for (const indices of pairs) {
-        const constraint = sketch.getConstraintsForPoints(indices, type).pop();
-        if (!constraint) continue;
-        value = constraint.data;
-        break;
-      }
-
-      if (value === null) {
-        const p1 = sketch.getPointInfo(pairs[0][0]);
-        const p2 = sketch.getPointInfo(pairs[0][1]);
-        if (!p1 || !p2) value = 0;
-        else if (component === undefined) value = vec2.distance(p1.vec2, p2.vec2);
-        else value = Math.abs(p1.vec2[component] - p2.vec2[component]);
-      }
-
-      engine.emit('propertyrequest', { type: 'distance', value }, /** @param {number} newValue */ (newValue) => {
-        if (newValue <= 0) return;
-        for (const indices of pairs) {
-          sketch[type](newValue, indices);
+      return (...args) => {
+        if (!hydrated) {
+          result = fn(...args);
+          hydrated = true;
         }
-      });
+        return /** @type {T} */ (result);
+      };
     };
 
-    /** @type {(...args: ExecArgs<"equal" | "coincident" | "horizontal" | "vertical">) => void} */
+    /**
+     * @param {number} defaultValue
+     * @returns {(value: number) => Promise<number>}
+     */
+    const cacheUserValue = (defaultValue = 0) => {
+      let hydrated = false;
+
+      return (value) => {
+        if (!hydrated) {
+          hydrated = true;
+          return new Promise(resolve => {
+            engine.emit('propertyrequest', { type: 'distance', value }, /** @param {number} newValue */ (newValue) => {
+              defaultValue = newValue;
+              resolve(newValue);
+            });
+          });
+        }
+        return Promise.resolve(defaultValue);
+      };
+    };
+
+    /**
+     * @param {0 | 1} [component]
+     * @returns {(...args: ExecArgs<DistanceType>) => void}
+     */
+    const cachedDistanceConstraint = (component) => {
+      const getUserValue = cacheUserValue();
+      const getValue = cache(/** @type {(...args: ExecArgs<DistanceType>) => number} */ ((pairs, _, type, sketch) => {
+        for (const indices of pairs) {
+          const constraint = sketch.getConstraintsForPoints(indices, type).pop();
+          if (constraint) return constraint.data;
+        }
+        const p1 = sketch.getPointInfo(pairs[0][0]);
+        const p2 = sketch.getPointInfo(pairs[0][1]);
+        if (!p1 || !p2) return 0;
+        if (component === undefined) return vec2.distance(p1.vec2, p2.vec2);
+        return Math.abs(p1.vec2[component] - p2.vec2[component]);
+      }));
+
+      return async (pairs, _, constraintType, sketch) => {
+        const value = getValue(pairs, _, constraintType, sketch);
+        const userValue = await getUserValue(value);
+        if (userValue <= 0) return;
+        for (const indices of pairs) {
+          sketch[constraintType](userValue, indices);
+        }
+      };
+    };
+
+    /** @type {(...args: ExecArgs<DistanceType>) => void} */
+    const undoDistanceConstraint = (pairs, previousValues, constraintType, sketch) => pairs.forEach((indices, i) => {
+      const constraint = sketch.getConstraintsForPoints(indices, constraintType).pop();
+      if (!constraint) return;
+      if (previousValues[i] === undefined) sketch.deleteConstraint(constraint);
+      else {
+        constraint.data = previousValues[i];
+        sketch.update();
+      }
+    });
+
+    /** @type {(...args: ExecArgs<ConstraintType>) => void} */
     const doConstraint = (pairs, currentValues, constraintType, sketch) => pairs.forEach((indices, i) => {
       if (currentValues[i] === undefined) sketch[constraintType](/** @type {any} */ (indices));
+    });
+
+    /** @type {(...args: ExecArgs<ConstraintType>) => void} */
+    const undoConstraint = (pairs, previousValues, constraintType, sketch) => pairs.forEach((indices, i) => {
+      if (previousValues[i] !== undefined) return;
+
+      const constraint = sketch.getConstraintsForPoints(indices, constraintType).pop();
+      if (constraint) sketch.deleteConstraint(constraint);
     });
 
     engine.on('keydown', (_, keyCombo) => {
@@ -508,25 +582,25 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
     engine.on('shortcut', setting => {
       switch (setting) {
         case distanceKey:
-          cancellableTask.exec('distance', extractLinesOrPointPairs, distanceConstraint());
+          cancellableTask.exec('distance', extractLinesOrPointPairs, cachedDistanceConstraint(), undoDistanceConstraint);
           break;
         case widthKey:
-          cancellableTask.exec('width', extractLinesOrPointPairs, distanceConstraint(0));
+          cancellableTask.exec('width', extractLinesOrPointPairs, cachedDistanceConstraint(0), undoDistanceConstraint);
           break;
         case heightKey:
-          cancellableTask.exec('height', extractLinesOrPointPairs, distanceConstraint(1));
+          cancellableTask.exec('height', extractLinesOrPointPairs, cachedDistanceConstraint(1), undoDistanceConstraint);
           break;
         case equalKey:
-          cancellableTask.exec('equal', extractLinePairs, doConstraint);
+          cancellableTask.exec('equal', extractLinePairs, doConstraint, undoConstraint);
           break;
         case coincidentKey:
-          cancellableTask.exec('coincident', extractPointPairs, doConstraint);
+          cancellableTask.exec('coincident', extractPointPairs, doConstraint, undoConstraint);
           break;
         case horizontalKey:
-          cancellableTask.exec('horizontal', extractAllPoints, doConstraint);
+          cancellableTask.exec('horizontal', extractAllPoints, doConstraint, undoConstraint);
           break;
         case verticalKey:
-          cancellableTask.exec('vertical', extractAllPoints, doConstraint);
+          cancellableTask.exec('vertical', extractAllPoints, doConstraint, undoConstraint);
           break;
       }
     });
