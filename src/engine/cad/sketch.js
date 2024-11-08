@@ -567,6 +567,10 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
       const action = history.createAction(`Delete line from Sketch ${sketch.name}`, null);
       if (!action) return;
 
+      const constraints = lines.flatMap(([line]) => sketch.getConstraints(line))
+        .filter((v, i, a) => a.indexOf(v) === i)
+        .map(constraint => /** @type {const} */ ([constraint, sketch.listConstraints().indexOf(constraint)]));
+
       action.append(
         () => {
           lines.forEach(([line]) => sketch.deleteElement(line));
@@ -574,6 +578,7 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
         },
         () => {
           lines.forEach(([line, indexAt]) => sketch.addElement(line, indexAt));
+          constraints.forEach(([constraint, indexAt]) => sketch.addConstraint(constraint, indexAt));
           selection.add(elements);
         },
       );
