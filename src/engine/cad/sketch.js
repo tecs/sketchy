@@ -8,6 +8,7 @@ const { glMatrix: { equals }, vec2, vec3, mat4, quat } = glMatrix;
 /** @typedef {import("./step.js").BaseParams<SketchState>} BaseParams */
 /** @typedef {import("./step.js").BaseParams<ConstructableSketchState>} PartialBaseParams */
 /** @typedef {import("../general/state.js").Value} Value */
+/** @typedef {import("../editor.js").Collection} Collection */
 
 /**
  * @template {string} T
@@ -89,6 +90,12 @@ const { glMatrix: { equals }, vec2, vec3, mat4, quat } = glMatrix;
  * @typedef {(data: ConstraintData<C>, current: C["_current"]) => void} ApplyFn
  */
 
+/**
+ * @template {Constraints["type"]} T
+ * @template {Constraints} [C=Find<Constraints, "type", T>]
+ * @typedef {[pairs: C["indices"][], data: (C["data"] | undefined)[], type: T, sketch: Sketch]} ExecArgs
+ */
+
 // cached structures
 const tempVec2 = vec2.create();
 const forward = vec3.fromValues(0, 0, 1);
@@ -131,25 +138,54 @@ const transformFlatBuffer = (flatBuffer, transform) => {
 };
 
 /**
- * @template T
- * @param {T[]} collection
- * @param {(pair: [T, T]) => void} fn
+ * @template {{}} T
+ * @param {(T | null | undefined)[]} dirtyCollection
+ * @returns {[T, T][]}
  */
-const forAllUniquePairs = (collection, fn) => {
-  collection = collection.filter((v, i, a) => a.indexOf(v) === i);
-  for (let i = 0; i < collection.length; ++i) {
-    for (let k = i + 1; k < collection.length; ++k) {
-      fn([collection[i], collection[k]]);
+const pair = (dirtyCollection) => {
+  const collection = /** @type {T[]} */ ([]);
+
+  for (const element of dirtyCollection) {
+    if (element !== null && element !== undefined && !collection.includes(element)) {
+      collection.push(element);
     }
   }
+
+  const pairs = /** @type {[T, T][]} */ ([]);
+  for (let i = 0; i < collection.length; ++i) {
+    for (let k = i + 1; k < collection.length; ++k) {
+      pairs.push([collection[i], collection[k]]);
+    }
+  }
+
+  return pairs;
 };
 
 /**
- * @param {import("../editor.js").Collection} selection
- * @param {Sketch} sketch
- * @returns {number[]}
+ * @param {Collection} selection
+ * @returns {[number, number][]}
  */
-const extractSelectionPoints = (selection, sketch) => selection.elements.flatMap(({ type, index }) => {
+const extractPointPairs = selection => pair(selection.getByType('point').map(({ index }) => index));
+
+/**
+ * @param {Collection} selection
+ * @param {Sketch} sketch
+ * @returns {[number, number, number, number][]}
+ */
+const extractLinePairs = (selection, sketch) => pair(selection.getByType('line').map(({ index }) => sketch.getLine(index)))
+  .reduce((indices, [l1, l2]) => {
+    const i1 = sketch.getLineIndices(l1);
+    const i2 = sketch.getLineIndices(l2);
+    if (i1 && i2) indices.push([...i1, ...i2]);
+    return indices;
+  }, /** @type {[number, number, number, number][]} */ ([]));
+
+/**
+ * @param {Collection} selection
+ * @param {Sketch} sketch
+ * @returns {[number, number][]}
+ */
+const extractAllPoints = (selection, sketch) => pair(selection.elements.flatMap(({ type, index }) => {
   switch (type) {
     case 'point': return index;
     case 'line': {
@@ -158,33 +194,30 @@ const extractSelectionPoints = (selection, sketch) => selection.elements.flatMap
     }
   }
   return [];
-});
+}));
 
 /**
- * @param {import("../editor.js").Collection} selection
+ * @param {Collection} selection
  * @param {Sketch} sketch
- * @param {"distance" | "width" | "height"} constraint
- * @returns {[PointInfo, PointInfo, number?][]}
+ * @returns {[number, number][]}
  */
-const extractSelectionPointsWithConstraints = (selection, sketch, constraint) => {
-  const pairs = /** @type {[PointInfo, PointInfo, number?][]} */ ([]);
-  const lines = selection.getByType('line').map(({ index }) => index);
-  for (const index of lines) {
-    const line = sketch.getLine(index);
-    const [p1, p2] = line ? sketch.getPoints(line) : [];
-    if (p1 && p2) {
-      pairs.push([p1, p2, sketch.getConstraintsForPoints([p1.index, p2.index], constraint).pop()?.data]);
+const extractLinesOrPointPairs = (selection, sketch) => {
+  const pairs = /** @type {[number, number][]} */ ([]);
+  const lines = selection.getByType('line').map(({ index }) => sketch.getLine(index));
+  for (const line of lines) {
+    if (!line) continue;
+    const indices = sketch.getLineIndices(line);
+    if (indices) {
+      pairs.push(indices);
     }
   };
 
-  const points = selection.getByType('point').map(({ index }) => index);
-  forAllUniquePairs(points, (indices) => {
-    const p1 = sketch.getPointInfo(indices[0]);
-    const p2 = sketch.getPointInfo(indices[1]);
-    if (p1 && p2 && !pairs.find(([p3, p4]) => (p3 === p1 && p4 === p2) || (p3 === p2 && p4 === p1))) {
-      pairs.push([p1, p2, sketch.getConstraintsForPoints(indices, constraint).pop()?.data]);
+  const pointPairs = pair(selection.getByType('point').map(({ index }) => index));
+  for (const [p1, p2] of pointPairs) {
+    if (!pairs.find(([p3, p4]) => (p3 === p1 && p4 === p2) || (p3 === p2 && p4 === p1))) {
+      pairs.push([p1, p2]);
     }
-  });
+  }
   return pairs;
 };
 
@@ -366,13 +399,16 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
       },
 
       /**
-       * @template T
-       * @param {(collection: typeof selection) => T} extractFn
-       * @param {(arg: T) => boolean} testFn
-       * @param {(arg: T) => void} thenFn
+       * @template {Constraints["type"]} C
+       * @param {C} constraintType
+       * @param {(collection: typeof selection, sketch: Sketch) => ExecArgs<C>[0]} extractFn
+       * @param {(...args: ExecArgs<C>) => void} thenFn
        */
-      async exec(extractFn, testFn, thenFn) {
+      async exec(constraintType, extractFn, thenFn) {
         this.drop(false);
+
+        const sketch = scene.currentStep ?? scene.enteredInstance?.body.step;
+        if (!(sketch instanceof Sketch)) return;
 
         const selectTool = engine.tools.get('select');
         previousTool = engine.tools.selected ?? selectTool;
@@ -382,20 +418,59 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
         this.handle = { valid: true };
         const { handle } = this;
 
-        let data = extractFn(selection);
-        let pass = testFn(data);
+        let data = extractFn(selection, sketch);
+        let pass = data.length > 0;
 
         while (!pass && handle.valid) {
           await selection.waitFor('change');
           if (!handle.valid) return;
-          data = extractFn(selection);
-          pass = testFn(data);
+          data = extractFn(selection, sketch);
+          pass = data.length > 0;
         }
 
         this.drop();
-        if (pass) thenFn(data);
+        if (!pass) return;
+
+        const constraintData = data.map(indices => sketch.getConstraintsForPoints(indices, constraintType).pop());
+        thenFn(data, /** @type {ExecArgs<C>[1]} */ (constraintData), constraintType, sketch);
       },
     };
+
+    /**
+     * @param {0 | 1} [component]
+     * @returns {(...args: ExecArgs<"distance" | "width" | "height">) => void}
+     */
+    const distanceConstraint = (component) => (pairs, _, type, sketch) => {
+      /** @type {number?} */
+      let value = null;
+
+      for (const indices of pairs) {
+        const constraint = sketch.getConstraintsForPoints(indices, type).pop();
+        if (!constraint) continue;
+        value = constraint.data;
+        break;
+      }
+
+      if (value === null) {
+        const p1 = sketch.getPointInfo(pairs[0][0]);
+        const p2 = sketch.getPointInfo(pairs[0][1]);
+        if (!p1 || !p2) value = 0;
+        else if (component === undefined) value = vec2.distance(p1.vec2, p2.vec2);
+        else value = Math.abs(p1.vec2[component] - p2.vec2[component]);
+      }
+
+      engine.emit('propertyrequest', { type: 'distance', value }, /** @param {number} newValue */ (newValue) => {
+        if (newValue <= 0) return;
+        for (const indices of pairs) {
+          sketch[type](newValue, indices);
+        }
+      });
+    };
+
+    /** @type {(...args: ExecArgs<"equal" | "coincident" | "horizontal" | "vertical">) => void} */
+    const doConstraint = (pairs, currentValues, constraintType, sketch) => pairs.forEach((indices, i) => {
+      if (currentValues[i] === undefined) sketch[constraintType](/** @type {any} */ (indices));
+    });
 
     engine.on('keydown', (_, keyCombo) => {
       if (keyCombo === 'esc') cancellableTask.drop();
@@ -431,85 +506,27 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
     });
 
     engine.on('shortcut', setting => {
-      const sketch = scene.currentStep ?? scene.enteredInstance?.body.step;
-      if (!(sketch instanceof Sketch)) return;
-
       switch (setting) {
         case distanceKey:
-          cancellableTask.exec(
-            s => extractSelectionPointsWithConstraints(s, sketch, 'distance'),
-            pairs => pairs.length > 0,
-            pairs => {
-              const value = pairs.find(([,, d]) => d)?.[2] ?? vec2.distance(pairs[0][0].vec2, pairs[0][1].vec2);
-
-              engine.emit('propertyrequest', { type: 'distance', value }, /** @param {number} newValue */ (newValue) => {
-                if (newValue <= 0) return;
-                for (const [p1, p2] of pairs) {
-                  sketch.distance(newValue, [p1.index, p2.index]);
-                }
-              });
-            },
-          );
+          cancellableTask.exec('distance', extractLinesOrPointPairs, distanceConstraint());
           break;
         case widthKey:
-          cancellableTask.exec(
-            s => extractSelectionPointsWithConstraints(s, sketch, 'width'),
-            pairs => pairs.length > 0,
-            pairs => {
-              const value = pairs.find(([,, d]) => d)?.[2] ?? Math.abs(pairs[0][0].vec2[0] - pairs[0][1].vec2[0]);
-
-              engine.emit('propertyrequest', { type: 'distance', value }, /** @param {number} newValue */ (newValue) => {
-                if (newValue <= 0) return;
-                for (const [p1, p2] of pairs) {
-                  sketch.width(newValue, [p1.index, p2.index]);
-                }
-              });
-            },
-          );
+          cancellableTask.exec('width', extractLinesOrPointPairs, distanceConstraint(0));
           break;
         case heightKey:
-          cancellableTask.exec(
-            s => extractSelectionPointsWithConstraints(s, sketch, 'height'),
-            pairs => pairs.length > 0,
-            pairs => {
-              const value = pairs.find(([,, d]) => d)?.[2] ?? Math.abs(pairs[0][0].vec2[1] - pairs[0][1].vec2[1]);
-
-              engine.emit('propertyrequest', { type: 'distance', value }, /** @param {number} newValue */ (newValue) => {
-                if (newValue <= 0) return;
-                for (const [p1, p2] of pairs) {
-                  sketch.height(newValue, [p1.index, p2.index]);
-                }
-              });
-            },
-          );
+          cancellableTask.exec('height', extractLinesOrPointPairs, distanceConstraint(1));
           break;
         case equalKey:
-          cancellableTask.exec(
-            s => s.getByType('line').map(({ index }) => sketch.getLine(index)).filter(line => line !== null),
-            lines => lines.length > 1,
-            lines => forAllUniquePairs(lines, linePairs => sketch.equal(linePairs)),
-          );
+          cancellableTask.exec('equal', extractLinePairs, doConstraint);
           break;
         case coincidentKey:
-          cancellableTask.exec(
-            s => s.getByType('point').map(({ index }) => index),
-            points => points.length > 1,
-            points => forAllUniquePairs(points, indices => sketch.coincident(indices)),
-          );
+          cancellableTask.exec('coincident', extractPointPairs, doConstraint);
           break;
         case horizontalKey:
-          cancellableTask.exec(
-            s => extractSelectionPoints(s, sketch),
-            points => points.length > 1,
-            points => forAllUniquePairs(points, indices => sketch.horizontal(indices)),
-          );
+          cancellableTask.exec('horizontal', extractAllPoints, doConstraint);
           break;
         case verticalKey:
-          cancellableTask.exec(
-            s => extractSelectionPoints(s, sketch),
-            points => points.length > 1,
-            points => forAllUniquePairs(points, indices => sketch.vertical(indices)),
-          );
+          cancellableTask.exec('vertical', extractAllPoints, doConstraint);
           break;
       }
     });
