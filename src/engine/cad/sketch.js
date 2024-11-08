@@ -436,7 +436,7 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
         if (!pass) return;
 
         const constraintData = data.map(indices => sketch.getConstraintsForPoints(indices, constraintType).pop()?.data);
-        const action = history.createAction('', null);
+        const action = history.createAction(`Create a ${constraintType} constraint`, null);
         if (!action) {
           thenFn(data, /** @type {ExecArgs<C>[1]} */ (constraintData), constraintType, sketch);
           return;
