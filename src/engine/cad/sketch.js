@@ -1077,19 +1077,21 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
 
   /**
    * @param {Readonly<ConstructionElements>} element
+   * @param {number} [atIndex]
    */
-  addElement(element) {
+  addElement(element, atIndex = this.data.elements.length) {
     if (this.data.elements.includes(element)) return;
-    this.data.elements.push(element);
+    this.data.elements.splice(atIndex, 0, element);
     this.update();
   }
 
   /**
    * @param {Readonly<Constraints>} constraint
+   * @param {number} [atIndex]
    */
-  addConstraint(constraint) {
+  addConstraint(constraint, atIndex = this.data.constraints.length) {
     if (this.data.constraints.includes(constraint)) return;
-    this.data.constraints.push(constraint);
+    this.data.constraints.splice(atIndex, 0, constraint);
     this.update();
   }
 
