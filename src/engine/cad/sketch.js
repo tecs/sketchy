@@ -823,16 +823,29 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
   }
 
   /**
-   * @param {[LineConstructionElement, LineConstructionElement]} lines
+   * @param {[LineConstructionElement, LineConstructionElement] | [number, number, number, number]} indices
    * @returns {Readonly<EqualConstraint>?}
    */
-  equal(lines) {
-    if (lines[0] === lines[1] || lines.some(line => !this.data.elements.includes(line))) return null;
-    const indices = lines.flatMap(line => this.getPoints(line) ?? []).map(({ index }) => index);
+  equal(indices) {
+    if (indices.length === 2) {
+      if (indices[0] === indices[1] || indices.some(line => !this.data.elements.includes(line))) return null;
 
-    return /** @type {EqualConstraint} */ (
-      this.#createConstraint('equal', /** @type {[number, number, number, number]}*/ (indices), null)
-    );
+      const i1 = this.getLineIndices(indices[0]);
+      const i2 = this.getLineIndices(indices[1]);
+      if (!i1 || !i2) return null;
+
+      indices = [...i1, ...i2];
+    } else {
+      if (indices.some((v, i, a) => a.indexOf(v) !== i)) return null;
+
+      const lines = indices.map(index => this.getLineForPoint(index)?.[0]);
+      if (lines.some(v => v === null)) return null;
+      if (lines[0] !== lines[1] || lines[1] === lines[2] || lines[2] !== lines[3]) return null;
+    }
+
+    if (indices.length !== 4) return null;
+
+    return /** @type {EqualConstraint} */ (this.#createConstraint('equal', indices, null));
   }
 
   /**
