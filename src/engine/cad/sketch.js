@@ -559,20 +559,21 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
           out.push(line);
         }
         return out;
-      }, /** @type {LineConstructionElement[]} */ ([]));
+      }, /** @type {LineConstructionElement[]} */ ([]))
+        .map(line => /** @type {const} */ ([line, sketch.listElements().indexOf(line)]));
 
       if (!lines.length) return;
 
-      const action = history.createAction(`Delete line from Sketch ${sketch.name}`, {});
+      const action = history.createAction(`Delete line from Sketch ${sketch.name}`, null);
       if (!action) return;
 
       action.append(
         () => {
-          lines.forEach(line => sketch.deleteElement(line));
+          lines.forEach(([line]) => sketch.deleteElement(line));
           selection.remove(elements);
         },
         () => {
-          lines.forEach(line => sketch.addElement(line));
+          lines.forEach(([line, indexAt]) => sketch.addElement(line, indexAt));
           selection.add(elements);
         },
       );
