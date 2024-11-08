@@ -431,7 +431,7 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
         this.drop();
         if (!pass) return;
 
-        const constraintData = data.map(indices => sketch.getConstraintsForPoints(indices, constraintType).pop());
+        const constraintData = data.map(indices => sketch.getConstraintsForPoints(indices, constraintType).pop()?.data);
         thenFn(data, /** @type {ExecArgs<C>[1]} */ (constraintData), constraintType, sketch);
       },
     };
