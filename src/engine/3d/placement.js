@@ -53,7 +53,7 @@ export default class Placement extends implement({
                 vec3.subtract(translation, translation, this.translation);
                 this.translate(translation);
               },
-              type: 'vec3',
+              type: 'coord',
             },
             Axis: {
               value: axis,

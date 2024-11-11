@@ -77,6 +77,15 @@ export const stringifyDistance = (value, precision) => {
 };
 
 /**
+ * @param {vec3} value
+ * @param {number} [precision]
+ * @returns {string}
+ */
+export const stringifyCoord = (value, precision) => {
+  return `[${[...value].map(component => stringifyDistance(component, precision)).join(', ')}]`;
+};
+
+/**
  * @param {string} value
  * @returns {number?}
  */
@@ -113,10 +122,35 @@ export const stringifyValue = ({ type, value, displayValue }, precision) => {
 
   switch(type) {
     case 'vec3': return stringifyVec3(value, precision);
+    case 'coord': return stringifyCoord(value, precision);
     case 'angle': return stringifyAngle(value, precision);
     case 'distance': return stringifyDistance(value, precision);
     case 'plain': return value;
     default: return '<<UNSUPPORTED PROPERTY TYPE>>';
+  }
+};
+
+/**
+ * @param {import("../../lib").AnyUIContainer} container
+ * @param {vec3} value
+ * @param {(v: vec3) => void} onEdit
+ * @param {(n: number) => string} [stringify]
+ * @param {(s: string) => number | null} [parse]
+ */
+const renderComponents = (container, value, onEdit, stringify = String, parse = parseFloat) => {
+  for (let component = /** @type {0 | 1 | 2} */ (0); component < 3; ++component) {
+    const c = container.addInput(stringify(value[component]), {
+      onchange: () => {
+        const newValue = parse(c.value);
+        if (typeof newValue !== 'number' || Number.isNaN(newValue) || !Number.isFinite(newValue)) return;
+        if (newValue === value[component]) return;
+
+        const newVec = vec3.clone(value);
+        newVec[component] = newValue;
+
+        onEdit(newVec);
+      },
+    });
   }
 };
 
@@ -128,26 +162,12 @@ export const renderInput = ({ type, value, onEdit }, container) => {
   if (!onEdit) return;
 
   switch (type) {
-    case 'vec3': {
-      /**
-       * @param {0|1|2} component
-       * @param {string} str
-       */
-      const parseComponent = (component, str) => {
-        const newValue = parseFloat(str);
-        if (typeof newValue !== 'number' || Number.isNaN(newValue) || !Number.isFinite(newValue)) return;
-        if (newValue === value[component]) return;
-
-        const newVec = vec3.clone(value);
-        newVec[component] = newValue;
-
-        onEdit(newVec);
-      };
-      const x = container.addInput(`${value[0]}`, { onchange: () => parseComponent(0, x.value) });
-      const y = container.addInput(`${value[1]}`, { onchange: () => parseComponent(1, y.value) });
-      const z = container.addInput(`${value[2]}`, { onchange: () => parseComponent(2, z.value) });
+    case 'vec3':
+      renderComponents(container, value, onEdit);
       break;
-    }
+    case 'coord':
+      renderComponents(container, value, onEdit, stringifyDistance, parseDistance);
+      break;
     case 'angle': {
       const input = container.addInput(stringifyAngle(value), { onchange: () => {
         const newAngle = parseAngle(input.value);

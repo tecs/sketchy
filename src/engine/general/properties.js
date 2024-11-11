@@ -6,9 +6,12 @@
 
 /** @typedef {TypedPropertyData<string, "plain">} PlainPropertyData */
 /** @typedef {TypedPropertyData<vec3, "vec3">} Vec3PropertyData */
+/** @typedef {TypedPropertyData<vec3, "coord">} CoordPropertyData */
 /** @typedef {TypedPropertyData<number, "angle">} AnglePropertyData */
 /** @typedef {TypedPropertyData<number, "distance">} DistancePropertyData */
-/** @typedef {PlainPropertyData | Vec3PropertyData | AnglePropertyData | DistancePropertyData} PropertyData */
+/** @typedef {PlainPropertyData | Vec3PropertyData} PlainPropertiesData */
+/** @typedef {DistancePropertyData | CoordPropertyData} DistancePropertiesData */
+/** @typedef {PlainPropertiesData | DistancePropertiesData | AnglePropertyData} PropertyData */
 /** @typedef {Record<string, Record<string, PropertyData>>} PropertyDefinitions */
 /** @typedef {[property: PropertyData, name: string, category: string]} PropertyMapping */
 
