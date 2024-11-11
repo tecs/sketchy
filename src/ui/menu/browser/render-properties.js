@@ -80,13 +80,13 @@ export const stringifyDistance = (value, precision) => {
  * @param {string} value
  * @returns {number?}
  */
-export const typifyAngle = (value) => parseUnit(value, ANGLE_UNITS);
+export const parseAngle = (value) => parseUnit(value, ANGLE_UNITS);
 
 /**
  * @param {string} value
  * @returns {number?}
  */
-export const typifyDistance = (value) => parseUnit(value, DISTANCE_UNITS);
+export const parseDistance = (value) => parseUnit(value, DISTANCE_UNITS);
 
 /**
  * @template {PropertyData} T
@@ -94,10 +94,10 @@ export const typifyDistance = (value) => parseUnit(value, DISTANCE_UNITS);
  * @param {T} property
  * @returns {T["value"]}
  */
-export const typifyString = (value, property) => {
+export const parseString = (value, property) => {
   switch (property.type) {
-    case 'angle': return typifyAngle(value) ?? property.value;
-    case 'distance': return typifyDistance(value) ?? property.value;
+    case 'angle': return parseAngle(value) ?? property.value;
+    case 'distance': return parseDistance(value) ?? property.value;
   }
 
   return property.value;
@@ -133,7 +133,7 @@ export const renderInput = ({ type, value, onEdit }, container) => {
        * @param {0|1|2} component
        * @param {string} str
        */
-      const typifyComponent = (component, str) => {
+      const parseComponent = (component, str) => {
         const newValue = parseFloat(str);
         if (typeof newValue !== 'number' || Number.isNaN(newValue) || !Number.isFinite(newValue)) return;
         if (newValue === value[component]) return;
@@ -143,21 +143,21 @@ export const renderInput = ({ type, value, onEdit }, container) => {
 
         onEdit(newVec);
       };
-      const x = container.addInput(`${value[0]}`, { onchange: () => typifyComponent(0, x.value) });
-      const y = container.addInput(`${value[1]}`, { onchange: () => typifyComponent(1, y.value) });
-      const z = container.addInput(`${value[2]}`, { onchange: () => typifyComponent(2, z.value) });
+      const x = container.addInput(`${value[0]}`, { onchange: () => parseComponent(0, x.value) });
+      const y = container.addInput(`${value[1]}`, { onchange: () => parseComponent(1, y.value) });
+      const z = container.addInput(`${value[2]}`, { onchange: () => parseComponent(2, z.value) });
       break;
     }
     case 'angle': {
       const input = container.addInput(stringifyAngle(value), { onchange: () => {
-        const newAngle = typifyAngle(input.value);
+        const newAngle = parseAngle(input.value);
         if (newAngle !== null && newAngle !== value) onEdit(newAngle);
       } });
       break;
     }
     case 'distance': {
       const input = container.addInput(stringifyDistance(value), { onchange: () => {
-        const newDistance = typifyDistance(input.value);
+        const newDistance = parseDistance(input.value);
         if (newDistance !== null && newDistance !== value) onEdit(newDistance);
       } });
       break;

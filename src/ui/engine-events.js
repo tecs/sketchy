@@ -1,4 +1,4 @@
-import { stringifyValue, typifyString } from './menu/browser/render-properties.js';
+import { stringifyValue, parseString } from './menu/browser/render-properties.js';
 
 /**
  * @param {Engine} engine
@@ -13,7 +13,7 @@ export default (engine, container) => {
     const window = container.addWindow('Value');
 
     const submit = () => {
-      property.value = typifyString(input.value, property);
+      property.value = parseString(input.value, property);
       /** @type {(value: typeof property["value"]) => void} */ (callback)(property.value);
       window.remove();
     };
