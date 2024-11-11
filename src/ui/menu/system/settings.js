@@ -142,15 +142,18 @@ export default (engine, container) => {
             }
             renderKeyCombo(keyInput, input.value);
           },
-          onkeydown({ key, ctrlKey, altKey, shiftKey }) {
+          onkeyup(e) {
+            e.stopPropagation();
+          },
+          onkeydown(e) {
+            e.stopPropagation();
+
+            const { key, ctrlKey, altKey, shiftKey } = e;
             const parsedInput = Input.parse(input.value);
             const isSequence = parsedInput.length === 2;
             const isPendingSequence = parsedInput[1]?.length === 0;
 
-            const originalKey = key;
-            key = Input.normalizeKey(key);
-
-            switch (key) {
+            switch (Input.normalizeKey(key)) {
               case 'esc':
                 if (isPendingSequence) {
                   parsedInput.pop();
@@ -176,7 +179,7 @@ export default (engine, container) => {
             }
 
             // block non-printable keys
-            if (originalKey.length !== 1) return false;
+            if (key.length !== 1) return;
 
             const combo = /** @type {import('../../../engine/input.js').NonNullKeyboardShortcut} */ ([key]);
             if (shiftKey) combo.unshift(Input.normalizeKey('shift'));
@@ -188,7 +191,7 @@ export default (engine, container) => {
             if (!isSequence && shouldBeConvertedToSequence(thisItem)) {
               input.value = Input.stringify([combo, []]);
               renderKeyCombo(keyInput, input.value);
-              return false;
+              return;
             }
 
             if (isPendingSequence) {
@@ -197,7 +200,7 @@ export default (engine, container) => {
             }
             dispatchEvent(input, 'change');
 
-            return false;
+            return;
           },
         });
       }
