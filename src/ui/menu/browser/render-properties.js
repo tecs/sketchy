@@ -156,7 +156,7 @@ export const renderInput = ({ type, value, onEdit }, container) => {
       break;
     }
     case 'distance': {
-      const input = container.addInput(stringifyAngle(value), { onchange: () => {
+      const input = container.addInput(stringifyDistance(value), { onchange: () => {
         const newDistance = typifyDistance(input.value);
         if (newDistance !== null && newDistance !== value) onEdit(newDistance);
       } });
