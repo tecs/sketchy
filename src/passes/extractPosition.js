@@ -3,7 +3,7 @@ const { vec3 } = glMatrix;
 /** @type {RenderingPass} */
 export default (engine) => {
   const {
-    driver: { ctx, makeProgram, vert, frag, UNSIGNED_INDEX_TYPE },
+    driver: { ctx, makeProgram, vert, frag, framebuffer, UNSIGNED_INDEX_TYPE },
     camera,
     scene,
     tools,
@@ -36,21 +36,7 @@ export default (engine) => {
     `,
   );
 
-  const texture = ctx.createTexture();
-  ctx.bindTexture(ctx.TEXTURE_2D, texture);
-  ctx.texParameteri(ctx.TEXTURE_2D, ctx.TEXTURE_MIN_FILTER, ctx.LINEAR);
-  ctx.texParameteri(ctx.TEXTURE_2D, ctx.TEXTURE_WRAP_S, ctx.CLAMP_TO_EDGE);
-  ctx.texParameteri(ctx.TEXTURE_2D, ctx.TEXTURE_WRAP_T, ctx.CLAMP_TO_EDGE);
-  ctx.texImage2D(ctx.TEXTURE_2D, 0, ctx.RGBA, 1, 1, 0, ctx.RGBA, ctx.FLOAT, null);
-
-  const renderbuffer = ctx.createRenderbuffer();
-  ctx.bindRenderbuffer(ctx.RENDERBUFFER, renderbuffer);
-  ctx.renderbufferStorage(ctx.RENDERBUFFER, ctx.DEPTH_COMPONENT16, 1, 1);
-
-  const framebuffer = ctx.createFramebuffer();
-  ctx.bindFramebuffer(ctx.FRAMEBUFFER, framebuffer);
-  ctx.framebufferTexture2D(ctx.FRAMEBUFFER, ctx.COLOR_ATTACHMENT0, ctx.TEXTURE_2D, texture, 0);
-  ctx.framebufferRenderbuffer(ctx.FRAMEBUFFER, ctx.DEPTH_ATTACHMENT, ctx.RENDERBUFFER, renderbuffer);
+  const fb = framebuffer(ctx.FLOAT);
 
   // cached structures
   // this needs 1 extra component for the alpha channel when reading from the framebuffer,
@@ -97,7 +83,7 @@ export default (engine) => {
         return;
       }
 
-      ctx.bindFramebuffer(ctx.FRAMEBUFFER, framebuffer);
+      ctx.bindFramebuffer(ctx.FRAMEBUFFER, fb);
       ctx.clear(ctx.COLOR_BUFFER_BIT | ctx.DEPTH_BUFFER_BIT);
 
       ctx.uniformMatrix4fv(program.uLoc.u_trs, false, scene.hoveredInstance.Placement.trs);

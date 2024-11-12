@@ -1,7 +1,7 @@
 const { mat4 } = glMatrix;
 
 /** @type {RenderingPass} */
-export default ({ driver: { ctx, makeProgram, vert, frag }, camera }) => {
+export default ({ driver: { ctx, buffer, makeProgram, vert, frag }, camera }) => {
   const program = makeProgram(
     vert`
       attribute vec4 a_position;
@@ -27,7 +27,18 @@ export default ({ driver: { ctx, makeProgram, vert, frag }, camera }) => {
     `,
   );
 
-  const positions = new Float32Array([
+  const indices = new Uint16Array([
+    0, 1, 2,
+    1, 3, 2,
+    1, 4, 3,
+    3, 4, 5,
+    6, 8, 7,
+    7, 8, 9,
+    7, 9, 10,
+    9, 11, 10,
+  ]);
+
+  const positionBuffer = buffer(new Float32Array([
     /* eslint-disable no-multi-spaces,indent */
     -1,  0, -1, //  0 FL
     -1, -1,  0, //  1 BL
@@ -42,43 +53,24 @@ export default ({ driver: { ctx, makeProgram, vert, frag }, camera }) => {
     -1,  0,  1, // 10 RL
      1,  0,  1, // 11 RR
     /* eslint-enable no-multi-spaces,indent */
-  ]);
-  const colors = new Uint8Array([
-    178, 178, 178,
-    178, 178, 178,
-    178, 178, 178,
-    178, 178, 178,
-    178, 178, 178,
-    178, 178, 178,
-    216, 230, 255,
-    216, 230, 255,
-    216, 230, 255,
-    216, 230, 255,
-    216, 230, 255,
-    216, 230, 255,
-  ]);
-  const indices = new Uint16Array([
-    0, 1, 2,
-    1, 3, 2,
-    1, 4, 3,
-    3, 4, 5,
-    6, 8, 7,
-    7, 8, 9,
-    7, 9, 10,
-    9, 11, 10,
-  ]);
+  ]));
 
-  const indexBuffer = ctx.createBuffer();
-  ctx.bindBuffer(ctx.ELEMENT_ARRAY_BUFFER, indexBuffer);
-  ctx.bufferData(ctx.ELEMENT_ARRAY_BUFFER, indices, ctx.STATIC_DRAW);
+  const colorBuffer = buffer(new Uint8Array([
+    178, 178, 178,
+    178, 178, 178,
+    178, 178, 178,
+    178, 178, 178,
+    178, 178, 178,
+    178, 178, 178,
+    216, 230, 255,
+    216, 230, 255,
+    216, 230, 255,
+    216, 230, 255,
+    216, 230, 255,
+    216, 230, 255,
+  ]));
 
-  const positionBuffer = ctx.createBuffer();
-  ctx.bindBuffer(ctx.ARRAY_BUFFER, positionBuffer);
-  ctx.bufferData(ctx.ARRAY_BUFFER, positions, ctx.STATIC_DRAW);
-
-  const colorBuffer = ctx.createBuffer();
-  ctx.bindBuffer(ctx.ARRAY_BUFFER, colorBuffer);
-  ctx.bufferData(ctx.ARRAY_BUFFER, colors, ctx.STATIC_DRAW);
+  const indexBuffer = buffer(indices);
 
   // cached structures
   const mvp = mat4.create();

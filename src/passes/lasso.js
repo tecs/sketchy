@@ -1,7 +1,7 @@
 const { vec3 } = glMatrix;
 
 /** @type {RenderingPass} */
-export default ({ driver: { ctx, makeProgram, vert, frag }, input, camera, tools }) => {
+export default ({ driver: { ctx, makeProgram, vert, frag, buffer }, input, camera, tools }) => {
   const program = makeProgram(
     vert`
       attribute vec4 a_position;
@@ -31,13 +31,8 @@ export default ({ driver: { ctx, makeProgram, vert, frag }, input, camera, tools
   const indices = new Uint16Array([0, 1, 2, 0, 2, 3]);
   const lineIndices = new Uint16Array([0, 1, 1, 2, 2, 3, 3, 0]);
 
-  const indexBuffer = ctx.createBuffer();
-  ctx.bindBuffer(ctx.ELEMENT_ARRAY_BUFFER, indexBuffer);
-  ctx.bufferData(ctx.ELEMENT_ARRAY_BUFFER, indices, ctx.STATIC_DRAW);
-
-  const lineIndexBuffer = ctx.createBuffer();
-  ctx.bindBuffer(ctx.ELEMENT_ARRAY_BUFFER, lineIndexBuffer);
-  ctx.bufferData(ctx.ELEMENT_ARRAY_BUFFER, lineIndices, ctx.STATIC_DRAW);
+  const indexBuffer = buffer(indices);
+  const lineIndexBuffer = buffer(lineIndices);
 
   const positionBuffer = ctx.createBuffer();
 

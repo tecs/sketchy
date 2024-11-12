@@ -3,7 +3,7 @@ const { mat4 } = glMatrix;
 /** @type {RenderingPass} */
 export default (engine) => {
   const {
-    driver: { ctx, makeProgram, vert, frag, UintIndexArray, UNSIGNED_INDEX_TYPE },
+    driver: { ctx, makeProgram, vert, frag, buffer, UintIndexArray, UNSIGNED_INDEX_TYPE },
     camera,
     scene,
   } = engine;
@@ -40,16 +40,10 @@ export default (engine) => {
       );
     }),
   );
-
-  const positionBuffer = ctx.createBuffer();
-  ctx.bindBuffer(ctx.ARRAY_BUFFER, positionBuffer);
-  ctx.bufferData(ctx.ARRAY_BUFFER, positions, ctx.STATIC_DRAW);
-
   const indices = new UintIndexArray(positions.length / 3).map((_, i) => i);
 
-  const indicesBuffer = ctx.createBuffer();
-  ctx.bindBuffer(ctx.ELEMENT_ARRAY_BUFFER, indicesBuffer);
-  ctx.bufferData(ctx.ELEMENT_ARRAY_BUFFER, indices, ctx.STATIC_DRAW);
+  const positionBuffer = buffer(positions);
+  const indicesBuffer = buffer(indices);
 
   // cached structures
   const mvp = mat4.create();

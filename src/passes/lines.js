@@ -4,7 +4,7 @@ import SubInstance from '../engine/cad/subinstance.js';
 /** @type {RenderingPass} */
 export default (engine) => {
   const {
-    driver: { ctx, makeProgram, vert, frag, UintIndexArray, UNSIGNED_INDEX_TYPE, UNSIGNED_INDEX_SIZE },
+    driver: { ctx, makeProgram, vert, frag, buffer, UintIndexArray, UNSIGNED_INDEX_TYPE, UNSIGNED_INDEX_SIZE },
     camera,
     editor: { selection },
     entities,
@@ -48,7 +48,7 @@ export default (engine) => {
     `,
   );
 
-  const boundingBoxIndex = new UintIndexArray([
+  const boundingBoxIndexBuffer = buffer(new UintIndexArray([
     // Bottom
     0, 1, // BFL - BRL
     1, 2, // BRL - BRR
@@ -64,11 +64,9 @@ export default (engine) => {
     1, 5, // BRL - TRL
     2, 6, // BRR - TRR
     3, 7, // BFR - TFR
-  ]);
+  ]));
+
   const boundingBoxVertexBuffer = ctx.createBuffer();
-  const boundingBoxIndexBuffer = ctx.createBuffer();
-  ctx.bindBuffer(ctx.ELEMENT_ARRAY_BUFFER, boundingBoxIndexBuffer);
-  ctx.bufferData(ctx.ELEMENT_ARRAY_BUFFER, boundingBoxIndex, ctx.STATIC_DRAW);
 
   return {
     program,

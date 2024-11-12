@@ -3,7 +3,7 @@ const { mat4, vec3 } = glMatrix;
 /** @type {RenderingPass} */
 export default (engine) => {
   const {
-    driver: { ctx, makeProgram, vert, frag },
+    driver: { ctx, makeProgram, vert, frag, buffer },
     camera,
     scene,
   } = engine;
@@ -45,29 +45,23 @@ export default (engine) => {
     `,
   );
 
-  const positionBuffer = ctx.createBuffer();
-  const positions = new Float32Array([
+  const positionBuffer = buffer(new Float32Array([
     -1, 0, 0, 0, 0, 0,
     0, -1, 0, 0, 0, 0,
     0, 0, -1, 0, 0, 0,
     0, 0, 0, 1, 0, 0,
     0, 0, 0, 0, 1, 0,
     0, 0, 0, 0, 0, 1,
-  ]);
-  ctx.bindBuffer(ctx.ARRAY_BUFFER, positionBuffer);
-  ctx.bufferData(ctx.ARRAY_BUFFER, positions, ctx.STATIC_DRAW);
+  ]));
 
-  const colorBuffer = ctx.createBuffer();
-  const colors = new Float32Array([
+  const colorBuffer = buffer(new Float32Array([
     1, 0, 0, 1, 0, 0,
     0, 1, 0, 0, 1, 0,
     0, 0, 1, 0, 0, 1,
     1, 0, 0, 1, 0, 0,
     0, 1, 0, 0, 1, 0,
     0, 0, 1, 0, 0, 1,
-  ]);
-  ctx.bindBuffer(ctx.ARRAY_BUFFER, colorBuffer);
-  ctx.bufferData(ctx.ARRAY_BUFFER, colors, ctx.STATIC_DRAW);
+  ]));
 
   // cached structures
   const mvp = mat4.create();

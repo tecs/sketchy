@@ -50,7 +50,7 @@ export default class Driver extends Base {
   constructor(engine, canvas) {
     super();
 
-    bindMethods(this, 'vert', 'frag', 'makeProgram', 'resize');
+    bindMethods(this, 'vert', 'frag', 'makeProgram', 'resize', 'buffer', 'framebuffer');
 
     this.#engine = engine;
     this.canvas = canvas;
@@ -175,6 +175,49 @@ export default class Driver extends Base {
    */
   frag(...args) {
     return this.#compileShader(String.raw(...args), this.ctx.FRAGMENT_SHADER);
+  }
+
+  /**
+   * @param {Float32Array | Uint8Array | InstanceType<Driver["UintIndexArray"]>} data
+   * @param {35040 | 35044 | 35048} usage
+   * @returns {WebGLBuffer | null}
+   */
+  buffer(data, usage = this.ctx.STATIC_DRAW) {
+    const { ctx } = this;
+    const type = data instanceof Float32Array || data instanceof Uint8Array
+      ? ctx.ARRAY_BUFFER
+      : ctx.ELEMENT_ARRAY_BUFFER;
+
+    const buffer = ctx.createBuffer();
+    ctx.bindBuffer(type, buffer);
+    ctx.bufferData(type, data, usage);
+    return buffer;
+  }
+
+  /**
+   * @param {5126 | 5121} type
+   * @returns {WebGLFramebuffer | null}
+   */
+  framebuffer(type) {
+    const { ctx } = this;
+
+    const texture = ctx.createTexture();
+    ctx.bindTexture(ctx.TEXTURE_2D, texture);
+    ctx.texParameteri(ctx.TEXTURE_2D, ctx.TEXTURE_MIN_FILTER, ctx.LINEAR);
+    ctx.texParameteri(ctx.TEXTURE_2D, ctx.TEXTURE_WRAP_S, ctx.CLAMP_TO_EDGE);
+    ctx.texParameteri(ctx.TEXTURE_2D, ctx.TEXTURE_WRAP_T, ctx.CLAMP_TO_EDGE);
+    ctx.texImage2D(ctx.TEXTURE_2D, 0, ctx.RGBA, 1, 1, 0, ctx.RGBA, type, null);
+
+    const renderbuffer = ctx.createRenderbuffer();
+    ctx.bindRenderbuffer(ctx.RENDERBUFFER, renderbuffer);
+    ctx.renderbufferStorage(ctx.RENDERBUFFER, ctx.DEPTH_COMPONENT16, 1, 1);
+
+    const framebuffer = ctx.createFramebuffer();
+    ctx.bindFramebuffer(ctx.FRAMEBUFFER, framebuffer);
+    ctx.framebufferTexture2D(ctx.FRAMEBUFFER, ctx.COLOR_ATTACHMENT0, ctx.TEXTURE_2D, texture, 0);
+    ctx.framebufferRenderbuffer(ctx.FRAMEBUFFER, ctx.DEPTH_ATTACHMENT, ctx.RENDERBUFFER, renderbuffer);
+
+    return framebuffer;
   }
 
   resize() {
