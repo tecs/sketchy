@@ -1,3 +1,5 @@
+import Sketch from '../engine/cad/sketch.js';
+
 /** @type {RenderingPass} */
 export default (engine) => {
   const {
@@ -46,9 +48,10 @@ export default (engine) => {
     render() {
       const { enteredInstance, hoveredInstance, hoveredPointIndex } = scene;
       const pointIsHovered = hoveredPointIndex !== null && enteredInstance === hoveredInstance;
+      const sketch = scene.currentStep;
 
       const selectedPointIndices = selection.getByType('point').map(({ index }) => index);
-      if (!selectedPointIndices.length && !pointIsHovered) return;
+      if (!selectedPointIndices.length && !pointIsHovered && !(sketch instanceof Sketch)) return;
 
       const model = enteredInstance?.body.currentModel;
       if (!model) return;
@@ -67,6 +70,11 @@ export default (engine) => {
         ctx.drawArrays(ctx.POINTS, hoveredPointIndex, 1);
         ctx.uniform1f(program.uLoc.u_isHovered, 0);
         ctx.drawArrays(ctx.POINTS, hoveredPointIndex, 1);
+      }
+      if (sketch instanceof Sketch) {
+        ctx.uniform1f(program.uLoc.u_isSelected, 0);
+        ctx.uniform1f(program.uLoc.u_isHovered, 0);
+        ctx.drawArrays(ctx.POINTS, 0, model.data.lineVertex.length / 3);
       }
       if (selectedPointIndices.length) {
         ctx.uniform1f(program.uLoc.u_isSelected, 1);
