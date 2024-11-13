@@ -12,9 +12,10 @@ import SubInstance from './cad/subinstance.js';
 
 /** @typedef {Element<"point">} PointElement */
 /** @typedef {Element<"line">} LineElement */
+/** @typedef {Element<"constraint">} ConstraintElement */
 /** @typedef {Element<"instance">} InstanceElement */
 
-/** @typedef {InstanceElement | LineElement | PointElement} Elements */
+/** @typedef {InstanceElement | LineElement | PointElement | ConstraintElement} Elements */
 
 /** @typedef {import("./general/events-types").Event<"change", [current: Elements[], previous: Elements[]]>} Changed */
 

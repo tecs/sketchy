@@ -26,6 +26,7 @@ export default (engine, tabs) => {
     if (constraints.length) table.addRow('', 'type', 'value').$element({ className: 'disabled' });
     else table.addHeader('', 'No constraints yet');
 
+    const selectedConstraints = selection.getByType('constraint').map(({ index }) => index);
     const selectedLineConstraints = selection.getByType('line')
       .map(({ index }) => sketch.getLine(index))
       .flatMap(line => line ? sketch.getConstraints(line) : []);
@@ -34,14 +35,20 @@ export default (engine, tabs) => {
 
     for (let i = 0; i < constraints.length; ++i) {
       const constraint = constraints[i];
-      const selected = constraint.indices.some(index => selectedPointIndices.includes(index))
+      const selected = selectedConstraints.includes(i)
+        || constraint.indices.some(index => selectedPointIndices.includes(index))
         || selectedLineConstraints.includes(constraint);
 
       table.addRow(`${i + 1}`, constraint.type, constraint.data !== null ? stringifyDistance(constraint.data, 3) : '').$element({
         onclick: ({ detail }) => {
-          if (detail !== 2 || constraint.type !== 'distance') return;
+          if (detail === 1) {
+            selection.set({ index: i, type: 'constraint', instance: scene.currentInstance });
+            return;
+          }
+          const isDistance = constraint.type === 'distance' || constraint.type === 'width' || constraint.type === 'height';
+          if (detail !== 2 || !isDistance) return;
           engine.emit('propertyrequest', {
-            type: constraint.type,
+            type: 'distance',
             value: constraint.data,
           }, /** @param {number} value */ (value) => {
             if (value <= 0) return;

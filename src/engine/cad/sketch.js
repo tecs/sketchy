@@ -553,6 +553,7 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
       if (!(sketch instanceof Sketch) || keyCombo !== 'delete') return;
 
       const elements = selection.elements.filter(el => el.type === 'line' || el.type === 'point');
+      const selectedConstraints = selection.getByType('constraint');
       const lines = elements.reduce((out, { type, index }) => {
         const line = type === 'line' ? sketch.getLine(index) : sketch.getLineForPoint(index)?.[0];
         if (line && !out.includes(line)) {
@@ -562,24 +563,28 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
       }, /** @type {LineConstructionElement[]} */ ([]))
         .map(line => /** @type {const} */ ([line, sketch.listElements().indexOf(line)]));
 
-      if (!lines.length) return;
-
-      const action = history.createAction(`Delete line from Sketch ${sketch.name}`, null);
-      if (!action) return;
-
       const constraints = lines.flatMap(([line]) => sketch.getConstraints(line))
-        .filter((v, i, a) => a.indexOf(v) === i)
+        .concat(selectedConstraints.map(({ index }) => sketch.data.constraints[index]))
+        .filter((v, i, a) => v && a.indexOf(v) === i)
         .map(constraint => /** @type {const} */ ([constraint, sketch.listConstraints().indexOf(constraint)]));
+
+      if (!lines.length && !constraints.length) return;
+
+      const action = history.createAction(`Delete elements from Sketch ${sketch.name}`, null);
+      if (!action) return;
 
       action.append(
         () => {
           lines.forEach(([line]) => sketch.deleteElement(line));
+          constraints.forEach(([constraint]) => sketch.deleteConstraint(constraint));
           selection.remove(elements);
+          selection.remove(selectedConstraints);
         },
         () => {
           lines.forEach(([line, indexAt]) => sketch.addElement(line, indexAt));
           constraints.forEach(([constraint, indexAt]) => sketch.addConstraint(constraint, indexAt));
           selection.add(elements);
+          selection.add(selectedConstraints);
         },
       );
       action.commit();
