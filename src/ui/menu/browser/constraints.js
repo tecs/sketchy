@@ -1,5 +1,5 @@
 import Sketch from '../../../engine/cad/sketch.js';
-import { stringifyDistance } from './render-properties.js';
+import { Properties } from '../../../engine/general/properties.js';
 
 /**
  * @param {Engine} engine
@@ -39,7 +39,7 @@ export default (engine, tabs) => {
         || constraint.indices.some(index => selectedPointIndices.includes(index))
         || selectedLineConstraints.includes(constraint);
 
-      table.addRow(`${i + 1}`, constraint.type, constraint.data !== null ? stringifyDistance(constraint.data, 3) : '').$element({
+      table.addRow(`${i + 1}`, constraint.type, constraint.data !== null ? Properties.stringifyDistance(constraint.data, 3) : '').$element({
         onclick: ({ detail }) => {
           if (detail === 1) {
             selection.set({ index: i, type: 'constraint', instance: scene.currentInstance });

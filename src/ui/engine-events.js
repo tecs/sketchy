@@ -1,4 +1,4 @@
-import { stringifyValue, parseString } from './menu/browser/render-properties.js';
+import { Properties } from '../engine/general/properties.js';
 
 /**
  * @param {Engine} engine
@@ -13,12 +13,12 @@ export default (engine, container) => {
     const window = container.addWindow('Value');
 
     const submit = () => {
-      property.value = parseString(input.value, property);
+      property.value = Properties.parse(input.value, property.type) ?? property.value;
       /** @type {(value: typeof property["value"]) => void} */ (callback)(property.value);
       window.remove();
     };
 
-    const input = window.addContainer().addInput(stringifyValue(property), { onkeydown: ({ key }) => {
+    const input = window.addContainer().addInput(Properties.stringify(property), { onkeydown: ({ key }) => {
       if (key === 'Enter') submit();
     }});
 
