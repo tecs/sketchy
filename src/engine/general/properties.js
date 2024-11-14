@@ -1,3 +1,5 @@
+const { vec3 } = glMatrix;
+
 /**
  * @template T
  * @template {string} S
@@ -87,6 +89,40 @@ export class Properties {
   }
 
   /**
+   * @param {string} value
+   * @returns {vec3?}
+   */
+  static parseVec3(value) {
+    value = value.trim();
+    const oldValue = value;
+
+    value = value.replace(/^vec3\((.+?)\)$/, '$1');
+    if (value === oldValue) value = value.replace(/^\[(.+?)\]$/, '$1');
+
+    const components = value.split(',').map(parseFloat).filter(n => !Number.isNaN(n) && Number.isFinite(n));
+    if (components.length !== 3) return null;
+
+    return glMatrix.vec3.fromValues(components[0], components[1], components[2]);
+  }
+
+  /**
+   * @param {string} value
+   * @returns {vec3?}
+   */
+  static parseCoord(value) {
+    value = value.trim();
+    const oldValue = value;
+
+    value = value.replace(/^vec3\((.+?)\)$/, '$1');
+    if (value === oldValue) value = value.replace(/^\[(.+?)\]$/, '$1');
+
+    const components = value.split(',').map(Properties.parseDistance).filter(n => typeof n === 'number');
+    if (components.length !== 3) return null;
+
+    return vec3.fromValues(components[0], components[1], components[2]);
+  }
+
+  /**
    * @template {PropertyData["type"]} T
    * @param {string} value
    * @param {T} type
@@ -94,6 +130,8 @@ export class Properties {
    */
   static parse(value, type) {
     switch (type) {
+      case 'vec3': return Properties.parseVec3(value);
+      case 'coord': return Properties.parseCoord(value);
       case 'angle': return Properties.parseAngle(value);
       case 'distance': return Properties.parseDistance(value);
       case 'plain': return value;
