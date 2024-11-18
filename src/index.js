@@ -2,6 +2,7 @@ import UI from './ui/index.js';
 import Engine from './engine/index.js';
 
 import renderAxis from './passes/axis.js';
+import renderConstraints from './passes/constraints.js';
 import renderGrid from './passes/grid.js';
 import renderSkybox from './passes/skybox.js';
 import renderObjects from './passes/objects.js';
@@ -41,6 +42,7 @@ window.addEventListener('load', () => {
   engine.renderer.addToPipeline(extractPosition);
   engine.renderer.addToPipeline(renderGrid);
   engine.renderer.addToPipeline(renderAxis);
+  engine.renderer.addToPipeline(renderConstraints);
   engine.renderer.addToPipeline(renderLasso);
 
   engine.tools.addTool(SelectTool);

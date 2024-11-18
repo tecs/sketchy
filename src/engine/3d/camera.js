@@ -33,6 +33,8 @@ export default class Camera {
 
   invertZoom = false;
   orthographic = false;
+  fovyTan = 0.5;
+  fovTan = 0.5;
   fovy = 1;
   aspect = 1;
   nearPlane = 0.01;
@@ -57,6 +59,7 @@ export default class Camera {
     this.#engine = engine;
 
     mat4.fromTranslation(this.world, vec3.fromValues(0, 0, -this.#startingDistance));
+    this.fovyTan = Math.tan(this.fovy * 0.5);
 
     engine.on('viewportresize', (current) => {
       this.screenResolution[0] = current[0];
@@ -64,6 +67,7 @@ export default class Camera {
       this.pixelToScreen[0] = 2 / this.screenResolution[0];
       this.pixelToScreen[1] = -2 / this.screenResolution[1];
       this.aspect = current[0] / current[1];
+      this.fovTan = this.fovyTan * this.aspect;
 
       this.recalculateProjection();
     });
@@ -258,7 +262,7 @@ export default class Camera {
   }
 
   recalculateProjection() {
-    const top = Math.tan(this.fovy * 0.5) * (this.orthographic ? this.#startingDistance : this.nearPlane);
+    const top = this.fovyTan * (this.orthographic ? this.#startingDistance : this.nearPlane);
     const right = top * this.aspect;
 
     if (this.orthographic) {
