@@ -2,14 +2,15 @@ import Sketch from '../engine/cad/sketch.js';
 import { Properties } from '../engine/general/properties.js';
 import WebGLFont from './webgl-font.js';
 
-const { vec2, vec3, mat4 } = glMatrix;
+const { vec2, vec3, vec4, mat4 } = glMatrix;
 
 // cached structures
 const temp1Vec2 = vec2.create();
 const temp2Vec2 = vec2.create();
 const vec2Zero = vec2.create();
 const tempVec3 = vec3.create();
-const color = vec3.fromValues(0.25, 0.25, 0.25);
+const color = vec4.fromValues(0.25, 0.25, 0.25, 1);
+const selectedColor = vec4.fromValues(0.25, 0.25, 0.75, 1);
 const mvp = mat4.create();
 const trs = mat4.create();
 
@@ -141,7 +142,7 @@ const calculateMarkerBounds = (out, p1, p2, charWidth, direction) => {
 
 /** @type {RenderingPass} */
 export default (engine) => {
-  const {driver, camera, scene } = engine;
+  const {driver, camera, scene, editor: { selection } } = engine;
 
   const { ctx, makeProgram, vert, frag, buffer, UNSIGNED_INDEX_TYPE, UintIndexArray } = driver;
 
@@ -163,10 +164,10 @@ export default (engine) => {
     frag`
       precision mediump float;
 
-      uniform vec3 u_color;
+      uniform vec4 u_color;
 
       void main() {
-        gl_FragColor = vec4(u_color, 1);
+        gl_FragColor = u_color;
       }
     `,
   );
@@ -239,18 +240,21 @@ export default (engine) => {
     const scaling = camera.fovTan * vec3.distance(tempVec3, camera.eye);
     return [scaling, scaling];
   };
-
   return {
     program,
     render() {
       const { currentStep: sketch, currentInstance } = scene;
       if (!(sketch instanceof Sketch)) return;
 
+      const constraints = sketch.listConstraints();
+      if (constraints.length === 0) return;
+
+      const selected = selection.getByType('constraint').map(({ index }) => index);
+
       mat4.multiply(trs, currentInstance.Placement.trs, sketch.fromSketch);
       mat4.multiply(mvp, camera.viewProjection, trs);
 
       ctx.uniformMatrix4fv(program.uLoc.u_mvp, false, mvp);
-      ctx.uniform3fv(program.uLoc.u_color, color);
       ctx.bindBuffer(ctx.ELEMENT_ARRAY_BUFFER, indexBuffer);
 
       ctx.bindBuffer(ctx.ARRAY_BUFFER, vertexBuffer);
@@ -260,15 +264,16 @@ export default (engine) => {
       const charWidth = font.charSize * camera.pixelToScreen[0];
       const charHeight = font.charSize * camera.pixelToScreen[1];
 
-      /** @type {[string, ReadonlyVec2, number?][]} */
+      /** @type {[text: string, coord: ReadonlyVec2, labelColor: vec4, scale?: number][]} */
       const labels = [];
-
-      const constraints = sketch.listConstraints();
 
       for (let i = 0; i < constraints.length; ++i) {
         const constraint = constraints[i];
         const points = constraint.indices.map(index => sketch.getPointInfo(index)).filter(p => p !== null);
         if (points.length !== constraint.indices.length) continue;
+
+        const labelColor = selected.includes(i) ? selectedColor : color;
+        ctx.uniform4fv(program.uLoc.u_color, labelColor);
 
         switch (constraint.type) {
           case 'width': {
@@ -276,7 +281,7 @@ export default (engine) => {
             const mid = calculateMarkerBounds(vertex, points[0].vec2, points[1].vec2, charWidth, 0);
             const [labelScaling, arrowScaling] = distanceToSketchElement(mid);
             calculateMarkerArrows(vertex, arrowScaling * charWidth, label.length);
-            labels.push([label, mid, labelScaling]);
+            labels.push([label, mid, labelColor, labelScaling]);
 
             ctx.bufferData(ctx.ARRAY_BUFFER, vertex, ctx.DYNAMIC_DRAW);
             ctx.drawElements(ctx.LINES, 16, UNSIGNED_INDEX_TYPE, 0);
@@ -287,7 +292,7 @@ export default (engine) => {
             const mid = calculateMarkerBounds(vertex, points[0].vec2, points[1].vec2, charWidth, 1);
             const [labelScaling, arrowScaling] = distanceToSketchElement(mid);
             calculateMarkerArrows(vertex, arrowScaling * charWidth, 1);
-            labels.push([label, mid, labelScaling]);
+            labels.push([label, mid, labelColor, labelScaling]);
 
             ctx.bufferData(ctx.ARRAY_BUFFER, vertex, ctx.DYNAMIC_DRAW);
             ctx.drawElements(ctx.LINES, 16, UNSIGNED_INDEX_TYPE, 0);
@@ -298,7 +303,7 @@ export default (engine) => {
             const mid = calculateMarkerBounds(vertex, points[0].vec2, points[1].vec2, charWidth, 2);
             const [labelScaling, arrowScaling] = distanceToSketchElement(mid);
             calculateMarkerArrows(vertex, arrowScaling * charWidth, label.length);
-            labels.push([label, mid, labelScaling]);
+            labels.push([label, mid, labelColor, labelScaling]);
 
             ctx.bufferData(ctx.ARRAY_BUFFER, vertex, ctx.DYNAMIC_DRAW);
             ctx.drawElements(ctx.LINES, 16, UNSIGNED_INDEX_TYPE, 0);
@@ -311,32 +316,32 @@ export default (engine) => {
             midpoint(temp2Vec2, points[0].vec2, points[1].vec2);
             vec2.add(temp1Vec2, temp1Vec2, temp2Vec2);
             temp1Vec2[0] += label.length * charWidth;
-            labels.push([label, vec2.clone(temp1Vec2)]);
+            labels.push([label, vec2.clone(temp1Vec2), labelColor]);
 
             perpendicular(temp1Vec2, points[0].vec2, points[1].vec2, 2);
             vec2.scale(temp1Vec2, temp1Vec2, 2 * charWidth);
             midpoint(temp2Vec2, points[2].vec2, points[3].vec2);
             vec2.add(temp1Vec2, temp1Vec2, temp2Vec2);
             temp1Vec2[0] += label.length * charWidth;
-            labels.push([label, vec2.clone(temp1Vec2)]);
+            labels.push([label, vec2.clone(temp1Vec2), labelColor]);
             break;
           }
           case 'horizontal':
             midpoint(temp1Vec2, points[0].vec2, points[1].vec2);
             temp1Vec2[1] += 2 * charHeight;
-            labels.push([`${HORIZONTAL_CHAR}${i + 1}`, vec2.clone(temp1Vec2)]);
+            labels.push([`${HORIZONTAL_CHAR}${i + 1}`, vec2.clone(temp1Vec2), labelColor]);
             break;
           case 'vertical': {
             const label = `${VERTICAL_CHAR}${i + 1}`;
             midpoint(temp1Vec2, points[0].vec2, points[1].vec2);
             temp1Vec2[0] += (label.length + 1) * charWidth;
-            labels.push([label, vec2.clone(temp1Vec2)]);
+            labels.push([label, vec2.clone(temp1Vec2), labelColor]);
             break;
           }
           case 'coincident':
             vec2.copy(temp1Vec2, points[0].vec2);
             temp1Vec2[1] += 2 * charHeight;
-            labels.push([`${COINCIDENT_CHAR}${i + 1}`, vec2.clone(temp1Vec2)]);
+            labels.push([`${COINCIDENT_CHAR}${i + 1}`, vec2.clone(temp1Vec2), labelColor]);
             break;
         }
       }
@@ -351,8 +356,8 @@ export default (engine) => {
 
       font.enable(mvp, temp1Vec2);
 
-      for (const [label, coord, distance] of labels) {
-        font.renderText(label, coord, color, distance);
+      for (const [label, coord, labelColor, distance] of labels) {
+        font.renderText(label, coord, labelColor, distance);
       }
 
       ctx.disable(ctx.BLEND);

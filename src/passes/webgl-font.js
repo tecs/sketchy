@@ -1,8 +1,8 @@
-const { vec2, vec3 } = glMatrix;
+const { vec2, vec4 } = glMatrix;
 
 // cached structures
 const tempVec2 = vec2.create();
-const vec3Zero = vec3.create();
+const vec4Black = vec4.fromValues(0, 0, 0, 1);
 
 /** @typedef {Readonly<import('../engine/driver').default>} Driver */
 
@@ -129,13 +129,13 @@ export default class Font {
         precision mediump float;
 
         uniform sampler2D u_texture;
-        uniform vec3 u_color;
+        uniform vec4 u_color;
 
         varying vec2 v_textCoord;
 
         void main() {
           float alpha = texture2D(u_texture, v_textCoord).a;
-          gl_FragColor = vec4(u_color * alpha, alpha);
+          gl_FragColor = u_color * alpha;
         }
       `,
     );
@@ -201,15 +201,15 @@ export default class Font {
   /**
    * @param {string} text
    * @param {ReadonlyVec2} coords
-   * @param {ReadonlyVec3} [color]
+   * @param {ReadonlyVec4} [color]
    * @param {number} [distance]
    */
-  renderText(text, coords, color = vec3Zero, distance = 0) {
+  renderText(text, coords, color = vec4Black, distance = 0) {
     const { ctx } = this.#driver;
     const { program } = this;
     ctx.uniform1f(program.uLoc.u_distance, distance);
     ctx.uniform2fv(program.uLoc.u_origin, coords);
-    ctx.uniform3fv(program.uLoc.u_color, color);
+    ctx.uniform4fv(program.uLoc.u_color, color);
     for (let o = 0; o < text.length; ++o) {
       vec2.set(tempVec2, o - (text.length - 1) * 0.5, 0);
       ctx.uniform2fv(program.uLoc.u_offset, tempVec2);
