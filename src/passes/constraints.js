@@ -1,4 +1,5 @@
 import Sketch from '../engine/cad/sketch.js';
+import Id from '../engine/general/id.js';
 import { Properties } from '../engine/general/properties.js';
 import WebGLFont from './webgl-font.js';
 
@@ -144,7 +145,7 @@ const calculateMarkerBounds = (out, p1, p2, charWidth, direction) => {
 export default (engine) => {
   const {driver, camera, scene, editor: { selection } } = engine;
 
-  const { ctx, makeProgram, vert, frag, buffer, UNSIGNED_INDEX_TYPE, UintIndexArray } = driver;
+  const { ctx, makeProgram, vert, frag, buffer, framebuffer, UNSIGNED_INDEX_TYPE, UintIndexArray } = driver;
 
   const program = makeProgram(
     vert`
@@ -221,9 +222,13 @@ export default (engine) => {
     ctx2d.stroke(bar);
   });
 
+  const fb = framebuffer(ctx.UNSIGNED_BYTE);
+
   const indexBuffer = buffer(new UintIndexArray([0, 1, 1, 2, 1, 3, 1, 4, 5, 6, 6, 7, 6, 8, 6, 9]));
   const vertex = new Float32Array(20);
   const vertexBuffer = ctx.createBuffer();
+
+  const readData = new Uint8Array(4);
 
   /**
    * @param {ReadonlyVec2} coord2D
@@ -264,13 +269,14 @@ export default (engine) => {
       const charWidth = font.charSize * camera.pixelToScreen[0];
       const charHeight = font.charSize * camera.pixelToScreen[1];
 
-      /** @type {[text: string, coord: ReadonlyVec2, labelColor: vec4, scale?: number][]} */
+      /** @type {[text: string, coord: ReadonlyVec2, labelColor: vec4, id: ReadonlyVec4, scale?: number][]} */
       const labels = [];
 
       for (let i = 0; i < constraints.length; ++i) {
         const constraint = constraints[i];
         const points = constraint.indices.map(index => sketch.getPointInfo(index)).filter(p => p !== null);
         if (points.length !== constraint.indices.length) continue;
+        const id = Id.intToVec4(i + 1);
 
         const labelColor = selected.includes(i) ? selectedColor : color;
         ctx.uniform4fv(program.uLoc.u_color, labelColor);
@@ -281,7 +287,7 @@ export default (engine) => {
             const mid = calculateMarkerBounds(vertex, points[0].vec2, points[1].vec2, charWidth, 0);
             const [labelScaling, arrowScaling] = distanceToSketchElement(mid);
             calculateMarkerArrows(vertex, arrowScaling * charWidth, label.length);
-            labels.push([label, mid, labelColor, labelScaling]);
+            labels.push([label, mid, labelColor, id, labelScaling]);
 
             ctx.bufferData(ctx.ARRAY_BUFFER, vertex, ctx.DYNAMIC_DRAW);
             ctx.drawElements(ctx.LINES, 16, UNSIGNED_INDEX_TYPE, 0);
@@ -292,7 +298,7 @@ export default (engine) => {
             const mid = calculateMarkerBounds(vertex, points[0].vec2, points[1].vec2, charWidth, 1);
             const [labelScaling, arrowScaling] = distanceToSketchElement(mid);
             calculateMarkerArrows(vertex, arrowScaling * charWidth, 1);
-            labels.push([label, mid, labelColor, labelScaling]);
+            labels.push([label, mid, labelColor, id, labelScaling]);
 
             ctx.bufferData(ctx.ARRAY_BUFFER, vertex, ctx.DYNAMIC_DRAW);
             ctx.drawElements(ctx.LINES, 16, UNSIGNED_INDEX_TYPE, 0);
@@ -303,7 +309,7 @@ export default (engine) => {
             const mid = calculateMarkerBounds(vertex, points[0].vec2, points[1].vec2, charWidth, 2);
             const [labelScaling, arrowScaling] = distanceToSketchElement(mid);
             calculateMarkerArrows(vertex, arrowScaling * charWidth, label.length);
-            labels.push([label, mid, labelColor, labelScaling]);
+            labels.push([label, mid, labelColor, id, labelScaling]);
 
             ctx.bufferData(ctx.ARRAY_BUFFER, vertex, ctx.DYNAMIC_DRAW);
             ctx.drawElements(ctx.LINES, 16, UNSIGNED_INDEX_TYPE, 0);
@@ -316,32 +322,32 @@ export default (engine) => {
             midpoint(temp2Vec2, points[0].vec2, points[1].vec2);
             vec2.add(temp1Vec2, temp1Vec2, temp2Vec2);
             temp1Vec2[0] += label.length * charWidth;
-            labels.push([label, vec2.clone(temp1Vec2), labelColor]);
+            labels.push([label, vec2.clone(temp1Vec2), labelColor, id]);
 
             perpendicular(temp1Vec2, points[0].vec2, points[1].vec2, 2);
             vec2.scale(temp1Vec2, temp1Vec2, 2 * charWidth);
             midpoint(temp2Vec2, points[2].vec2, points[3].vec2);
             vec2.add(temp1Vec2, temp1Vec2, temp2Vec2);
             temp1Vec2[0] += label.length * charWidth;
-            labels.push([label, vec2.clone(temp1Vec2), labelColor]);
+            labels.push([label, vec2.clone(temp1Vec2), labelColor, id]);
             break;
           }
           case 'horizontal':
             midpoint(temp1Vec2, points[0].vec2, points[1].vec2);
             temp1Vec2[1] += 2 * charHeight;
-            labels.push([`${HORIZONTAL_CHAR}${i + 1}`, vec2.clone(temp1Vec2), labelColor]);
+            labels.push([`${HORIZONTAL_CHAR}${i + 1}`, vec2.clone(temp1Vec2), labelColor, id]);
             break;
           case 'vertical': {
             const label = `${VERTICAL_CHAR}${i + 1}`;
             midpoint(temp1Vec2, points[0].vec2, points[1].vec2);
             temp1Vec2[0] += (label.length + 1) * charWidth;
-            labels.push([label, vec2.clone(temp1Vec2), labelColor]);
+            labels.push([label, vec2.clone(temp1Vec2), labelColor, id]);
             break;
           }
           case 'coincident':
             vec2.copy(temp1Vec2, points[0].vec2);
             temp1Vec2[1] += 2 * charHeight;
-            labels.push([`${COINCIDENT_CHAR}${i + 1}`, vec2.clone(temp1Vec2), labelColor]);
+            labels.push([`${COINCIDENT_CHAR}${i + 1}`, vec2.clone(temp1Vec2), labelColor, id]);
             break;
         }
       }
@@ -356,7 +362,7 @@ export default (engine) => {
 
       font.enable(mvp, temp1Vec2);
 
-      for (const [label, coord, labelColor, distance] of labels) {
+      for (const [label, coord, labelColor,, distance] of labels) {
         font.renderText(label, coord, labelColor, distance);
       }
 
@@ -364,6 +370,18 @@ export default (engine) => {
       ctx.depthMask(true);
       ctx.pixelStorei(ctx.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
       ctx.blendFunc(ctx.SRC_ALPHA, ctx.ONE_MINUS_SRC_ALPHA);
+
+      ctx.bindFramebuffer(ctx.FRAMEBUFFER, fb);
+      ctx.clear(ctx.COLOR_BUFFER_BIT | ctx.DEPTH_BUFFER_BIT);
+
+      font.enable(camera.frustum, temp1Vec2, 0);
+
+      for (const [label, coord,, id, distance] of labels) {
+        font.renderText(label, coord, id, distance);
+      }
+
+      ctx.readPixels(0, 0, 1, 1, ctx.RGBA, ctx.UNSIGNED_BYTE, readData);
+      scene.hoverConstraint(readData);
     },
   };
 };

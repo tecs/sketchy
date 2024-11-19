@@ -1,3 +1,4 @@
+import Sketch from '../engine/cad/sketch.js';
 import SubInstance from '../engine/cad/subinstance.js';
 
 /** @type {(engine: Engine) => Tool} */
@@ -29,7 +30,7 @@ export default (engine) => {
     end(count = 1) {
       if (lasso) return;
 
-      const { enteredInstance, hoveredPointIndex, hoveredLineIndex, currentStep } = scene;
+      const { enteredInstance, hoveredPointIndex, hoveredLineIndex, hoveredConstraintIndex, currentStep } = scene;
       const toggle = input.ctrl;
 
       if (currentStep && enteredInstance) {
@@ -37,6 +38,8 @@ export default (engine) => {
           toggleOrSet({ type: 'line', index: hoveredLineIndex, instance: enteredInstance }, toggle);
         } else if (hoveredPointIndex !== null) {
           toggleOrSet({ type: 'point', index: hoveredPointIndex, instance: enteredInstance }, toggle);
+        } else if (hoveredConstraintIndex !== null && currentStep instanceof Sketch) {
+          toggleOrSet({ type: 'constraint', index: hoveredConstraintIndex, instance: enteredInstance }, toggle);
         } else if (!toggle) selection.clear();
         return;
       }

@@ -130,11 +130,13 @@ export default class Font {
 
         uniform sampler2D u_texture;
         uniform vec4 u_color;
+        uniform float u_alias;
 
         varying vec2 v_textCoord;
 
         void main() {
           float alpha = texture2D(u_texture, v_textCoord).a;
+          alpha = u_alias * alpha + (1.0 - u_alias) * ceil(alpha);
           gl_FragColor = u_color * alpha;
         }
       `,
@@ -171,8 +173,9 @@ export default class Font {
   /**
    * @param {ReadonlyMat4} mvp
    * @param {ReadonlyVec2} screenScale
+   * @param {0 | 1} [alias]
    */
-  enable(mvp, screenScale) {
+  enable(mvp, screenScale, alias = 1) {
     const { ctx } = this.#driver;
     const { program } = this;
 
@@ -196,6 +199,8 @@ export default class Font {
 
     vec2.scale(tempVec2, screenScale, this.charSize);
     ctx.uniform2fv(program.uLoc.u_scale, tempVec2);
+
+    ctx.uniform1f(program.uLoc.u_alias, alias);
   }
 
   /**
