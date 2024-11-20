@@ -196,6 +196,11 @@ export default class SubInstance extends /** @type {typeof Step<SubInstanceState
 
       this.#recalculateGlobalTrs(instance);
     });
+
+    engine.on('instancescaled', (instance, factor) => {
+      this.getParent(instance)?.subInstance.scale(factor);
+      this.#recalculateGlobalTrs(instance);
+    });
   }
 
   #recompute() {
@@ -287,6 +292,14 @@ export default class SubInstance extends /** @type {typeof Step<SubInstanceState
    */
   translate(translation) {
     this.placement.translate(translation);
+    this.#placementChanged();
+  }
+
+  /**
+   * @param {ReadonlyVec3} factor
+   */
+  scale(factor) {
+    this.placement.scale(factor);
     this.#placementChanged();
   }
 

@@ -16,6 +16,7 @@ import LineTool from './tools/line.js';
 import RectangleTool from './tools/rectangle.js';
 import SelectTool from './tools/select.js';
 import MoveTool from './tools/move.js';
+import ScaleTool from './tools/scale.js';
 import OrbitTool from './tools/orbit.js';
 import ZoomTool from './tools/zoom.js';
 
@@ -47,6 +48,7 @@ window.addEventListener('load', () => {
 
   engine.tools.addTool(SelectTool);
   engine.tools.addTool(MoveTool);
+  engine.tools.addTool(ScaleTool);
   engine.tools.addTool(LineTool);
   engine.tools.addTool(RectangleTool);
   engine.tools.addTool(OrbitTool);

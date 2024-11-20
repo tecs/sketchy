@@ -126,4 +126,14 @@ export default class Instance extends implement({
     this.engine.emit('instanceedited', this);
     this.engine.emit('scenechange');
   }
+
+  /**
+   * @param {ReadonlyVec3} factor
+   */
+  scale(factor) {
+    this.Placement.scale(factor);
+    this.engine.emit('instancescaled', this, factor);
+    this.engine.emit('instanceedited', this);
+    this.engine.emit('scenechange');
+  }
 }

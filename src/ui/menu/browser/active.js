@@ -41,4 +41,5 @@ export default (engine, tabs) => {
   engine.on('currentchange', render);
   engine.on('instancetransformed', repopulateSelectedMenuOnInstanceChange);
   engine.on('instancetranslated', repopulateSelectedMenuOnInstanceChange);
+  engine.on('instancescaled', repopulateSelectedMenuOnInstanceChange);
 };
