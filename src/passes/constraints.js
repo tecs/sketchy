@@ -11,6 +11,7 @@ const temp2Vec2 = vec2.create();
 const vec2Zero = vec2.create();
 const tempVec3 = vec3.create();
 const color = vec4.fromValues(0.25, 0.25, 0.25, 1);
+const hoveredColor = vec4.fromValues(0.5, 0.5, 0.5, 1);
 const selectedColor = vec4.fromValues(0.25, 0.25, 0.75, 1);
 const mvp = mat4.create();
 const trs = mat4.create();
@@ -248,7 +249,7 @@ export default (engine) => {
   return {
     program,
     render() {
-      const { currentStep: sketch, currentInstance } = scene;
+      const { currentStep: sketch, currentInstance, hoveredConstraintIndex } = scene;
       if (!(sketch instanceof Sketch)) return;
 
       const constraints = sketch.listConstraints();
@@ -278,7 +279,9 @@ export default (engine) => {
         if (points.length !== constraint.indices.length) continue;
         const id = Id.intToVec4(i + 1);
 
-        const labelColor = selected.includes(i) ? selectedColor : color;
+        let labelColor = color;
+        if (selected.includes(i)) labelColor = selectedColor;
+        else if (i === hoveredConstraintIndex) labelColor = hoveredColor;
         ctx.uniform4fv(program.uLoc.u_color, labelColor);
 
         switch (constraint.type) {
