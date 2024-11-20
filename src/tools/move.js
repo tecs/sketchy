@@ -285,7 +285,8 @@ export default (engine) => {
       emit('scenechange');
     },
     end() {
-      const tooShort = !released && (!this.value || this.value < 0.1);
+      const { value } = this;
+      const tooShort = !released && (!value || value < 0.1);
       released = true;
       if (tooShort) return;
 
