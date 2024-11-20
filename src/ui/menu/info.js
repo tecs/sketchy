@@ -1,3 +1,4 @@
+import { Properties } from '../../engine/general/properties.js';
 import { UIMenu } from '../lib/index.js';
 
 /**
@@ -18,7 +19,10 @@ export default (engine) => {
     measurementsInput.disabled = true;
   });
   engine.on('scenechange', () => {
-    measurementsInput.value = engine.tools.selected?.distance?.map(v => v.toFixed(2)).join(', ') ?? '';
+    const distance = engine.tools.selected?.distance;
+    if (!distance) measurementsInput.value = '';
+    else if (distance.length === 1) measurementsInput.value = Properties.stringifyDistance(distance[0], 2);
+    else measurementsInput.value = Properties.stringifyCoord(distance, 2);
     if (!measurementsInput.disabled) measurementsInput.select();
   });
   measurementsInput.addEventListener('keydown', ({ key }) => {
@@ -30,8 +34,26 @@ export default (engine) => {
     const distance = engine.tools.selected?.distance;
     if (!distance || !engine.tools.selected?.setDistance || key !== 'Enter') return;
 
-    const newDistance = measurementsInput.value.replace(/[, ]+/g, ' ').trim().split(' ').map(v => parseFloat(v));
-    if (newDistance.every(v => !Number.isNaN(v)) && newDistance.length === distance.length) {
+    let newDistance = /** @type {number[]?} */ (null);
+    switch (distance.length) {
+      case 1: {
+        const d = Properties.parseDistance(measurementsInput.value);
+        if (d !== null) newDistance = [d];
+        break;
+      }
+      case 2: {
+        const d = Properties.parseCoord2d(measurementsInput.value);
+        if (d) newDistance = [...d];
+        break;
+      }
+      case 3: {
+        const d = Properties.parseCoord2d(measurementsInput.value);
+        if (d) newDistance = [...d];
+        break;
+      }
+    }
+
+    if (newDistance) {
       engine.tools.selected.setDistance(newDistance);
     }
   });
