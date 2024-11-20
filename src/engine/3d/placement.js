@@ -84,6 +84,15 @@ export default class Placement extends implement({
                 this.#recalculateAll();
               },
             },
+            Scale: {
+              value: this.scaling,
+              type: 'vec3',
+              onEdit: (factor) => {
+                vec3.divide(factor, factor, this.scaling);
+                mat4.scale(this.trs, this.trs, factor);
+                this.#recalculateAll();
+              },
+            },
           },
         }),
       ],
