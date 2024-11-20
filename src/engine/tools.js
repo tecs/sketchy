@@ -1,29 +1,42 @@
 import Input from './input.js';
 
+/** @typedef {import('./general/properties.js').PropertyData} PropertyData */
+
 /**
- * @typedef Tool
+ * @typedef BaseTool
  * @property {string} type
  * @property {string} name
  * @property {import('./input.js').KeyboardShortcutRepresentation} shortcut
  * @property {string} icon
  * @property {string} [cursor]
  * @property {boolean} [active]
- * @property {number[]} [distance]
- * @property {(distance: number[]) => void} [setDistance]
  * @property {(count?: number) => void} start
  * @property {(delta: ReadonlyVec3) => void} update
  * @property {(count?: number) => void} end
  * @property {() => void} abort
  */
 
+/**
+ * @template {PropertyData["type"]} T
+ * @typedef ToolValue
+ * @property {Find<PropertyData, "type", T>["value"]} [value]
+ * @property {(value: Find<PropertyData, "type", T>["value"]) => void} setValue
+ * @property {T} valueType
+ */
+
+/**
+ * @template {PropertyData["type"] | never} [T=never]
+ * @typedef {IfExtends<T, PropertyData["type"], BaseTool & ToolValue<T>, BaseTool>} Tool
+ */
+
 export default class Tools {
   /** @type {Engine} */
   #engine;
 
-  /** @type {{ tool: Tool, shortcut: import("./config").StringSetting }[]} */
+  /** @type {{ tool: AnyTool, shortcut: import("./config").StringSetting }[]} */
   #tools = [];
 
-  /** @type {Tool?} */
+  /** @type {AnyTool?} */
   selected = null;
 
   /**
@@ -55,7 +68,7 @@ export default class Tools {
   }
 
   /**
-   * @param {(engine: Engine) => Tool} Tool
+   * @param {(engine: Engine) => AnyTool} Tool
    */
   addTool(Tool) {
     const tool = Tool(this.#engine);
@@ -71,7 +84,7 @@ export default class Tools {
   }
 
   /**
-   * @param {Tool?} tool
+   * @param {AnyTool?} tool
    */
   setTool(tool) {
     const previous = this.selected;
@@ -97,7 +110,7 @@ export default class Tools {
   }
 
   /**
-   * @returns {Tool[]}
+   * @returns {AnyTool[]}
    */
   list() {
     return this.#tools.map(({ tool }) => tool);
@@ -105,7 +118,7 @@ export default class Tools {
 
   /**
    * @param {string} type
-   * @returns {Tool?}
+   * @returns {AnyTool?}
    */
   get(type) {
     return this.#tools.find(({ tool }) => tool.type === type)?.tool ?? null;

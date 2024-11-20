@@ -1,7 +1,7 @@
 import Sketch from '../engine/cad/sketch.js';
 import SubInstance from '../engine/cad/subinstance.js';
 
-/** @type {(engine: Engine) => Tool} */
+/** @type {(engine: Engine) => BaseTool} */
 export default (engine) => {
   const { editor: { selection }, scene, input } = engine;
   let lasso = false;
@@ -15,7 +15,7 @@ export default (engine) => {
     else selection.set(elements);
   };
 
-  /** @type {Tool} */
+  /** @type {BaseTool} */
   const select = {
     type: 'select',
     name: 'Select',

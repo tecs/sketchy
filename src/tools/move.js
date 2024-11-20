@@ -4,7 +4,9 @@ import SubInstance from '../engine/cad/subinstance.js';
 
 const { vec3, mat4 } = glMatrix;
 
-/** @type {(engine: Engine) => Tool} */
+/** @typedef {Tool<"distance">} MoveTool */
+
+/** @type {(engine: Engine) => MoveTool} */
 export default (engine) => {
   const { editor: { edited: active, selection }, scene, history, emit } = engine;
 
@@ -51,7 +53,7 @@ export default (engine) => {
   const origin = vec3.create();
   const diff = vec3.create();
 
-  /** @type {Tool} */
+  /** @type {MoveTool} */
   const move = {
     type: 'move',
     name: 'Move',
@@ -61,10 +63,11 @@ export default (engine) => {
     get active() {
       return !!historyAction;
     },
-    get distance() {
-      return historyAction ? [vec3.length(historyAction.data.translation)] : undefined;
+    get value() {
+      return historyAction ? vec3.length(historyAction.data.translation) : undefined;
     },
-    setDistance([distance]) {
+    valueType: 'distance',
+    setValue(distance) {
       if (!historyAction) return;
 
       const { elements, translation, lockedIndices } = historyAction.data;
@@ -282,7 +285,7 @@ export default (engine) => {
       emit('scenechange');
     },
     end() {
-      const tooShort = !released && !this.distance?.every(v => v >= 0.1);
+      const tooShort = !released && (!this.value || this.value < 0.1);
       released = true;
       if (tooShort) return;
 

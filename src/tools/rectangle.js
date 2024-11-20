@@ -17,7 +17,9 @@ const { vec2, vec3, mat4 } = glMatrix;
  * @property {import("../engine/cad/sketch").PointInfo[]} points
  */
 
-/** @type {(engine: Engine) => Tool} */
+/** @typedef {Tool<"coord2d">} RectTool */
+
+/** @type {(engine: Engine) => RectTool} */
 export default (engine) => {
   const { editor: { edited: active }, history, scene, emit } = engine;
 
@@ -27,11 +29,12 @@ export default (engine) => {
 
   // cached structures
   const transformation = mat4.create();
+  const diff = vec2.create();
   const origin = vec3.create();
   const coord = vec3.create();
   const line = new Float32Array(4);
 
-  /** @type {Tool} */
+  /** @type {RectTool} */
   const rectangle = {
     type: 'rectangle',
     name: 'Rectangle/Circle/etc',
@@ -41,7 +44,7 @@ export default (engine) => {
     get active() {
       return !!historyAction;
     },
-    get distance() {
+    get value() {
       if (!historyAction) return undefined;
 
       const { lineOriginHorizontal, lineOriginVertical } = historyAction.data;
@@ -52,9 +55,10 @@ export default (engine) => {
       line.set(lineOriginVertical.data);
       const d2 = vec2.distance(/** @type {vec2} */ (line), /** @type {vec2} */ (line.subarray(2)));
 
-      return [d1, d2];
+      return vec2.set(diff, d1, d2);
     },
-    setDistance([d1, d2]) {
+    valueType: 'coord2d',
+    setValue([d1, d2]) {
       if (!historyAction || d1 <= 0 || d2 <= 0) return;
 
       const { sketch, lineCoordHorizontal, lockedIndices } = historyAction.data;
@@ -208,7 +212,7 @@ export default (engine) => {
     end() {
       if (!historyAction) return;
 
-      const tooShort = !released && !this.distance?.every(v => v >= 0.1);
+      const tooShort = !released && !this.value?.every(v => v >= 0.1);
       released = true;
       if (tooShort) return;
 

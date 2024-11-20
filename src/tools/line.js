@@ -3,6 +3,7 @@ import Sketch from '../engine/cad/sketch.js';
 const { vec3, mat4 } = glMatrix;
 
 /** @typedef {import("../engine/cad/sketch.js").LineConstructionElement} Line */
+/** @typedef {Tool<"distance">} LineTool */
 
 /**
  * @typedef LineData
@@ -15,7 +16,7 @@ const { vec3, mat4 } = glMatrix;
  * @property {import("../engine/cad/sketch").PointInfo[]} points
  */
 
-/** @type {(engine: Engine) => Tool} */
+/** @type {(engine: Engine) => LineTool} */
 export default (engine) => {
   const { editor: { edited: active }, history, scene, emit } = engine;
 
@@ -28,7 +29,7 @@ export default (engine) => {
   const origin = vec3.create();
   const coord = vec3.create();
 
-  /** @type {Omit<Tool, "start"> & { start: (click?: number, startIndex?: number) => void }} */
+  /** @type {Omit<LineTool, "start"> & { start: (click?: number, startIndex?: number) => void }} */
   const lineTool = {
     type: 'line',
     name: 'Line/Arc',
@@ -38,10 +39,11 @@ export default (engine) => {
     get active() {
       return !!historyAction;
     },
-    get distance() {
-      return historyAction ? [vec3.distance(origin, coord)] : undefined;
+    valueType: 'distance',
+    get value() {
+      return historyAction ? vec3.distance(origin, coord) : undefined;
     },
-    setDistance([distance]) {
+    setValue(distance) {
       if (!historyAction || distance <= 0) return;
       const { sketch, line } = historyAction.data;
 
@@ -141,7 +143,7 @@ export default (engine) => {
     end() {
       if (!historyAction) return;
 
-      const tooShort = !released && !this.distance?.every(v => v >= 0.1);
+      const tooShort = !released && (!this.value || this.value < 0.1);
       released = true;
       if (tooShort) return;
 

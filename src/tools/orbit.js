@@ -1,13 +1,13 @@
 const { vec3 } = glMatrix;
 
-/** @type {(engine: Engine) => Tool} */
+/** @type {(engine: Engine) => BaseTool} */
 export default (engine) => {
   const { driver, scene, camera, input } = engine;
 
   // cached structures
   const origin = vec3.create();
 
-  /** @type {Tool} */
+  /** @type {BaseTool} */
   let lastTool = {
     type: 'orbit',
     name: 'Orbit',

@@ -2,14 +2,14 @@ import Input from '../engine/input.js';
 
 const { vec3 } = glMatrix;
 
-/** @type {(engine: Engine) => Tool} */
+/** @type {(engine: Engine) => BaseTool} */
 export default (engine) => {
   const { camera, input, scene, emit } = engine;
 
   // cached structures
   const neutralZoomOrigin = vec3.fromValues(0, 0, -1);
 
-  /** @type {Tool} */
+  /** @type {BaseTool} */
   const zoom = {
     type: 'zoom',
     name: 'Zoom',
