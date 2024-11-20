@@ -14,12 +14,14 @@ const { vec2, vec3 } = glMatrix;
  */
 
 /** @typedef {TypedPropertyData<string, "plain">} PlainPropertyData */
+/** @typedef {TypedPropertyData<number, "number">} NumberPropertyData */
+/** @typedef {TypedPropertyData<vec2, "vec2">} Vec2PropertyData */
 /** @typedef {TypedPropertyData<vec3, "vec3">} Vec3PropertyData */
 /** @typedef {TypedPropertyData<vec2, "coord2d">} Coord2dPropertyData */
 /** @typedef {TypedPropertyData<vec3, "coord">} CoordPropertyData */
 /** @typedef {TypedPropertyData<number, "angle">} AnglePropertyData */
 /** @typedef {TypedPropertyData<number, "distance">} DistancePropertyData */
-/** @typedef {PlainPropertyData | Vec3PropertyData} PlainPropertiesData */
+/** @typedef {PlainPropertyData | NumberPropertyData | Vec2PropertyData | Vec3PropertyData} PlainPropertiesData */
 /** @typedef {DistancePropertyData | Coord2dPropertyData | CoordPropertyData} DistancePropertiesData */
 /** @typedef {PlainPropertiesData | DistancePropertiesData | AnglePropertyData} PropertyData */
 /** @typedef {Record<string, Record<string, PropertyData>>} PropertyDefinitions */
@@ -110,6 +112,17 @@ export class Properties {
 
   /**
    * @param {string} value
+   * @returns {vec2?}
+   */
+  static parseVec2(value) {
+    const components = Properties.parseComponents(value, Properties.parseNumber);
+    if (components.length !== 2) return null;
+
+    return vec2.fromValues(components[0], components[1]);
+  }
+
+  /**
+   * @param {string} value
    * @returns {vec3?}
    */
   static parseVec3(value) {
@@ -149,6 +162,8 @@ export class Properties {
    */
   static parse(value, type) {
     switch (type) {
+      case 'number': return Properties.parseNumber(value);
+      case 'vec2': return Properties.parseVec2(value);
       case 'vec3': return Properties.parseVec3(value);
       case 'coord2d': return Properties.parseCoord2d(value);
       case 'coord': return Properties.parseCoord3d(value);
@@ -226,11 +241,13 @@ export class Properties {
     if (typeof displayValue === 'string') return displayValue;
 
     switch(type) {
+      case 'vec2':
       case 'vec3': return Properties.stringifyVec(value, precision);
       case 'coord2d':
       case 'coord': return Properties.stringifyCoord(value, precision);
       case 'angle': return Properties.stringifyAngle(value, precision);
       case 'distance': return Properties.stringifyDistance(value, precision);
+      case 'number': return Properties.stringifyNumber(value, precision);
       case 'plain': return value;
       default: return '<<UNSUPPORTED PROPERTY TYPE>>';
     }
