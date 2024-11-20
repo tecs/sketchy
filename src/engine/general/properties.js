@@ -25,6 +25,8 @@ const { vec2, vec3 } = glMatrix;
 /** @typedef {Record<string, Record<string, PropertyData>>} PropertyDefinitions */
 /** @typedef {[property: PropertyData, name: string, category: string]} PropertyMapping */
 
+const RAD_TO_DEG = Math.PI / 180;
+
 export class Properties {
   /** @type {() => PropertyDefinitions} */
   #getFn;
@@ -44,8 +46,8 @@ export class Properties {
   static ANGLE_UNITS = [
     { suffix: 'rad', toBase: 1, fromBase: 1 },
     { suffix: 'tau', toBase: 2, fromBase: 0.5 },
-    { suffix:   '°', toBase: Math.PI / 180, fromBase: 180 / Math.PI },
-    { suffix: 'deg', toBase: Math.PI / 180, fromBase: 180 / Math.PI },
+    { suffix:   '°', toBase: RAD_TO_DEG, fromBase: 180 / Math.PI },
+    { suffix: 'deg', toBase: RAD_TO_DEG, fromBase: 180 / Math.PI },
   ];
 
   /**
@@ -53,6 +55,16 @@ export class Properties {
    */
   constructor(getFn) {
     this.#getFn = getFn;
+  }
+
+  /**
+   * @param {string} value
+   * @returns {number?}
+   */
+  static parseNumber(value) {
+    const parsed = parseFloat(value);
+    if (Number.isNaN(parsed) || !Number.isFinite(parsed)) return null;
+    return parsed;
   }
 
   /**
@@ -67,10 +79,17 @@ export class Properties {
       .pop();
     if (unit) value = value.slice(0, -unit.suffix.length);
 
-    const distance = parseFloat(value);
-    if (Number.isNaN(distance) || !Number.isFinite(distance)) return null;
+    const distance = Properties.parseNumber(value);
+    return unit && distance !== null ? distance * unit.toBase : distance;
+  }
 
-    return unit ? distance * unit.toBase : distance;
+  /**
+   * @param {string} value
+   * @param {(component: string) => number?} parser
+   * @returns {number[]}
+   */
+  static parseComponents(value, parser) {
+    return value.trim().replace(/^\[(.+?)\]$/, '$1').split(',').map(parser).filter(n => n !== null);
   }
 
   /**
@@ -94,16 +113,10 @@ export class Properties {
    * @returns {vec3?}
    */
   static parseVec3(value) {
-    value = value.trim();
-    const oldValue = value;
-
-    value = value.replace(/^vec3\((.+?)\)$/, '$1');
-    if (value === oldValue) value = value.replace(/^\[(.+?)\]$/, '$1');
-
-    const components = value.split(',').map(parseFloat).filter(n => !Number.isNaN(n) && Number.isFinite(n));
+    const components = Properties.parseComponents(value, Properties.parseNumber);
     if (components.length !== 3) return null;
 
-    return glMatrix.vec3.fromValues(components[0], components[1], components[2]);
+    return vec3.fromValues(components[0], components[1], components[2]);
   }
 
   /**
@@ -111,13 +124,7 @@ export class Properties {
    * @returns {vec2?}
    */
   static parseCoord2d(value) {
-    value = value.trim();
-    const oldValue = value;
-
-    value = value.replace(/^vec2\((.+?)\)$/, '$1');
-    if (value === oldValue) value = value.replace(/^\[(.+?)\]$/, '$1');
-
-    const components = value.split(',').map(Properties.parseDistance).filter(n => typeof n === 'number');
+    const components = Properties.parseComponents(value, Properties.parseDistance);
     if (components.length !== 2) return null;
 
     return vec2.fromValues(components[0], components[1]);
@@ -127,14 +134,8 @@ export class Properties {
    * @param {string} value
    * @returns {vec3?}
    */
-  static parseCoord(value) {
-    value = value.trim();
-    const oldValue = value;
-
-    value = value.replace(/^vec3\((.+?)\)$/, '$1');
-    if (value === oldValue) value = value.replace(/^\[(.+?)\]$/, '$1');
-
-    const components = value.split(',').map(Properties.parseDistance).filter(n => typeof n === 'number');
+  static parseCoord3d(value) {
+    const components = Properties.parseComponents(value, Properties.parseDistance);
     if (components.length !== 3) return null;
 
     return vec3.fromValues(components[0], components[1], components[2]);
@@ -150,7 +151,7 @@ export class Properties {
     switch (type) {
       case 'vec3': return Properties.parseVec3(value);
       case 'coord2d': return Properties.parseCoord2d(value);
-      case 'coord': return Properties.parseCoord(value);
+      case 'coord': return Properties.parseCoord3d(value);
       case 'angle': return Properties.parseAngle(value);
       case 'distance': return Properties.parseDistance(value);
       case 'plain': return value;
@@ -164,11 +165,29 @@ export class Properties {
    * @param {number} [precision]
    * @returns {string}
    */
+  static stringifyNumber(value, precision) {
+    return precision === undefined ? `${value}` : `${value.toFixed(precision)}`;
+  }
+
+  /**
+   * @param {ReadonlyVec2 | ReadonlyVec3 | number[]} value
+   * @param {(component: number, precision?: number) => string} toString
+   * @param {number} [precision]
+   * @returns {string}
+   */
+  static stringifyComponents(value, toString, precision) {
+    return `[${[...value].map(v => toString(v, precision)).join(', ')}]`;
+  }
+
+  /**
+   * @param {number} value
+   * @param {number} [precision]
+   * @returns {string}
+   */
   static stringifyDistance(value, precision) {
     const searchValue = Math.abs(value === 0 ? 1 : value * 0.1);
     const unit = Properties.DISTANCE_UNITS.find(u => searchValue <= u.toBase) ?? Properties.DISTANCE_UNITS[0];
-    value *= unit.fromBase;
-    return precision === undefined ? `${value}${unit.suffix}` : `${value.toFixed(precision)}${unit.suffix}`;
+    return `${Properties.stringifyNumber(value * unit.fromBase, precision)}${unit.suffix}`;
   }
 
   /**
@@ -177,17 +196,16 @@ export class Properties {
    * @returns {string}
    */
   static stringifyAngle(value, precision) {
-    value *= 180 / Math.PI;
-    return precision === undefined ? `${value}°` : `${value.toFixed(3)}°`;
+    return `${Properties.stringifyNumber(value * RAD_TO_DEG, precision)}°`;
   }
 
   /**
-   * @param {ReadonlyVec3} value
+   * @param {ReadonlyVec2 | ReadonlyVec3 | number[]} value
    * @param {number} [precision]
    * @returns {string}
    */
-  static stringifyVec3(value, precision) {
-    return precision === undefined ? `[${value.join(', ')}]` : `[${[...value].map(v => v.toFixed(3)).join(', ')}]`;
+  static stringifyVec(value, precision) {
+    return Properties.stringifyComponents(value, Properties.stringifyNumber, precision);
   }
 
   /**
@@ -196,7 +214,7 @@ export class Properties {
    * @returns {string}
    */
   static stringifyCoord(value, precision) {
-    return `[${[...value].map(component => Properties.stringifyDistance(component, precision)).join(', ')}]`;
+    return Properties.stringifyComponents(value, Properties.stringifyDistance, precision);
   }
 
   /**
@@ -208,7 +226,7 @@ export class Properties {
     if (typeof displayValue === 'string') return displayValue;
 
     switch(type) {
-      case 'vec3': return Properties.stringifyVec3(value, precision);
+      case 'vec3': return Properties.stringifyVec(value, precision);
       case 'coord2d':
       case 'coord': return Properties.stringifyCoord(value, precision);
       case 'angle': return Properties.stringifyAngle(value, precision);
