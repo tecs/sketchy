@@ -1,14 +1,22 @@
 import { Properties } from '../general/properties.js';
 import Input from '../input.js';
+import cs from './constraints.js';
 import Step from './step.js';
 import triangulate from './triangulate.js';
 
-const { glMatrix: { equals }, vec2, vec3, mat4, quat } = glMatrix;
+const { vec2, vec3, mat4, quat } = glMatrix;
 
 /** @typedef {import("./step.js").BaseParams<SketchState>} BaseParams */
 /** @typedef {import("./step.js").BaseParams<ConstructableSketchState>} PartialBaseParams */
-/** @typedef {import("../general/state.js").Value} Value */
 /** @typedef {import("../editor.js").Collection} Collection */
+/** @typedef {import("./constraints.js").DistanceConstraint} DistanceConstraint */
+/** @typedef {import("./constraints.js").WidthConstraint} WidthConstraint */
+/** @typedef {import("./constraints.js").HeightConstraint} HeightConstraint */
+/** @typedef {import("./constraints.js").EqualConstraint} EqualConstraint */
+/** @typedef {import("./constraints.js").CoincidentConstraint} CoincidentConstraint */
+/** @typedef {import("./constraints.js").HorizontalConstraint} HorizontalConstraint */
+/** @typedef {import("./constraints.js").VerticalConstraint} VerticalConstraint */
+/** @typedef {import("./constraints.js").Constraints} Constraints */
 
 /**
  * @template {string} T
@@ -20,30 +28,6 @@ const { glMatrix: { equals }, vec2, vec3, mat4, quat } = glMatrix;
 
 /** @typedef {ConstructionElement<"line", 4>} LineConstructionElement */
 /** @typedef {LineConstructionElement} ConstructionElements */
-
-/**
- * @template {string} T
- * @template {number} I
- * @template {Value} [D=null]
- * @template [S=D]
- * @typedef Constraint
- * @property {T} type
- * @property {Tuple<number, I>} indices
- * @property {D} data
- * @property {S} _current
- */
-
-/** @typedef {Constraint<"distance", 2, number>} DistanceConstraint */
-/** @typedef {Constraint<"width", 2, number>} WidthConstraint */
-/** @typedef {Constraint<"height", 2, number>} HeightConstraint */
-/** @typedef {Constraint<"coincident", 2>} CoincidentConstraint */
-/** @typedef {Constraint<"horizontal", 2>} HorizontalConstraint */
-/** @typedef {Constraint<"vertical", 2>} VerticalConstraint */
-/** @typedef {Constraint<"equal", 4, null, [number, number]>} EqualConstraint */
-
-/** @typedef {DistanceConstraint|WidthConstraint|HeightConstraint|EqualConstraint} DistanceConstraints */
-/** @typedef {HorizontalConstraint|VerticalConstraint} OrientationConstraints */
-/** @typedef {DistanceConstraints|CoincidentConstraint|OrientationConstraints} Constraints */
 
 /**
  * @typedef PointInfo
@@ -73,34 +57,15 @@ const { glMatrix: { equals }, vec2, vec3, mat4, quat } = glMatrix;
 /** @typedef {Omit<SketchState, "elements" | "constraints"> & Partial<SketchState>} ConstructableSketchState */
 
 /**
- * @template {Constraints} C
- * @typedef ConstraintData
- * @property {Tuple<PointInfo, C["indices"]["length"]>} elements
- * @property {number} incrementScale
- * @property {C["data"]} value
- */
-
-/**
- * @template {Constraints} C
- * @typedef {(data: ConstraintData<C>) => [C["_current"], boolean]} CheckFn
- */
-
-/**
- * @template {Constraints} C
- * @typedef {(data: ConstraintData<C>, current: C["_current"]) => void} ApplyFn
- */
-
-/**
  * @template {Constraints["type"]} T
  * @template {Constraints} [C=Find<Constraints, "type", T>]
  * @typedef {[pairs: C["indices"][], data: (C["data"] | undefined)[], type: T, sketch: Sketch]} ExecArgs
  */
 
-/** @typedef {Exclude<DistanceConstraints, EqualConstraint>["type"]} DistanceType */
+/** @typedef {Exclude<import("./constraints.js").DistanceConstraints, EqualConstraint>["type"]} DistanceType */
 /** @typedef {Exclude<Constraints["type"], DistanceType>} ConstraintType */
 
 // cached structures
-const tempVec2 = vec2.create();
 const forward = vec3.fromValues(0, 0, 1);
 const rotation = quat.create();
 const tempVertex = vec3.create();
@@ -228,7 +193,7 @@ const extractLinesOrPointPairs = (selection, sketch) => {
  * @template {Constraints} C
  * @param {C} constraint
  * @param {Sketch} sketch
- * @returns {ConstraintData<C>?}
+ * @returns {import("./constraints.js").ConstraintData<C>?}
  */
 const getElements = (constraint, sketch) => {
   const pointsInfo = constraint.indices.map(index => sketch.getPointInfo(index)).filter(p => !!p);
@@ -238,96 +203,10 @@ const getElements = (constraint, sketch) => {
   if (numLocked === pointsInfo.length) return null;
 
   return {
-    elements: /** @type {ConstraintData<C>["elements"]} */ (pointsInfo),
+    elements: /** @type {import("./constraints.js").ConstraintData<C>["elements"]} */ (pointsInfo),
     value: constraint.data,
     incrementScale: 1 / (pointsInfo.length - numLocked),
   };
-};
-
-/** @type {{ [K in Constraints["type"]]: CheckFn<Find<Constraints, "type", K>> }} */
-const checkConstraint = {
-  distance({ elements: [p1, p2], value }) {
-    const current = vec2.distance(p1.vec2, p2.vec2);
-    return [current, equals(current, value)];
-  },
-  width({ elements: [p1, p2], value }) {
-    const current = Math.abs(p1.vec2[0] - p2.vec2[0]);
-    return [current, equals(current, value)];
-  },
-  height({ elements: [p1, p2], value }) {
-    const current = Math.abs(p1.vec2[1] - p2.vec2[1]);
-    return [current, equals(current, value)];
-  },
-  coincident: ({ elements: [p1, p2] }) => [null, vec2.equals(p1.vec2, p2.vec2)],
-  horizontal: ({ elements: [p1, p2] }) => [null, equals(p1.vec2[1], p2.vec2[1])],
-  vertical: ({ elements: [p1, p2] }) => [null, equals(p1.vec2[0], p2.vec2[0])],
-  equal: ({ elements: [p1, p2, p3, p4] }) => {
-    const distance1 = vec2.distance(p1.vec2, p2.vec2);
-    const distance2 = vec2.distance(p3.vec2, p4.vec2);
-    return [[distance1, distance2], equals(distance1, distance2)];
-  },
-};
-
-/** @type {{ [K in Constraints["type"]]: ApplyFn<Find<Constraints, "type", K>> }} */
-const applyConstraint = {
-  distance({ elements: [p1, p2], incrementScale, value }, distance) {
-    vec2.subtract(tempVec2, p1.vec2, p2.vec2);
-    vec2.normalize(tempVec2, tempVec2);
-    vec2.scale(tempVec2, tempVec2, (value - distance) * incrementScale);
-
-    if (!p1.locked) vec2.add(p1.vec2, p1.vec2, tempVec2);
-    if (!p2.locked) vec2.subtract(p2.vec2, p2.vec2, tempVec2);
-  },
-  width({ elements: [p1, p2], incrementScale, value }, distance) {
-    const diff = (value - distance) * incrementScale * (p1.vec2[0] < p2.vec2[0] ? -1 : 1);
-
-    if (!p1.locked) p1.vec2[0] += diff;
-    if (!p2.locked) p2.vec2[0] -= diff;
-  },
-  height({ elements: [p1, p2], incrementScale, value }, distance) {
-    const diff = (value - distance) * incrementScale * (p1.vec2[1] < p2.vec2[1] ? -1 : 1);
-
-    if (!p1.locked) p1.vec2[1] += diff;
-    if (!p2.locked) p2.vec2[1] -= diff;
-  },
-  coincident({ elements: [p1, p2], incrementScale }) {
-    vec2.subtract(tempVec2, p1.vec2, p2.vec2);
-    vec2.scale(tempVec2, tempVec2, incrementScale);
-
-    if (!p1.locked) vec2.subtract(p1.vec2, p1.vec2, tempVec2);
-    if (!p2.locked) vec2.add(p2.vec2, p2.vec2, tempVec2);
-  },
-  horizontal({ elements: [p1, p2], incrementScale }) {
-    const diff = (p1.vec2[1] - p2.vec2[1]) * incrementScale;
-
-    if (!p1.locked) p1.vec2[1] -= diff;
-    if (!p2.locked) p2.vec2[1] += diff;
-  },
-  vertical({ elements: [p1, p2], incrementScale }) {
-    const diff = (p1.vec2[0] - p2.vec2[0]) * incrementScale;
-
-    if (!p1.locked) p1.vec2[0] -= diff;
-    if (!p2.locked) p2.vec2[0] += diff;
-  },
-  equal({ elements: [p1, p2, p3, p4], incrementScale }, [distance1, distance2]) {
-    if (!p1.locked || !p2.locked) {
-      vec2.subtract(tempVec2, p1.vec2, p2.vec2);
-      vec2.normalize(tempVec2, tempVec2);
-      vec2.scale(tempVec2, tempVec2, (distance2 - distance1) * incrementScale);
-
-      if (!p1.locked) vec2.add(p1.vec2, p1.vec2, tempVec2);
-      if (!p2.locked) vec2.subtract(p2.vec2, p2.vec2, tempVec2);
-    }
-
-    if (!p3.locked || !p4.locked) {
-      vec2.subtract(tempVec2, p3.vec2, p4.vec2);
-      vec2.normalize(tempVec2, tempVec2);
-      vec2.scale(tempVec2, tempVec2, (distance1 - distance2) * incrementScale);
-
-      if (!p3.locked) vec2.add(p3.vec2, p3.vec2, tempVec2);
-      if (!p4.locked) vec2.subtract(p4.vec2, p4.vec2, tempVec2);
-    }
-  },
 };
 
 export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Step) {
@@ -662,28 +541,6 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
   }
 
   /**
-   * @template {Constraints} T
-   * @param {T["type"]} type
-   * @param {T["indices"]} indices
-   * @param {T["data"]} data
-   * @returns {T}
-   */
-  static makeConstraint(type, indices, data) {
-    switch (type) {
-      case 'distance':
-      case 'width':
-      case 'height':
-      case 'coincident':
-      case 'horizontal':
-      case 'vertical':
-      case 'equal':
-        return /** @type {T} */ ({ type, indices, data });
-      default:
-        throw new Error(`Unknown constraint type "${type}"`);
-    }
-  }
-
-  /**
    * @template {ConstructionElements} T
    * @param {T} element
    * @returns {T}
@@ -750,7 +607,7 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
       return /** @type {T} */ (/** @type {Constraints} */ (existingConstraint));
     }
 
-    const constraint = Sketch.makeConstraint(type, indices, data);
+    const constraint = /** @type {T} */ ({ type, indices, data });
     this.addConstraint(constraint);
     return constraint;
   }
@@ -787,14 +644,16 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
         const constraintData = getElements(constraint, this);
         if (!constraintData) continue;
 
-        const [currentValue, passes] = /** @type {CheckFn<typeof constraint>} */
-          (checkConstraint[constraint.type])(constraintData);
+        const handler = cs[constraint.type];
+
+        const [currentValue, passes] = /** @type {import("./constraints.js").CheckFn<typeof constraint>} */
+          (handler.check)(constraintData);
 
         if (passes) continue;
         solved = false;
 
-        /** @type {ApplyFn<typeof constraint>} */
-        (applyConstraint[constraint.type])(constraintData, currentValue);
+        /** @type {import("./constraints.js").ApplyFn<typeof constraint>} */
+        (handler.apply)(constraintData, currentValue);
 
         for (const { element: { data }, offset, vec2: vec } of constraintData.elements) {
           data[offset] = vec[0];
