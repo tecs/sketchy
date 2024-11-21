@@ -46,7 +46,7 @@ export default (engine) => {
           toggleOrSet({ type: 'line', index: hoveredLineIndex, instance: enteredInstance }, toggle);
         } else if (hoveredSelf && hoveredPointIndex !== null) {
           toggleOrSet({ type: 'point', index: hoveredPointIndex, instance: enteredInstance }, toggle);
-        } else if (hoveredSelf && hoveredConstraintIndex !== null && currentStep instanceof Sketch) {
+        } else if (hoveredConstraintIndex !== null && currentStep instanceof Sketch) {
           toggleOrSet({ type: 'constraint', index: hoveredConstraintIndex, instance: enteredInstance }, toggle);
         } else if (!toggle) selection.clear();
         return;
