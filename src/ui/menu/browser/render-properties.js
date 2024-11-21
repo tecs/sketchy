@@ -27,7 +27,7 @@ const renderComponents = (container, value, onEdit, stringify = String, parse = 
 };
 
 /**
- * @param {import('../../../engine/general/properties.js').PropertyData} property
+ * @param {import("../../../engine/general/properties.js").PropertyData} property
  * @param {import("../../lib").AnyUIContainer} container
  */
 export const renderInput = ({ type, value, onEdit }, container) => {

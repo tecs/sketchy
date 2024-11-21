@@ -1,12 +1,12 @@
 import Input from './input.js';
 
-/** @typedef {import('./general/properties.js').PropertyData} PropertyData */
+/** @typedef {import("./general/properties.js").PropertyData} PropertyData */
 
 /**
  * @typedef BaseTool
  * @property {string} type
  * @property {string} name
- * @property {import('./input.js').KeyboardShortcutRepresentation} shortcut
+ * @property {import("./input.js").KeyboardShortcutRepresentation} shortcut
  * @property {string} icon
  * @property {string} [cursor]
  * @property {boolean} [active]

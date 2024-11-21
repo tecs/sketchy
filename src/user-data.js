@@ -1,6 +1,6 @@
 /**
  * @typedef UserData
- * @property {import('./engine/config.js').Override[]} config
+ * @property {import("./engine/config.js").Override[]} config
  */
 
 const USER_DATA_KEY = 'userData';

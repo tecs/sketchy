@@ -4,7 +4,7 @@ const { vec2, vec4 } = glMatrix;
 const tempVec2 = vec2.create();
 const vec4Black = vec4.fromValues(0, 0, 0, 1);
 
-/** @typedef {Readonly<import('../engine/driver').default>} Driver */
+/** @typedef {Readonly<import("../engine/driver").default>} Driver */
 
 export default class Font {
   static NUMERIC = '0123456789';

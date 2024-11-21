@@ -6,7 +6,7 @@ import SubInstance from '../cad/subinstance.js';
 
 const { vec3 } = glMatrix;
 
-/** @typedef {import('../cad/body.js').AnyStep} AnyStep */
+/** @typedef {import("../cad/body.js").AnyStep} AnyStep */
 
 /**
  * @typedef SceneState

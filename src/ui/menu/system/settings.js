@@ -181,7 +181,7 @@ export default (engine, container) => {
             // block non-printable keys
             if (key.length !== 1) return;
 
-            const combo = /** @type {import('../../../engine/input.js').NonNullKeyboardShortcut} */ ([key]);
+            const combo = /** @type {import("../../../engine/input.js").NonNullKeyboardShortcut} */ ([key]);
             if (shiftKey) combo.unshift(Input.normalizeKey('shift'));
             if (altKey) combo.unshift(Input.normalizeKey('alt'));
             if (ctrlKey) combo.unshift(Input.normalizeKey('control'));
