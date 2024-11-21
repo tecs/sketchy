@@ -30,21 +30,29 @@ export default (engine) => {
     end(count = 1) {
       if (lasso) return;
 
-      const { enteredInstance, hoveredPointIndex, hoveredLineIndex, hoveredConstraintIndex, currentStep } = scene;
+      const {
+        enteredInstance,
+        hoveredInstance,
+        hoveredPointIndex,
+        hoveredLineIndex,
+        hoveredConstraintIndex,
+        currentStep,
+      } = scene;
       const toggle = input.ctrl;
 
       if (currentStep && enteredInstance) {
-        if (hoveredLineIndex !== null) {
+        const hoveredSelf = hoveredInstance === enteredInstance;
+        if (hoveredSelf && hoveredLineIndex !== null) {
           toggleOrSet({ type: 'line', index: hoveredLineIndex, instance: enteredInstance }, toggle);
-        } else if (hoveredPointIndex !== null) {
+        } else if (hoveredSelf && hoveredPointIndex !== null) {
           toggleOrSet({ type: 'point', index: hoveredPointIndex, instance: enteredInstance }, toggle);
-        } else if (hoveredConstraintIndex !== null && currentStep instanceof Sketch) {
+        } else if (hoveredSelf && hoveredConstraintIndex !== null && currentStep instanceof Sketch) {
           toggleOrSet({ type: 'constraint', index: hoveredConstraintIndex, instance: enteredInstance }, toggle);
         } else if (!toggle) selection.clear();
         return;
       }
 
-      let clicked = scene.hoveredInstance;
+      let clicked = hoveredInstance;
       let parent = clicked ? SubInstance.getParent(clicked) : undefined;
       while (clicked && clicked !== enteredInstance && (parent?.instance ?? null) !== enteredInstance) {
         clicked = parent?.instance ?? null;
