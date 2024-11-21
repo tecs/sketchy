@@ -25,6 +25,13 @@ import Input from './input.js';
  */
 
 /**
+ * @typedef Action
+ * @property {string} name
+ * @property {string} icon
+ * @property {() => void} call
+ */
+
+/**
  * @template {PropertyData["type"] | never} [T=never]
  * @typedef {IfExtends<T, PropertyData["type"], BaseTool & ToolValue<T>, BaseTool>} Tool
  */
@@ -96,6 +103,20 @@ export default class Tools {
 
     this.#engine.emit('cursorchange', tool?.cursor);
     this.#engine.emit('toolchange', tool, previous);
+  }
+
+  /**
+   * @param {Action[] | null} actions
+   */
+  setContextActions(actions) {
+    this.#engine.emit('contextactions', actions);
+  }
+
+  /**
+   * @param {Action | null} action
+   */
+  activateContextAction(action) {
+    this.#engine.emit('contextactionchange', action);
   }
 
   /**

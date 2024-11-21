@@ -218,7 +218,7 @@ export default class Scene extends Base {
         this.setEnteredInstance(this.currentInstance);
       }
       this.currentStep = step;
-      this.#engine.emit('stepchange', step, previous);
+      this.#engine.emit('stepchange', step, previous, false);
     }
   }
 
@@ -229,7 +229,7 @@ export default class Scene extends Base {
     if (step !== this.selectedStep) {
       const previous = this.selectedStep;
       this.selectedStep = step;
-      this.#engine.emit('stepchange', step, previous);
+      this.#engine.emit('stepchange', step, previous, true);
     }
   }
 

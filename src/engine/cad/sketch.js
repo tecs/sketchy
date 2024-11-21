@@ -249,24 +249,6 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
 
     const { editor: { selection }, scene, history, config } = engine;
 
-    const distanceKey = config.createString('shortcuts.sketch.distance', 'Sketch constraint: distance', 'key', Input.stringify([['k'], ['d']]));
-    const widthKey = config.createString('shortcuts.sketch.width', 'Sketch constraint: width', 'key', Input.stringify([['k'], ['l']]));
-    const heightKey = config.createString('shortcuts.sketch.height', 'Sketch constraint: height', 'key', Input.stringify([['k'], ['i']]));
-    const coincidentKey = config.createString('shortcuts.sketch.coincident', 'Sketch constraint: coincident point', 'key', Input.stringify([['k'], ['c']]));
-    const horizontalKey = config.createString('shortcuts.sketch.horizontal', 'Sketch constraint: horizontal', 'key', Input.stringify([['k'], ['h']]));
-    const verticalKey = config.createString('shortcuts.sketch.vertical', 'Sketch constraint: vertical', 'key', Input.stringify([['k'], ['v']]));
-    const equalKey = config.createString('shortcuts.sketch.equal', 'Sketch constraint: equal', 'key', Input.stringify([['k'], ['e']]));
-
-    engine.input.registerShortcuts(
-      distanceKey,
-      heightKey,
-      widthKey,
-      coincidentKey,
-      horizontalKey,
-      verticalKey,
-      equalKey,
-    );
-
     let previousTool = engine.tools.selected;
 
     const cancellableTask = {
@@ -275,6 +257,7 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
       drop(revertTool = true) {
         if (this.handle.valid && revertTool) {
           engine.emit('cursorchange', previousTool?.cursor);
+          engine.emit('contextactionchange', null);
           engine.tools.setTool(previousTool);
         }
         this.handle.valid = false;
@@ -425,6 +408,41 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
       if (constraint) sketch.deleteConstraint(constraint);
     });
 
+    /**
+     * @template {Constraints["type"]} C
+     * @param {C} type
+     * @param {string} icon
+     * @param {import("../input.js").KeyboardShortcutRepresentation} shortcut
+     * @param {(collection: typeof selection, sketch: Sketch) => ExecArgs<C>[0]} extractFn
+     * @param {(...args: ExecArgs<C>) => void} thenFn
+     * @param {(...args: ExecArgs<C>) => void} undoFn
+     * @returns {import("../tools.js").Action & { key: Readonly<import("../config.js").StringSetting>}}
+     */
+    const makeAction = (type, icon, shortcut, extractFn, thenFn, undoFn) => {
+      const name = type.charAt(0).toUpperCase().concat(type.substring(1));
+      const contextAction = {
+        name,
+        icon,
+        call() {
+          engine.emit('contextactionchange', contextAction);
+          cancellableTask.exec(type, extractFn, thenFn, undoFn);
+        },
+        key: config.createString(`shortcuts.sketch.${type}`, `Sketch constraint: ${type}`, 'key', Input.stringify(shortcut)),
+      };
+      engine.input.registerShortcuts(contextAction.key);
+      return contextAction;
+    };
+
+    const contextActions = [
+      makeAction('distance', '⤡', [['k'], ['d']], extractLinesOrPointPairs, cachedDistanceConstraint(), undoDistanceConstraint),
+      makeAction('width', '🡘', [['k'], ['l']], extractLinesOrPointPairs, cachedDistanceConstraint(0), undoDistanceConstraint),
+      makeAction('height', '🡙', [['k'], ['i']], extractLinesOrPointPairs, cachedDistanceConstraint(1), undoDistanceConstraint),
+      makeAction('equal', '=', [['k'], ['e']], extractLinePairs, doConstraint, undoConstraint),
+      makeAction('coincident', '⌖', [['k'], ['c']], extractPointPairs, doConstraint, undoConstraint),
+      makeAction('horizontal', '―', [['k'], ['h']], extractAllPoints, doConstraint, undoConstraint),
+      makeAction('vertical', '|', [['k'], ['v']], extractAllPoints, doConstraint, undoConstraint),
+    ];
+
     engine.on('keydown', (_, keyCombo) => {
       if (keyCombo === 'esc') cancellableTask.drop();
 
@@ -470,28 +488,8 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
     });
 
     engine.on('shortcut', setting => {
-      switch (setting) {
-        case distanceKey:
-          cancellableTask.exec('distance', extractLinesOrPointPairs, cachedDistanceConstraint(), undoDistanceConstraint);
-          break;
-        case widthKey:
-          cancellableTask.exec('width', extractLinesOrPointPairs, cachedDistanceConstraint(0), undoDistanceConstraint);
-          break;
-        case heightKey:
-          cancellableTask.exec('height', extractLinesOrPointPairs, cachedDistanceConstraint(1), undoDistanceConstraint);
-          break;
-        case equalKey:
-          cancellableTask.exec('equal', extractLinePairs, doConstraint, undoConstraint);
-          break;
-        case coincidentKey:
-          cancellableTask.exec('coincident', extractPointPairs, doConstraint, undoConstraint);
-          break;
-        case horizontalKey:
-          cancellableTask.exec('horizontal', extractAllPoints, doConstraint, undoConstraint);
-          break;
-        case verticalKey:
-          cancellableTask.exec('vertical', extractAllPoints, doConstraint, undoConstraint);
-          break;
+      for (const { key, call } of contextActions) {
+        if (key === setting) return call();
       }
     });
 
@@ -506,10 +504,16 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
       else if (hoveredPointIndex !== null && sketch.hasPoint(hoveredPointIndex)) scene.setCurrentStep(sketch);
     });
 
-    engine.on('stepchange', (current, previous) => {
+    engine.on('stepchange', (current, previous, isSelectionChange) => {
+      if (isSelectionChange) return;
+
       cancellableTask.drop();
-      if (current instanceof Sketch) current.update();
-      if (previous instanceof Sketch) previous.update();
+      const isSketch = current instanceof Sketch;
+      const wasSketch = previous instanceof Sketch;
+      if (isSketch) current.update();
+      if (wasSketch) previous.update();
+      if (isSketch && !wasSketch) engine.tools.setContextActions(contextActions);
+      else if (wasSketch && !isSketch) engine.tools.setContextActions(null);
     });
 
     engine.on('toolchange', () => cancellableTask.drop(false));

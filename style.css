@@ -138,6 +138,33 @@ kbd {
   right: 0;
 }
 
+.submenu.left {
+  left: unset;
+  right: 100%;
+  margin-right: 5px;
+}
+
+.submenu.right {
+  right: unset;
+  left: 100%;
+  margin-left: 5px;
+}
+
+.submenu.top {
+  top: unset;
+  left: unset;
+  bottom: 100%;
+  margin-bottom: 5px;
+}
+
+.submenu.bottom {
+  left: unset;
+  right: unset;
+  bottom: unset;
+  top: 100%;
+  margin-top: 5px;
+}
+
 .menu > button {
   width: var(--iconSize);
   height: var(--iconSize);
