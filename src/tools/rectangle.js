@@ -38,7 +38,7 @@ export default (engine) => {
   const rectangle = {
     type: 'rectangle',
     name: 'Rectangle/Circle/etc',
-    shortcut: 'r',
+    shortcut: [['d'], ['r']],
     icon: '⧄',
     cursor: 'crosshair',
     get active() {

@@ -33,7 +33,7 @@ export default (engine) => {
   const lineTool = {
     type: 'line',
     name: 'Line/Arc',
-    shortcut: 'l',
+    shortcut: [['d'], ['l']],
     icon: '🖊',
     cursor: 'crosshair',
     get active() {
