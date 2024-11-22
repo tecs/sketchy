@@ -36,7 +36,7 @@ export default (engine) => {
     },
     valueType: 'number',
     get value() {
-      return historyAction ? historyAction.data.scaleFactor : undefined;
+      return historyAction?.data.scaleFactor;
     },
     setValue(newScaleFactor) {
       if (!historyAction) return;
