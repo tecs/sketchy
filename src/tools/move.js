@@ -224,7 +224,7 @@ export default (engine) => {
         },
         ({ elements, translation, lockedIndices }) => {
           const translationVecReverse = vec3.create();
-          vec3.scale(translationVecReverse, translation, -1);
+          vec3.negate(translationVecReverse, translation);
           for (const element of elements) {
             switch (element.type) {
               case 'instance':

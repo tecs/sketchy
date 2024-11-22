@@ -145,7 +145,7 @@ export default class Camera {
       toEye[2] = rotationOrigin[2];
     }
 
-    vec3.scale(toPivot, toEye, -1);
+    vec3.negate(toPivot, toEye);
 
     const oldPitch = this.pitch;
 
@@ -246,7 +246,7 @@ export default class Camera {
       toEye[2] = zoomOrigin[2];
     }
 
-    vec3.scale(toPivot, toEye, -1);
+    vec3.negate(toPivot, toEye);
 
     diff[0] = this.scale / originalScale;
     diff[1] = diff[0];
