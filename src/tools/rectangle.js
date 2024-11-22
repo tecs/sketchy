@@ -37,7 +37,7 @@ export default (engine) => {
   /** @type {RectTool} */
   const rectangle = {
     type: 'rectangle',
-    name: 'Rectangle/Circle/etc',
+    name: 'Rectangle',
     shortcut: [['d'], ['r']],
     icon: '⧄',
     cursor: 'crosshair',
