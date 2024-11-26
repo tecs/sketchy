@@ -136,4 +136,15 @@ export default class Instance extends implement({
     this.engine.emit('instanceedited', this);
     this.engine.emit('scenechange');
   }
+
+  /**
+   * @param {number} angle
+   * @param {ReadonlyVec3} axis
+   */
+  rotate(angle, axis) {
+    this.Placement.rotate(angle, axis);
+    this.engine.emit('instancerotated', this, angle, axis);
+    this.engine.emit('instanceedited', this);
+    this.engine.emit('scenechange');
+  }
 }

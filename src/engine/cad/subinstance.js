@@ -201,6 +201,11 @@ export default class SubInstance extends /** @type {typeof Step<SubInstanceState
       this.getParent(instance)?.subInstance.scale(factor);
       this.#recalculateGlobalTrs(instance);
     });
+
+    engine.on('instancerotated', (instance, angle, axis) => {
+      this.getParent(instance)?.subInstance.rotate(angle, axis);
+      this.#recalculateGlobalTrs(instance);
+    });
   }
 
   #recompute() {
@@ -300,6 +305,15 @@ export default class SubInstance extends /** @type {typeof Step<SubInstanceState
    */
   scale(factor) {
     this.placement.scale(factor);
+    this.#placementChanged();
+  }
+
+  /**
+   * @param {number} angle
+   * @param {ReadonlyVec3} axis
+   */
+  rotate(angle, axis) {
+    this.placement.rotate(angle, axis);
     this.#placementChanged();
   }
 

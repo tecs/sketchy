@@ -22,6 +22,9 @@ export default (engine) => {
     const tool = engine.tools.selected;
     if (tool && 'value' in tool && tool?.value !== undefined) {
       switch (tool?.valueType) {
+        case 'angle':
+          measurementsInput.value = Properties.stringifyAngle(tool.value, 2);
+          break;
         case 'number':
           measurementsInput.value = Properties.stringifyNumber(tool.value, 2);
           break;
@@ -48,6 +51,11 @@ export default (engine) => {
     if (!('value' in tool) || tool.value === undefined || !tool.setValue || key !== 'Enter') return;
 
     switch (tool.valueType) {
+      case 'angle': {
+        const value = Properties.parseAngle(measurementsInput.value);
+        if (value) tool.setValue(value);
+        break;
+      }
       case 'number': {
         const value = Properties.parseNumber(measurementsInput.value);
         if (value) tool.setValue(value);

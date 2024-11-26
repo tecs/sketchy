@@ -72,16 +72,14 @@ export default class Placement extends implement({
                 if (vec3.length(normal) === 0) return;
 
                 mat4.rotate(this.trs, this.trs, -angle, axis);
-                mat4.rotate(this.trs, this.trs, angle, normal);
-                this.#recalculateAll();
+                this.rotate(angle, normal);
               },
             },
             Angle: {
               value: angle,
               type: 'angle',
               onEdit: (value) => {
-                mat4.rotate(this.trs, this.trs, value - angle, axis);
-                this.#recalculateAll();
+                this.rotate(value - angle, axis);
               },
             },
             Scale: {
@@ -152,6 +150,15 @@ export default class Placement extends implement({
    */
   scale(factor) {
     mat4.scale(this.trs, this.trs, factor);
+    this.#recalculateAll();
+  }
+
+  /**
+   * @param {number} angle
+   * @param {ReadonlyVec3} axis
+   */
+  rotate(angle, axis) {
+    mat4.rotate(this.trs, this.trs, angle, axis);
     this.#recalculateAll();
   }
 
