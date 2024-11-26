@@ -27,7 +27,7 @@ const { vec2, vec3 } = glMatrix;
 /** @typedef {Record<string, Record<string, PropertyData>>} PropertyDefinitions */
 /** @typedef {[property: PropertyData, name: string, category: string]} PropertyMapping */
 
-const RAD_TO_DEG = Math.PI / 180;
+const RAD_TO_DEG = 180 / Math.PI;
 
 export class Properties {
   /** @type {() => PropertyDefinitions} */
@@ -48,8 +48,8 @@ export class Properties {
   static ANGLE_UNITS = [
     { suffix: 'rad', toBase: 1, fromBase: 1 },
     { suffix: 'tau', toBase: 2, fromBase: 0.5 },
-    { suffix:   '°', toBase: RAD_TO_DEG, fromBase: 180 / Math.PI },
-    { suffix: 'deg', toBase: RAD_TO_DEG, fromBase: 180 / Math.PI },
+    { suffix:   '°', toBase: RAD_TO_DEG, fromBase: Math.PI / 180 },
+    { suffix: 'deg', toBase: RAD_TO_DEG, fromBase: Math.PI / 180 },
   ];
 
   /**
