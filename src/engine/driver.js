@@ -196,9 +196,11 @@ export default class Driver extends Base {
 
   /**
    * @param {5126 | 5121} type
+   * @param {number} [width]
+   * @param {number} [height]
    * @returns {WebGLFramebuffer | null}
    */
-  framebuffer(type) {
+  framebuffer(type, width = 1, height = 1) {
     const { ctx } = this;
 
     const texture = ctx.createTexture();
@@ -206,11 +208,11 @@ export default class Driver extends Base {
     ctx.texParameteri(ctx.TEXTURE_2D, ctx.TEXTURE_MIN_FILTER, ctx.LINEAR);
     ctx.texParameteri(ctx.TEXTURE_2D, ctx.TEXTURE_WRAP_S, ctx.CLAMP_TO_EDGE);
     ctx.texParameteri(ctx.TEXTURE_2D, ctx.TEXTURE_WRAP_T, ctx.CLAMP_TO_EDGE);
-    ctx.texImage2D(ctx.TEXTURE_2D, 0, ctx.RGBA, 1, 1, 0, ctx.RGBA, type, null);
+    ctx.texImage2D(ctx.TEXTURE_2D, 0, ctx.RGBA, width, height, 0, ctx.RGBA, type, null);
 
     const renderbuffer = ctx.createRenderbuffer();
     ctx.bindRenderbuffer(ctx.RENDERBUFFER, renderbuffer);
-    ctx.renderbufferStorage(ctx.RENDERBUFFER, ctx.DEPTH_COMPONENT16, 1, 1);
+    ctx.renderbufferStorage(ctx.RENDERBUFFER, ctx.DEPTH_COMPONENT16, width, height);
 
     const framebuffer = ctx.createFramebuffer();
     ctx.bindFramebuffer(ctx.FRAMEBUFFER, framebuffer);
