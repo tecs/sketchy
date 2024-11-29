@@ -245,7 +245,7 @@ export default class Scene extends Base {
   }
 
   /**
-   * @param {Readonly<Uint8Array>} id4u
+   * @param {Readonly<Uint8Array | Uint8ClampedArray>} id4u
    */
   hoverOver(id4u) {
     const id = Id.uuuuToInt(id4u);
@@ -261,7 +261,7 @@ export default class Scene extends Base {
   }
 
   /**
-   * @param {Readonly<Uint8Array>} id4u
+   * @param {Readonly<Uint8Array | Uint8ClampedArray>} id4u
    */
   hoverLine(id4u) {
     const id = Id.uuuuToInt(id4u);
@@ -271,7 +271,7 @@ export default class Scene extends Base {
   }
 
   /**
-   * @param {Readonly<Uint8Array>} id4u
+   * @param {Readonly<Uint8Array | Uint8ClampedArray>} id4u
    */
   hoverPoint(id4u) {
     const id = Id.uuuuToInt(id4u);
@@ -281,7 +281,7 @@ export default class Scene extends Base {
   }
 
   /**
-   * @param {Readonly<Uint8Array>} id4u
+   * @param {Readonly<Uint8Array | Uint8ClampedArray>} id4u
    */
   hoverConstraint(id4u) {
     if (this.hoveredLineIndex !== null || this.hoveredPointIndex !== null) return;

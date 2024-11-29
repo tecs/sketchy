@@ -36,7 +36,7 @@ export default class Id {
   }
 
   /**
-   * @param {Readonly<Uint8Array>} uuuu
+   * @param {Readonly<Uint8Array | Uint8ClampedArray>} uuuu
    * @returns {number}
    */
   static uuuuToInt(uuuu) {
