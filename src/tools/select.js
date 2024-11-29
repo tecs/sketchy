@@ -3,7 +3,7 @@ import SubInstance from '../engine/cad/subinstance.js';
 
 /** @type {(engine: Engine) => BaseTool} */
 export default (engine) => {
-  const { editor: { selection }, scene, input } = engine;
+  const { editor: { selection, temp }, scene, input } = engine;
   let lasso = false;
 
   /**
@@ -15,20 +15,41 @@ export default (engine) => {
     else selection.set(elements);
   };
 
+  /** @type {import("../engine/editor.js").Elements[]} */
+  let oldSelection = [];
+
   /** @type {BaseTool} */
   const select = {
     type: 'select',
     name: 'Select',
     shortcut: 'space',
     icon: '🮰',
+    active: false,
     start() {
+      if (!input.leftButton) return;
       lasso = false;
+      this.active = true;
     },
     update() {
-      if (input.leftButton) lasso = true;
+      if (!this.active) return;
+
+      if (lasso) {
+        selection.set(temp.elements);
+        if (input.ctrl) selection.toggle(oldSelection);
+        return;
+      }
+
+      oldSelection = selection.elements.slice();
+      lasso = true;
     },
     end(count = 1) {
-      if (lasso) return;
+      if (!this.active) return;
+      this.active = false;
+
+      if (lasso) {
+        lasso = false;
+        return;
+      }
 
       const {
         enteredInstance,
@@ -78,8 +99,12 @@ export default (engine) => {
       }
     },
     abort() {
-      if (engine.tools.selected !== this) return;
+      if (!this.active) return;
+      this.active = false;
+
       if (lasso) {
+        lasso = false;
+        selection.set(oldSelection);
         input.setButton(0, false, 1);
         return;
       }

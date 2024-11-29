@@ -145,8 +145,12 @@ export class Collection extends Base {
 }
 
 export default class Editor {
-  selection = new Collection();
-  edited = new Collection();
+  /** @type {Tuple<Collection, 3>} */
+  #collections = [new Collection(), new Collection(), new Collection()];
+
+  selection = this.#collections[0];
+  edited = this.#collections[1];
+  temp = this.#collections[2];
 
   /**
    * @param {Engine} engine
@@ -158,18 +162,17 @@ export default class Editor {
     engine.on('entityremoved', (entity) => {
       if (!(entity instanceof Instance)) return;
 
-      const deletedSelection = this.selection.getByType('instance')
-        .filter(({ instance }) => SubInstance.belongsTo(instance, entity));
-      this.selection.remove(deletedSelection);
-
-      const deletedActives = this.edited.getByType('instance')
-        .filter(({ instance }) => SubInstance.belongsTo(instance, entity));
-      this.edited.remove(deletedActives);
+      for (const collection of this.#collections) {
+        const deleted = collection.getByType('instance')
+          .filter(({ instance }) => SubInstance.belongsTo(instance, entity));
+        collection.remove(deleted);
+      }
     });
   }
 
   reset() {
-    this.selection.clear();
-    this.edited.clear();
+    for (const collection of this.#collections) {
+      collection.clear();
+    }
   }
 }
