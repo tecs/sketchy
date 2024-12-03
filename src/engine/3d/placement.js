@@ -7,7 +7,6 @@ const { vec3, mat4, quat } = glMatrix;
 // cached structures
 export const defaultTrs = /** @type {PlainMat4} */ (Object.freeze([...mat4.create()]));
 const tempToVec3 = vec3.create();
-const tempTranslateVec3 = vec3.create();
 const tempTransform = mat4.create();
 
 export default class Placement extends implement({
@@ -99,24 +98,12 @@ export default class Placement extends implement({
 
   /**
    * @param {vec3} out
-   * @param {ReadonlyVec3} globalRelativeCoords
-   * @param {ReadonlyMat4} inverseTrs
-   * @returns {vec3}
-   */
-  static toLocalRelativeCoords(out, globalRelativeCoords, inverseTrs) {
-    vec3.transformMat4(out, globalRelativeCoords, inverseTrs);
-    mat4.getTranslation(tempToVec3, inverseTrs);
-    return vec3.subtract(out, out, tempToVec3);
-  }
-
-  /**
-   * @param {vec3} out
-   * @param {ReadonlyVec3} localRelativeCoords
+   * @param {ReadonlyVec3} relativeCoords
    * @param {ReadonlyMat4} trs
    * @returns {vec3}
    */
-  static toGlobalRelativeCoords(out, localRelativeCoords, trs) {
-    vec3.transformMat4(out, localRelativeCoords, trs);
+  static toRelativeCords(out, relativeCoords, trs) {
+    vec3.transformMat4(out, relativeCoords, trs);
     mat4.getTranslation(tempToVec3, trs);
     return vec3.subtract(out, out, tempToVec3);
   }
@@ -179,14 +166,6 @@ export default class Placement extends implement({
   }
 
   /**
-   * @param {ReadonlyVec3} translation
-   */
-  translateGlobal(translation) {
-    this.toLocalRelativeCoords(tempTranslateVec3, translation);
-    this.translate(tempTranslateVec3);
-  }
-
-  /**
    * @param {mat4} out
    * @param {ReadonlyMat4} globalTransformation
    * @returns {mat4}
@@ -228,7 +207,7 @@ export default class Placement extends implement({
    * @returns {vec3}
    */
   toLocalRelativeCoords(out, globalRelativeCoords) {
-    return Placement.toLocalRelativeCoords(out, globalRelativeCoords, this.inverseTrs);
+    return Placement.toRelativeCords(out, globalRelativeCoords, this.inverseTrs);
   }
 
   /**
@@ -237,6 +216,6 @@ export default class Placement extends implement({
    * @returns {vec3}
    */
   toGlobalRelativeCoords(out, localRelativeCoords) {
-    return Placement.toGlobalRelativeCoords(out, localRelativeCoords, this.trs);
+    return Placement.toRelativeCords(out, localRelativeCoords, this.trs);
   }
 }

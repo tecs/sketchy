@@ -120,8 +120,8 @@ export default class Instance extends implement({
   /**
    * @param {ReadonlyVec3} translation
    */
-  translateGlobal(translation) {
-    this.Placement.translateGlobal(translation);
+  translate(translation) {
+    this.Placement.translate(translation);
     this.engine.emit('instancetranslated', this, translation);
     this.engine.emit('instanceedited', this);
     this.engine.emit('scenechange');

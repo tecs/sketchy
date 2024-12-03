@@ -76,14 +76,14 @@ export default (engine) => {
       vec3.normalize(translation, translation);
       vec3.scale(translation, translation, distance);
       vec3.subtract(diff, translation, diff);
+      Placement.toRelativeCords(diff, translation, transformation);
 
       for (const element of elements) {
         switch (element.type) {
           case 'instance':
-            element.instance.translateGlobal(diff);
+            element.instance.translate(diff);
             break;
           case 'line':
-            Placement.toLocalRelativeCoords(diff, translation, transformation);
             element.line.data[0] += diff[0];
             element.line.data[1] += diff[1];
             element.line.data[2] += diff[0];
@@ -91,7 +91,6 @@ export default (engine) => {
             element.sketch.update(lockedIndices);
             break;
           case 'point':
-            Placement.toLocalRelativeCoords(diff, translation, transformation);
             element.line.data[0 + element.offset] += diff[0];
             element.line.data[1 + element.offset] += diff[1];
             element.sketch.update(lockedIndices);
@@ -194,18 +193,18 @@ export default (engine) => {
 
       active.set(selection.elements);
 
-      vec3.transformMat4(origin, scene.hovered, transformation);
+      vec3.copy(origin, scene.hovered);
       emit('toolactive', move);
 
       historyAction.append(
         ({ elements, translation, lockedIndices }) => {
+          Placement.toRelativeCords(diff, translation, transformation);
           for (const element of elements) {
             switch (element.type) {
               case 'instance':
-                element.instance.translateGlobal(translation);
+                element.instance.translate(translation);
                 break;
               case 'line':
-                Placement.toLocalRelativeCoords(diff, translation, transformation);
                 element.line.data[0] += diff[0];
                 element.line.data[1] += diff[1];
                 element.line.data[2] += diff[0];
@@ -213,7 +212,6 @@ export default (engine) => {
                 element.sketch.update(lockedIndices);
                 break;
               case 'point':
-                Placement.toLocalRelativeCoords(diff, translation, transformation);
                 element.line.data[0 + element.offset] += diff[0];
                 element.line.data[1 + element.offset] += diff[1];
                 element.sketch.update(lockedIndices);
@@ -225,13 +223,13 @@ export default (engine) => {
         ({ elements, translation, lockedIndices }) => {
           const translationVecReverse = vec3.create();
           vec3.negate(translationVecReverse, translation);
+          Placement.toRelativeCords(diff, translation, transformation);
           for (const element of elements) {
             switch (element.type) {
               case 'instance':
-                element.instance.translateGlobal(translationVecReverse);
+                element.instance.translate(translationVecReverse);
                 break;
               case 'line':
-                Placement.toLocalRelativeCoords(diff, translation, transformation);
                 element.line.data[0] -= diff[0];
                 element.line.data[1] -= diff[1];
                 element.line.data[2] -= diff[0];
@@ -239,7 +237,6 @@ export default (engine) => {
                 element.sketch.update(lockedIndices);
                 break;
               case 'point':
-                Placement.toLocalRelativeCoords(diff, translation, transformation);
                 element.line.data[0 + element.offset] -= diff[0];
                 element.line.data[1 + element.offset] -= diff[1];
                 element.sketch.update(lockedIndices);
@@ -255,18 +252,17 @@ export default (engine) => {
 
       const { elements, translation, lockedIndices } = historyAction.data;
 
-      const old = vec3.clone(translation);
-      vec3.transformMat4(diff, scene.hovered, transformation);
-      vec3.subtract(translation, diff, origin);
-      vec3.subtract(diff, translation, old);
+      vec3.subtract(diff, scene.hovered, origin);
+      vec3.subtract(diff, diff, translation);
+      vec3.subtract(translation, scene.hovered, origin);
+      Placement.toRelativeCords(diff, diff, transformation);
 
       for (const element of elements) {
         switch (element.type) {
           case 'instance':
-            element.instance.translateGlobal(diff);
+            element.instance.translate(diff);
             break;
           case 'line':
-            Placement.toLocalRelativeCoords(diff, diff, transformation);
             element.line.data[0] += diff[0];
             element.line.data[1] += diff[1];
             element.line.data[2] += diff[0];
@@ -274,7 +270,6 @@ export default (engine) => {
             element.sketch.update(lockedIndices);
             break;
           case 'point':
-            Placement.toLocalRelativeCoords(diff, diff, transformation);
             element.line.data[0 + element.offset] += diff[0];
             element.line.data[1 + element.offset] += diff[1];
             element.sketch.update(lockedIndices);
