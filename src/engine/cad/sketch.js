@@ -696,8 +696,9 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
       this.#resizeModelBuffer('normal', 0);
       this.#resizeModelBuffer('color', 0);
     } else {
-      const [indices, vertices2D] = triangulate(lineVertices2D, lineIndices.map(i => i - this.offsets.lineIndex));
-      const vertices = transformFlatBuffer(vertices2D, this.fromSketch);
+      const faces = triangulate(lineVertices2D, lineIndices.map(i => i - this.offsets.lineIndex));
+      const indices = faces.flatMap(face => face[0]);
+      const vertices = transformFlatBuffer(faces.flatMap(face => face[1]), this.fromSketch);
 
       const normals = new Uint8Array(vertices.length);
       for (let i = 0; i < normals.length; i += 3) {

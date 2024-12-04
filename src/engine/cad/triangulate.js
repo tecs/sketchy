@@ -1,6 +1,7 @@
 const { glMatrix: { equals }, vec2 } = glMatrix;
 
 /** @typedef {[i1: number, i2: number, angle: number]} Line */
+/** @typedef {[indices: number[], vertices: number[]]} Face */
 /**
  * @typedef Loop
  * @property {number[]} indices
@@ -550,7 +551,7 @@ const setHoles = (triangulations, uniqueVertices) => {
 /**
  * @param {Readonly<number[]>} vertices
  * @param {Readonly<number[]>} lineIndices A-B,B-C,C-D,...
- * @returns {[indices: number[], vertices: number[]]}
+ * @returns {Face[]}
  */
 export default (vertices, lineIndices) => {
   const lines = /** @type {Line[]} */ ([]);
@@ -608,5 +609,23 @@ export default (vertices, lineIndices) => {
 
   setHoles(triangulations, uniquePoints);
 
-  return [triangulations.flatMap(({ meshIndices }) => meshIndices), flatVertices];
+  const faces = /** @type {Face[]} */ ([]);
+  let startingIndex = 0;
+  for (const { meshIndices } of triangulations) {
+    const face = /** @type {Face} */ ([[], []]);
+    const indexMap = /** @type {number[]} */ ([]);
+    for (const index of meshIndices) {
+      let newIndex = indexMap.indexOf(index);
+      if (newIndex === -1) {
+        newIndex = indexMap.length;
+        indexMap.push(index);
+        face[1].push(...uniquePoints[index]);
+      }
+      face[0].push(newIndex + startingIndex);
+    }
+    faces.push(face);
+    startingIndex += indexMap.length;
+  }
+
+  return faces;
 };
