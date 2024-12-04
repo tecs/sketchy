@@ -22,7 +22,7 @@ const populateChildren = (instances, instancesToFindChildrenOf = instances) => {
 /** @type {RenderingPass} */
 export default (engine) => {
   const {
-    driver: { ctx, makeProgram, vert, frag, framebuffer, UNSIGNED_INDEX_TYPE, UNSIGNED_INDEX_SIZE },
+    driver: { ctx, makeProgram, vert, frag, framebuffer },
     camera,
     editor,
     entities,
@@ -32,8 +32,8 @@ export default (engine) => {
   } = engine;
 
   const program = makeProgram(
-    vert`
-      attribute vec4 a_position;
+    vert`#version 300 es
+      in vec4 a_position;
 
       uniform mat4 u_trs;
       uniform mat4 u_viewProjection;
@@ -45,13 +45,15 @@ export default (engine) => {
         gl_PointSize = 10.0;
       }
     `,
-    frag`
+    frag`#version 300 es
       precision mediump float;
 
       uniform vec4 u_instanceId;
 
+      out vec4 outId;
+
       void main() {
-        gl_FragColor = u_instanceId;
+        outId = u_instanceId;
       }
     `,
   );
@@ -131,7 +133,7 @@ export default (engine) => {
           ctx.uniformMatrix4fv(program.uLoc.u_trs, false, instance.Placement.trs);
           ctx.uniform4fv(program.uLoc.u_instanceId, instance.Id.vec4);
 
-          ctx.drawElements(ctx.TRIANGLES, model.data.index.length, UNSIGNED_INDEX_TYPE, 0);
+          ctx.drawElements(ctx.TRIANGLES, model.data.index.length, ctx.UNSIGNED_INT, 0);
         }
 
         // Lines
@@ -149,7 +151,7 @@ export default (engine) => {
           ctx.uniformMatrix4fv(program.uLoc.u_trs, false, instance.Placement.trs);
           ctx.uniform4fv(program.uLoc.u_instanceId, instance.Id.vec4);
 
-          ctx.drawElements(ctx.LINES, model.data.lineIndex.length, UNSIGNED_INDEX_TYPE, 0);
+          ctx.drawElements(ctx.LINES, model.data.lineIndex.length, ctx.UNSIGNED_INT, 0);
         }
         ctx.lineWidth(1);
 
@@ -217,7 +219,7 @@ export default (engine) => {
       ctx.bindBuffer(ctx.ELEMENT_ARRAY_BUFFER, model.buffer.index);
       ctx.uniform4fv(program.uLoc.u_instanceId, Id.intToVec4(0));
 
-      ctx.drawElements(ctx.TRIANGLES, model.data.index.length, UNSIGNED_INDEX_TYPE, 0);
+      ctx.drawElements(ctx.TRIANGLES, model.data.index.length, ctx.UNSIGNED_INT, 0);
 
       // Lines
       ctx.bindBuffer(ctx.ARRAY_BUFFER, model.buffer.lineVertex);
@@ -229,7 +231,7 @@ export default (engine) => {
       ctx.bindBuffer(ctx.ELEMENT_ARRAY_BUFFER, model.buffer.lineIndex);
 
       ctx.lineWidth(5);
-      ctx.drawElements(ctx.LINES, model.data.lineIndex.length, UNSIGNED_INDEX_TYPE, 0);
+      ctx.drawElements(ctx.LINES, model.data.lineIndex.length, ctx.UNSIGNED_INT, 0);
       ctx.lineWidth(1);
 
       // Points
@@ -268,7 +270,7 @@ export default (engine) => {
       ctx.bindBuffer(ctx.ELEMENT_ARRAY_BUFFER, model.buffer.index);
       ctx.uniform4fv(program.uLoc.u_instanceId, Id.intToVec4(0));
 
-      ctx.drawElements(ctx.TRIANGLES, model.data.index.length, UNSIGNED_INDEX_TYPE, 0);
+      ctx.drawElements(ctx.TRIANGLES, model.data.index.length, ctx.UNSIGNED_INT, 0);
 
       // Lines
       ctx.uniform1f(program.uLoc.u_offset, 1);
@@ -280,7 +282,7 @@ export default (engine) => {
         // Prevent self-picking when editing
         if (!activeLines.includes(i)) {
           ctx.uniform4fv(program.uLoc.u_instanceId, Id.intToVec4(i + 1));
-          ctx.drawElements(ctx.LINES, 2, UNSIGNED_INDEX_TYPE, i * UNSIGNED_INDEX_SIZE);
+          ctx.drawElements(ctx.LINES, 2, ctx.UNSIGNED_INT, i * 8);
         }
       }
       ctx.lineWidth(1);

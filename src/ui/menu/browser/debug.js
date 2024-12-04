@@ -96,7 +96,6 @@ export default (engine, tabs) => {
     'Instances': () => [entities.values(Body).reduce((sum, b) => sum + b.instances.length, 0)],
     'Triangles': () => [entities.values(Body).reduce((sum, b) => sum + (b.instances.length * (b.currentModel?.data.index.length ?? 0)) / 3, 0)],
     'Lines': () => [entities.values(Body).reduce((sum, b) => sum + (b.instances.length * (b.currentModel?.data.lineIndex.length ?? 0)) / 2, 0)],
-    'Supports UInt32 indexes': () => [engine.driver.supportsUIntIndexes ? 'yes' : 'no'],
   }).map(rowFn('Driver', 2, tab));
 
   const fns = [coordsFns, editorFns, toolFns, driverFns].flat();

@@ -3,21 +3,21 @@ const { vec3 } = glMatrix;
 /** @type {RenderingPass} */
 export default (engine) => {
   const {
-    driver: { ctx, makeProgram, vert, frag, framebuffer, UNSIGNED_INDEX_TYPE },
+    driver: { ctx, makeProgram, vert, frag, framebuffer },
     camera,
     scene,
     tools,
   } = engine;
 
   const program = makeProgram(
-    vert`
-      attribute vec4 a_position;
+    vert`#version 300 es
+      in vec4 a_position;
 
       uniform mat4 u_trs;
       uniform mat4 u_viewProjection;
       uniform mat4 u_frustum;
 
-      varying vec4 v_coord;
+      out vec4 v_coord;
 
       void main() {
         v_coord = u_trs * a_position;
@@ -25,13 +25,15 @@ export default (engine) => {
         gl_PointSize = 10.0;
       }
     `,
-    frag`
+    frag`#version 300 es
       precision mediump float;
 
-      varying vec4 v_coord;
+      in vec4 v_coord;
+
+      out vec4 outCoords;
 
       void main() {
-        gl_FragColor = v_coord;
+        outCoords = v_coord;
       }
     `,
   );
@@ -96,7 +98,7 @@ export default (engine) => {
       ctx.vertexAttribPointer(program.aLoc.a_position, 3, ctx.FLOAT, false, 0, 0);
 
       ctx.bindBuffer(ctx.ELEMENT_ARRAY_BUFFER, model.buffer.index);
-      ctx.drawElements(ctx.TRIANGLES, model.data.index.length, UNSIGNED_INDEX_TYPE, 0);
+      ctx.drawElements(ctx.TRIANGLES, model.data.index.length, ctx.UNSIGNED_INT, 0);
 
       // Lines
       ctx.enableVertexAttribArray(program.aLoc.a_position);
@@ -105,13 +107,12 @@ export default (engine) => {
 
       ctx.bindBuffer(ctx.ELEMENT_ARRAY_BUFFER, model.buffer.lineIndex);
       ctx.lineWidth(5);
-      ctx.drawElements(ctx.LINES, model.data.lineIndex.length, UNSIGNED_INDEX_TYPE, 0);
+      ctx.drawElements(ctx.LINES, model.data.lineIndex.length, ctx.UNSIGNED_INT, 0);
       ctx.lineWidth(1);
 
       // Points
       ctx.drawArrays(ctx.POINTS, 0, model.data.lineVertex.length / 3);
 
-      // requires OES_texture_float
       ctx.readPixels(0, 0, 1, 1, ctx.RGBA, ctx.FLOAT, coords);
 
       scene.hover(coords);

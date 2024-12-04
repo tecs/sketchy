@@ -3,11 +3,11 @@ import BoundingBox from './bounding-box.js';
 
 /**
  * @typedef ModelData
- * @property {Uint16Array|Uint32Array} index
+ * @property {Uint32Array} index
  * @property {Float32Array} vertex
  * @property {Float32Array} normal
  * @property {Uint8Array} color
- * @property {Uint16Array|Uint32Array} lineIndex
+ * @property {Uint32Array} lineIndex
  * @property {Float32Array} lineVertex
  */
 
@@ -19,7 +19,7 @@ export default class Model extends Base.implement({ BoundingBox }) {
   /** @type {Engine["driver"]} */
   #driver;
 
-  /** @type {WebGLRenderingContext} */
+  /** @type {WebGL2RenderingContext} */
   #ctx;
 
   /** @type {import("../cad/body.js").default} */
@@ -65,8 +65,8 @@ export default class Model extends Base.implement({ BoundingBox }) {
       vertex: new Float32Array(data?.vertex ?? []),
       normal: new Float32Array(data?.normal ?? []),
       color: new Uint8Array(data?.color ?? []),
-      index: new this.#driver.UintIndexArray(data?.index ?? []),
-      lineIndex: new this.#driver.UintIndexArray(data?.lineIndex ?? []),
+      index: new Uint32Array(data?.index ?? []),
+      lineIndex: new Uint32Array(data?.lineIndex ?? []),
       lineVertex: new Float32Array(data?.lineVertex ?? []),
     };
 
@@ -118,7 +118,7 @@ export default class Model extends Base.implement({ BoundingBox }) {
    */
   update(...parts) {
     for (const part of parts) {
-      const isIndex = this.data[part] instanceof Uint16Array || this.data[part] instanceof Uint32Array;
+      const isIndex = this.data[part] instanceof Uint32Array;
       const BUFFER_TYPE = isIndex ? this.#ctx.ELEMENT_ARRAY_BUFFER : this.#ctx.ARRAY_BUFFER;
       this.#ctx.bindBuffer(BUFFER_TYPE, this.buffer[part]);
       this.#ctx.bufferData(BUFFER_TYPE, this.data[part], this.#ctx.STATIC_DRAW);

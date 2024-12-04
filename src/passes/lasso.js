@@ -3,20 +3,22 @@ const { vec3 } = glMatrix;
 /** @type {RenderingPass} */
 export default ({ driver: { ctx, makeProgram, vert, frag, buffer }, input, camera, tools }) => {
   const program = makeProgram(
-    vert`
-      attribute vec4 a_position;
+    vert`#version 300 es
+      in vec4 a_position;
 
       void main() {
         gl_Position = a_position;
       }
     `,
-    frag`
+    frag`#version 300 es
       precision mediump float;
 
       uniform vec4 u_color;
 
+      out vec4 outColor;
+
       void main() {
-        gl_FragColor = u_color;
+        outColor = u_color;
       }
     `,
   );
@@ -28,8 +30,8 @@ export default ({ driver: { ctx, makeProgram, vert, frag, buffer }, input, camer
   const oneOneZero = vec3.fromValues(1, -1, 0);
 
   const positions = new Float32Array(8);
-  const indices = new Uint16Array([0, 1, 2, 0, 2, 3]);
-  const lineIndices = new Uint16Array([0, 1, 1, 2, 2, 3, 3, 0]);
+  const indices = new Uint32Array([0, 1, 2, 0, 2, 3]);
+  const lineIndices = new Uint32Array([0, 1, 1, 2, 2, 3, 3, 0]);
 
   const indexBuffer = buffer(indices);
   const lineIndexBuffer = buffer(lineIndices);
@@ -64,13 +66,13 @@ export default ({ driver: { ctx, makeProgram, vert, frag, buffer }, input, camer
       ctx.uniform4f(program.uLoc.u_color, 0, 0, 0.3, 0.3);
 
       ctx.bindBuffer(ctx.ELEMENT_ARRAY_BUFFER, indexBuffer);
-      ctx.drawElements(ctx.TRIANGLES, indices.length, ctx.UNSIGNED_SHORT, 0);
+      ctx.drawElements(ctx.TRIANGLES, indices.length, ctx.UNSIGNED_INT, 0);
 
       ctx.lineWidth(2);
       ctx.uniform4f(program.uLoc.u_color, 0, 0, 0.3, 0.7);
 
       ctx.bindBuffer(ctx.ELEMENT_ARRAY_BUFFER, lineIndexBuffer);
-      ctx.drawElements(ctx.LINES, lineIndices.length, ctx.UNSIGNED_SHORT, 0);
+      ctx.drawElements(ctx.LINES, lineIndices.length, ctx.UNSIGNED_INT, 0);
 
       ctx.disable(ctx.BLEND);
       ctx.enable(ctx.DEPTH_TEST);

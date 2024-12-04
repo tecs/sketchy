@@ -146,11 +146,11 @@ const calculateMarkerBounds = (out, p1, p2, charWidth, direction) => {
 export default (engine) => {
   const {driver, camera, scene, editor: { selection } } = engine;
 
-  const { ctx, makeProgram, vert, frag, buffer, framebuffer, UNSIGNED_INDEX_TYPE, UintIndexArray } = driver;
+  const { ctx, makeProgram, vert, frag, buffer, framebuffer } = driver;
 
   const program = makeProgram(
-    vert`
-      attribute vec4 a_position;
+    vert`#version 300 es
+      in vec4 a_position;
 
       uniform mat4 u_mvp;
 
@@ -163,13 +163,15 @@ export default (engine) => {
         gl_Position.z -= 0.00001;
       }
     `,
-    frag`
+    frag`#version 300 es
       precision mediump float;
 
       uniform vec4 u_color;
 
+      out vec4 outColor;
+
       void main() {
-        gl_FragColor = u_color;
+        outColor = u_color;
       }
     `,
   );
@@ -225,7 +227,7 @@ export default (engine) => {
 
   const fb = framebuffer(ctx.UNSIGNED_BYTE);
 
-  const indexBuffer = buffer(new UintIndexArray([0, 1, 1, 2, 1, 3, 1, 4, 5, 6, 6, 7, 6, 8, 6, 9]));
+  const indexBuffer = buffer(new Uint32Array([0, 1, 1, 2, 1, 3, 1, 4, 5, 6, 6, 7, 6, 8, 6, 9]));
   const vertex = new Float32Array(20);
   const vertexBuffer = ctx.createBuffer();
 
@@ -293,7 +295,7 @@ export default (engine) => {
             labels.push([label, mid, labelColor, id, labelScaling]);
 
             ctx.bufferData(ctx.ARRAY_BUFFER, vertex, ctx.DYNAMIC_DRAW);
-            ctx.drawElements(ctx.LINES, 16, UNSIGNED_INDEX_TYPE, 0);
+            ctx.drawElements(ctx.LINES, 16, ctx.UNSIGNED_INT, 0);
             break;
           }
           case 'height': {
@@ -304,7 +306,7 @@ export default (engine) => {
             labels.push([label, mid, labelColor, id, labelScaling]);
 
             ctx.bufferData(ctx.ARRAY_BUFFER, vertex, ctx.DYNAMIC_DRAW);
-            ctx.drawElements(ctx.LINES, 16, UNSIGNED_INDEX_TYPE, 0);
+            ctx.drawElements(ctx.LINES, 16, ctx.UNSIGNED_INT, 0);
             break;
           }
           case 'distance': {
@@ -315,7 +317,7 @@ export default (engine) => {
             labels.push([label, mid, labelColor, id, labelScaling]);
 
             ctx.bufferData(ctx.ARRAY_BUFFER, vertex, ctx.DYNAMIC_DRAW);
-            ctx.drawElements(ctx.LINES, 16, UNSIGNED_INDEX_TYPE, 0);
+            ctx.drawElements(ctx.LINES, 16, ctx.UNSIGNED_INT, 0);
             break;
           }
           case 'equal': {

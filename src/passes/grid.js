@@ -3,16 +3,16 @@ const { mat4 } = glMatrix;
 /** @type {RenderingPass} */
 export default (engine) => {
   const {
-    driver: { ctx, makeProgram, vert, frag, buffer, UintIndexArray, UNSIGNED_INDEX_TYPE },
+    driver: { ctx, makeProgram, vert, frag, buffer },
     camera,
     scene,
   } = engine;
 
   const program = makeProgram(
-    vert`
+    vert`#version 300 es
       precision mediump float;
 
-      attribute vec4 a_position;
+      in vec4 a_position;
 
       uniform mat4 u_matrix;
 
@@ -20,11 +20,13 @@ export default (engine) => {
         gl_Position = u_matrix * a_position;
       }
     `,
-    frag`
+    frag`#version 300 es
       precision mediump float;
 
+      out vec4 outColor;
+
       void main() {
-        gl_FragColor = vec4(0, 0, 0, 1);
+        outColor = vec4(0, 0, 0, 1);
       }
     `,
   );
@@ -40,7 +42,7 @@ export default (engine) => {
       );
     }),
   );
-  const indices = new UintIndexArray(positions.length / 3).map((_, i) => i);
+  const indices = new Uint32Array(positions.length / 3).map((_, i) => i);
 
   const positionBuffer = buffer(positions);
   const indicesBuffer = buffer(indices);
@@ -70,7 +72,7 @@ export default (engine) => {
       ctx.uniformMatrix4fv(program.uLoc.u_matrix, false, mvp);
 
       ctx.lineWidth(1);
-      ctx.drawElements(ctx.LINES, indices.length, UNSIGNED_INDEX_TYPE, 0);
+      ctx.drawElements(ctx.LINES, indices.length, ctx.UNSIGNED_INT, 0);
     },
   };
 };

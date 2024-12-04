@@ -10,15 +10,15 @@ export default (engine) => {
   } = engine;
 
   const program = makeProgram(
-    vert`
-      attribute vec4 a_position;
+    vert`#version 300 es
+      in vec4 a_position;
 
       uniform mat4 u_trs;
       uniform mat4 u_viewProjection;
       uniform float u_isSelected;
       uniform float u_isHovered;
 
-      varying vec4 v_color;
+      out vec4 v_color;
 
       void main() {
         gl_Position = u_viewProjection * u_trs * a_position;
@@ -32,13 +32,15 @@ export default (engine) => {
         gl_PointSize = 5.0 + u_isHovered * 5.0;
       }
     `,
-    frag`
+    frag`#version 300 es
       precision mediump float;
 
-      varying vec4 v_color;
+      in vec4 v_color;
+
+      out vec4 outColor;
 
       void main() {
-        gl_FragColor = v_color;
+        outColor = v_color;
       }
     `,
   );

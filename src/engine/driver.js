@@ -10,7 +10,7 @@ const { vec3 } = glMatrix;
 /**
  * @typedef Shader
  * @property {WebGLShader} shader
- * @property {string[][]} vars
+ * @property {["in" | "uniform", string, string][]} vars
  */
 
 /**
@@ -25,23 +25,11 @@ export default class Driver extends Base {
   /** @type {Engine} */
   #engine;
 
-  /** @type {WebGLRenderingContext} */
+  /** @type {WebGL2RenderingContext} */
   ctx;
 
   /** @type {HTMLCanvasElement} */
   canvas;
-
-  /** @type {boolean} */
-  supportsUIntIndexes;
-
-  /** @type {Uint16ArrayConstructor|Uint32ArrayConstructor} */
-  UintIndexArray;
-
-  /** @type {5125 | 5123} */
-  UNSIGNED_INDEX_TYPE;
-
-  /** @type {4 | 8} */
-  UNSIGNED_INDEX_SIZE;
 
   /**
    * @param {Engine} engine
@@ -55,24 +43,19 @@ export default class Driver extends Base {
     this.#engine = engine;
     this.canvas = canvas;
 
-    const ctx = canvas.getContext('webgl');
+    const ctx = canvas.getContext('webgl2');
     if (!ctx) {
-      throw new Error('WebGL not supported');
+      throw new Error('WebGL2 not supported');
     }
     this.ctx = ctx;
-
-    if (!ctx.getExtension('OES_texture_float')) {
-      throw new Error('Floating point extension "OES_texture_float" is not supported');
+    if (!ctx.getExtension('EXT_color_buffer_float')) {
+      throw new Error('Floating point extension "EXT_color_buffer_float" is not supported');
     }
-    this.supportsUIntIndexes = !!ctx.getExtension('OES_element_index_uint');
-    this.UintIndexArray = this.supportsUIntIndexes ? Uint32Array : Uint16Array;
-    this.UNSIGNED_INDEX_TYPE = this.supportsUIntIndexes ? ctx.UNSIGNED_INT : ctx.UNSIGNED_SHORT;
-    this.UNSIGNED_INDEX_SIZE = this.supportsUIntIndexes ? 8 : 4;
   }
 
   /**
    * @param {string} source
-   * @param {number} type
+   * @param {35632 | 35633} type
    * @returns {Shader}
    */
   #compileShader(source, type) {
@@ -106,9 +89,10 @@ export default class Driver extends Base {
       }
     }
 
-    const vars = cleanSource.replace(/\s+/g, ' ').trim().replace(/;\s+/g, ';').split(';')
+    const vars = /** @type {Shader["vars"]} */ (cleanSource.replace(/^#version.+/, '').replace(/\s+/g, ' ').trim().replace(/;\s+/g, ';').split(';')
       .map(row => row.split(' '))
-      .filter(row => row.length === 3 && ['attribute', 'uniform'].includes(row[0]));
+      .filter(row => row.length === 3)
+      .filter(([kind]) => kind === 'uniform' || (kind === 'in' && type === this.ctx.VERTEX_SHADER)));
 
     this.ctx.shaderSource(shader, source.trim());
     this.ctx.compileShader(shader);
@@ -130,7 +114,7 @@ export default class Driver extends Base {
     if (!program) {
       throw new Error('Cannot create a new program');
     }
-    /** @type {string[][]} */
+    /** @type {Shader["vars"]} */
     const locs = [];
     for (const { shader, vars } of shaders) {
       this.ctx.attachShader(program, shader);
@@ -141,9 +125,9 @@ export default class Driver extends Base {
     const aLoc = /** @type {AttributeLocationMap} */ ({});
     const uLoc = /** @type {UniformLocationMap} */ ({});
 
-    for (const [type,, name] of locs) {
-      switch (type) {
-        case 'attribute':
+    for (const [kind,, name] of locs) {
+      switch (kind) {
+        case 'in':
           aLoc[name] = this.ctx.getAttribLocation(program, name);
           break;
         case 'uniform':
@@ -178,15 +162,13 @@ export default class Driver extends Base {
   }
 
   /**
-   * @param {Float32Array | Uint8Array | InstanceType<Driver["UintIndexArray"]>} data
+   * @param {Float32Array | Uint8Array | Uint32Array} data
    * @param {35040 | 35044 | 35048} usage
    * @returns {WebGLBuffer | null}
    */
   buffer(data, usage = this.ctx.STATIC_DRAW) {
     const { ctx } = this;
-    const type = data instanceof Float32Array || data instanceof Uint8Array
-      ? ctx.ARRAY_BUFFER
-      : ctx.ELEMENT_ARRAY_BUFFER;
+    const type = data instanceof Uint32Array ? ctx.ELEMENT_ARRAY_BUFFER : ctx.ARRAY_BUFFER;
 
     const buffer = ctx.createBuffer();
     ctx.bindBuffer(type, buffer);
@@ -203,12 +185,15 @@ export default class Driver extends Base {
   framebuffer(type, width = 1, height = 1) {
     const { ctx } = this;
 
+    // RGBA32F requires EXT_color_buffer_float
+    const format = type === ctx.FLOAT ? ctx.RGBA32F : ctx.RGBA;
+
     const texture = ctx.createTexture();
     ctx.bindTexture(ctx.TEXTURE_2D, texture);
     ctx.texParameteri(ctx.TEXTURE_2D, ctx.TEXTURE_MIN_FILTER, ctx.LINEAR);
     ctx.texParameteri(ctx.TEXTURE_2D, ctx.TEXTURE_WRAP_S, ctx.CLAMP_TO_EDGE);
     ctx.texParameteri(ctx.TEXTURE_2D, ctx.TEXTURE_WRAP_T, ctx.CLAMP_TO_EDGE);
-    ctx.texImage2D(ctx.TEXTURE_2D, 0, ctx.RGBA, width, height, 0, ctx.RGBA, type, null);
+    ctx.texImage2D(ctx.TEXTURE_2D, 0, format, width, height, 0, ctx.RGBA, type, null);
 
     const renderbuffer = ctx.createRenderbuffer();
     ctx.bindRenderbuffer(ctx.RENDERBUFFER, renderbuffer);

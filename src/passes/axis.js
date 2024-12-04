@@ -9,16 +9,16 @@ export default (engine) => {
   } = engine;
 
   const program = makeProgram(
-    vert`
+    vert`#version 300 es
       precision mediump float;
 
-      attribute vec4 a_position;
-      attribute vec3 a_color;
+      in vec4 a_position;
+      in vec3 a_color;
 
       uniform mat4 u_matrix;
 
-      varying vec3 v_color;
-      varying float v_distance;
+      out vec3 v_color;
+      out float v_distance;
 
       void main() {
         gl_Position = u_matrix * a_position;
@@ -27,20 +27,22 @@ export default (engine) => {
         v_distance = a_position.x + a_position.y + a_position.z;
       }
     `,
-    frag`
+    frag`#version 300 es
       precision mediump float;
 
-      varying vec3 v_color;
-      varying float v_distance;
+      in vec3 v_color;
+      in float v_distance;
 
       uniform vec3 u_origin;
+
+      out vec4 outColor;
 
       void main() {
         vec2 centeredCoord = gl_FragCoord.xy - u_origin.xy;
         float isSolid = step(0.0, v_distance);
         float field = sin(length(centeredCoord));
         float dotField = step(0.0, field) * smoothstep(0.0, 0.1, field) * 0.8;
-        gl_FragColor = vec4(v_color, isSolid + (1.0 - isSolid) * dotField);
+        outColor = vec4(v_color, isSolid + (1.0 - isSolid) * dotField);
       }
     `,
   );

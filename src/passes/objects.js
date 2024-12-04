@@ -6,7 +6,7 @@ const { mat4 } = glMatrix;
 /** @type {RenderingPass} */
 export default (engine) => {
   const {
-    driver: { ctx, makeProgram, vert, frag, UNSIGNED_INDEX_TYPE },
+    driver: { ctx, makeProgram, vert, frag },
     camera,
     editor: { selection },
     entities,
@@ -14,10 +14,10 @@ export default (engine) => {
   } = engine;
 
   const program = makeProgram(
-    vert`
-      attribute vec4 a_position;
-      attribute vec4 a_normal;
-      attribute vec3 a_color;
+    vert`#version 300 es
+      in vec4 a_position;
+      in vec4 a_normal;
+      in vec3 a_color;
 
       uniform mat4 u_trs;
       uniform mat4 u_viewProjection;
@@ -25,7 +25,7 @@ export default (engine) => {
       uniform float u_isSelected;
       uniform float u_isInShadow;
 
-      varying vec4 v_color;
+      out vec4 v_color;
 
       void main() {
         gl_Position = u_viewProjection * u_trs * a_position;
@@ -47,13 +47,15 @@ export default (engine) => {
         v_color.rgb += vec3(0.1 * u_isSelected);
       }
     `,
-    frag`
+    frag`#version 300 es
       precision mediump float;
 
-      varying vec4 v_color;
+      in vec4 v_color;
+
+      out vec4 outColor;
 
       void main() {
-        gl_FragColor = v_color;
+        outColor = v_color;
       }
     `,
   );
@@ -98,7 +100,7 @@ export default (engine) => {
           mat4.invert(normalMvp, normalMvp);
           ctx.uniformMatrix4fv(program.uLoc.u_normalMvp, false, normalMvp);
 
-          ctx.drawElements(ctx.TRIANGLES, model.data.index.length, UNSIGNED_INDEX_TYPE, 0);
+          ctx.drawElements(ctx.TRIANGLES, model.data.index.length, ctx.UNSIGNED_INT, 0);
         }
       }
     },

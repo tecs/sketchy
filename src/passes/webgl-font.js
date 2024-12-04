@@ -97,13 +97,13 @@ export default class Font {
     this.texture = driver.ctx.createTexture();
 
     this.#charBuffer = driver.buffer(new Float32Array([-0.5, 0.5, 0.5, 0.5, -0.5, -0.5, 0.5, -0.5]));
-    this.#charIndex = driver.buffer(new Uint16Array([0, 1, 2, 1, 2, 3]));
+    this.#charIndex = driver.buffer(new Uint32Array([0, 1, 2, 1, 2, 3]));
     this.#texBuffer = driver.buffer(new Float32Array([0, 0, 1, 0, 0, 1, 1, 1]));
 
     this.program = driver.makeProgram(
-      driver.vert`
-        attribute vec2 a_position;
-        attribute vec2 a_coord;
+      driver.vert`#version 300 es
+        in vec2 a_position;
+        in vec2 a_coord;
 
         uniform vec2 u_scale;
         uniform vec2 u_offset;
@@ -112,7 +112,7 @@ export default class Font {
         uniform mat4 u_mvp;
         uniform float u_distance;
 
-        varying vec2 v_textCoord;
+        out vec2 v_textCoord;
 
         void main() {
           vec2 pos = u_scale * (a_position + u_offset);
@@ -125,19 +125,21 @@ export default class Font {
           v_textCoord = a_coord + u_textOffset;
         }
       `,
-      driver.frag`
+      driver.frag`#version 300 es
         precision mediump float;
+
+        in vec2 v_textCoord;
 
         uniform sampler2D u_texture;
         uniform vec4 u_color;
         uniform float u_alias;
 
-        varying vec2 v_textCoord;
+        out vec4 outColor;
 
         void main() {
-          float alpha = texture2D(u_texture, v_textCoord).a;
+          float alpha = texture(u_texture, v_textCoord).a;
           alpha = u_alias * alpha + (1.0 - u_alias) * ceil(alpha);
-          gl_FragColor = u_color * alpha;
+          outColor = u_color * alpha;
         }
       `,
     );
@@ -222,7 +224,7 @@ export default class Font {
       const c = this.#charMap[text[o]] ?? 0;
       ctx.uniform2fv(program.uLoc.u_textOffset, this.#texCoords.subarray(c, c + 2));
 
-      ctx.drawElements(ctx.TRIANGLES, 6, ctx.UNSIGNED_SHORT, 0);
+      ctx.drawElements(ctx.TRIANGLES, 6, ctx.UNSIGNED_INT, 0);
     }
   }
 

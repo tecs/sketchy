@@ -4,7 +4,7 @@ import SubInstance from '../engine/cad/subinstance.js';
 /** @type {RenderingPass} */
 export default (engine) => {
   const {
-    driver: { ctx, makeProgram, vert, frag, buffer, UintIndexArray, UNSIGNED_INDEX_TYPE, UNSIGNED_INDEX_SIZE },
+    driver: { ctx, makeProgram, vert, frag, buffer },
     camera,
     editor: { selection },
     entities,
@@ -12,8 +12,8 @@ export default (engine) => {
   } = engine;
 
   const program = makeProgram(
-    vert`
-      attribute vec4 a_position;
+    vert`#version 300 es
+      in vec4 a_position;
 
       uniform mat4 u_trs;
       uniform mat4 u_viewProjection;
@@ -21,7 +21,7 @@ export default (engine) => {
       uniform float u_isInShadow;
       uniform float u_isHovered;
 
-      varying vec4 v_color;
+      out vec4 v_color;
 
       void main() {
         gl_Position = u_viewProjection * u_trs * a_position;
@@ -37,18 +37,19 @@ export default (engine) => {
         gl_Position.z -= 0.00001;
       }
     `,
-    frag`
+    frag`#version 300 es
       precision mediump float;
 
-      varying vec4 v_color;
+      in vec4 v_color;
+      out vec4 outColor;
 
       void main() {
-        gl_FragColor = v_color;
+        outColor = v_color;
       }
     `,
   );
 
-  const boundingBoxIndexBuffer = buffer(new UintIndexArray([
+  const boundingBoxIndexBuffer = buffer(new Uint32Array([
     // Bottom
     0, 1, // BFL - BRL
     1, 2, // BRL - BRR
@@ -99,19 +100,19 @@ export default (engine) => {
           if (hoveredIndex !== null) {
             ctx.uniform1f(program.uLoc.u_isHovered, 1);
             ctx.lineWidth(5);
-            ctx.drawElements(ctx.LINES, 2, UNSIGNED_INDEX_TYPE, hoveredIndex * UNSIGNED_INDEX_SIZE);
+            ctx.drawElements(ctx.LINES, 2, ctx.UNSIGNED_INT, hoveredIndex * 8);
             ctx.uniform1f(program.uLoc.u_isHovered, 0);
           }
 
           ctx.lineWidth(1 + isSelected);
-          ctx.drawElements(ctx.LINES, model.data.lineIndex.length, UNSIGNED_INDEX_TYPE, 0);
+          ctx.drawElements(ctx.LINES, model.data.lineIndex.length, ctx.UNSIGNED_INT, 0);
 
           const instanceLines = selectedLines.filter(el => el.instance === instance);
           if (instanceLines.length) {
             ctx.uniform1f(program.uLoc.u_isSelected, 1);
             ctx.lineWidth(2);
             for (const selectedLine of instanceLines) {
-              ctx.drawElements(ctx.LINES, 2, UNSIGNED_INDEX_TYPE, selectedLine.index * UNSIGNED_INDEX_SIZE);
+              ctx.drawElements(ctx.LINES, 2, ctx.UNSIGNED_INT, selectedLine.index * 8);
             }
           }
         }
@@ -135,7 +136,7 @@ export default (engine) => {
           ctx.uniform1f(program.uLoc.u_isHovered, 0);
 
           ctx.lineWidth(2);
-          ctx.drawElements(ctx.LINES, 24, UNSIGNED_INDEX_TYPE, 0);
+          ctx.drawElements(ctx.LINES, 24, ctx.UNSIGNED_INT, 0);
           ctx.lineWidth(1);
         }
       }

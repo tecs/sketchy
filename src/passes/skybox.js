@@ -3,31 +3,33 @@ const { mat4 } = glMatrix;
 /** @type {RenderingPass} */
 export default ({ driver: { ctx, buffer, makeProgram, vert, frag }, camera }) => {
   const program = makeProgram(
-    vert`
-      attribute vec4 a_position;
-      attribute vec4 a_color;
+    vert`#version 300 es
+      in vec4 a_position;
+      in vec4 a_color;
 
       uniform mat4 u_mvp;
 
-      varying vec4 v_color;
+      out vec4 v_color;
 
       void main() {
         gl_Position = u_mvp * a_position;
         v_color = a_color;
       }
     `,
-    frag`
+    frag`#version 300 es
       precision mediump float;
 
-      varying vec4 v_color;
+      in vec4 v_color;
+
+      out vec4 outColor;
 
       void main() {
-        gl_FragColor = v_color;
+        outColor = v_color;
       }
     `,
   );
 
-  const indices = new Uint16Array([
+  const indices = new Uint32Array([
     0, 1, 2,
     1, 3, 2,
     1, 4, 3,
@@ -94,7 +96,7 @@ export default ({ driver: { ctx, buffer, makeProgram, vert, frag }, camera }) =>
       ctx.uniformMatrix4fv(program.uLoc.u_mvp, false, mvp);
 
       ctx.bindBuffer(ctx.ELEMENT_ARRAY_BUFFER, indexBuffer);
-      ctx.drawElements(ctx.TRIANGLES, indices.length, ctx.UNSIGNED_SHORT, 0);
+      ctx.drawElements(ctx.TRIANGLES, indices.length, ctx.UNSIGNED_INT, 0);
       ctx.enable(ctx.DEPTH_TEST);
     },
   };
