@@ -245,39 +245,25 @@ export default class Scene extends Base {
   }
 
   /**
-   * @param {Readonly<Uint8Array | Uint8ClampedArray>} id4u
+   * @param {Readonly<Uint32Array>} ids
    */
-  hoverOver(id4u) {
-    const id = Id.uuuuToInt(id4u);
-    if ((!id && !this.hoveredInstance) || id === this.hoveredInstance?.Id.int) return;
-
-    this.hoveredInstance = id ? this.#engine.entities.getFirstByTypeAndIntId(Instance, id) ?? null : null;
+  hoverOver([instanceId, lineId, pointId]) {
+    if ((instanceId || this.hoveredInstance) && instanceId !== this.hoveredInstance?.Id.int) {
+      this.hoveredInstance = instanceId
+        ? this.#engine.entities.getFirstByTypeAndIntId(Instance, instanceId) ?? null
+        : null;
+    }
 
     if (!this.hoveredInstance) {
       this.hoveredLineIndex = null;
       this.hoveredPointIndex = null;
-      this.hoveredConstraintIndex = null;
+      return;
     }
-  }
 
-  /**
-   * @param {Readonly<Uint8Array | Uint8ClampedArray>} id4u
-   */
-  hoverLine(id4u) {
-    const id = Id.uuuuToInt(id4u);
-    this.hoveredLineIndex = id > 0 ? id - 1 : null;
-    this.hoveredPointIndex = null;
-    this.hoveredConstraintIndex = null;
-  }
+    if (this.hoveredInstance !== this.enteredInstance) return;
 
-  /**
-   * @param {Readonly<Uint8Array | Uint8ClampedArray>} id4u
-   */
-  hoverPoint(id4u) {
-    const id = Id.uuuuToInt(id4u);
-    this.hoveredPointIndex = id > 0 ? id - 1 : null;
-    this.hoveredLineIndex = null;
-    this.hoveredConstraintIndex = null;
+    this.hoveredPointIndex = pointId > 0 ? pointId - 1 : null;
+    this.hoveredLineIndex = lineId > 0 && this.hoveredPointIndex === null ? lineId - 1 : null;
   }
 
   /**

@@ -38,7 +38,7 @@ export default class Driver extends Base {
   constructor(engine, canvas) {
     super();
 
-    bindMethods(this, 'vert', 'frag', 'makeProgram', 'resize', 'buffer', 'framebuffer');
+    bindMethods(this, 'vert', 'frag', 'makeProgram', 'resize', 'buffer', 'framebuffer', 'renderbuffer', 'texture');
 
     this.#engine = engine;
     this.canvas = canvas;
@@ -177,29 +177,64 @@ export default class Driver extends Base {
   }
 
   /**
-   * @param {5126 | 5121} type
+   * @param {5125 | 5126 | 5121} type
    * @param {number} [width]
    * @param {number} [height]
-   * @returns {WebGLFramebuffer | null}
+   * @returns {WebGLTexture | null}
    */
-  framebuffer(type, width = 1, height = 1) {
+  texture(type, width = 1, height = 1) {
     const { ctx } = this;
 
-    // RGBA32F requires EXT_color_buffer_float
-    const format = type === ctx.FLOAT ? ctx.RGBA32F : ctx.RGBA;
+    /** @type {number} */
+    let internalFormat = ctx.RGBA;
+    let format = internalFormat;
+    switch (type) {
+      case ctx.FLOAT:
+        // RGBA32F requires EXT_color_buffer_float
+        internalFormat = ctx.RGBA32F;
+        break;
+      case ctx.UNSIGNED_INT:
+        internalFormat = ctx.RGBA32UI;
+        format = ctx.RGBA_INTEGER;
+        break;
+    }
 
     const texture = ctx.createTexture();
     ctx.bindTexture(ctx.TEXTURE_2D, texture);
     ctx.texParameteri(ctx.TEXTURE_2D, ctx.TEXTURE_MIN_FILTER, ctx.LINEAR);
     ctx.texParameteri(ctx.TEXTURE_2D, ctx.TEXTURE_WRAP_S, ctx.CLAMP_TO_EDGE);
     ctx.texParameteri(ctx.TEXTURE_2D, ctx.TEXTURE_WRAP_T, ctx.CLAMP_TO_EDGE);
-    ctx.texImage2D(ctx.TEXTURE_2D, 0, format, width, height, 0, ctx.RGBA, type, null);
+    ctx.texImage2D(ctx.TEXTURE_2D, 0, internalFormat, width, height, 0, format, type, null);
+
+    return texture;
+  }
+
+  /**
+   * @param {number} [width]
+   * @param {number} [height]
+   * @returns {WebGLRenderbuffer | null}
+   */
+  renderbuffer(width = 1, height = 1) {
+    const { ctx } = this;
 
     const renderbuffer = ctx.createRenderbuffer();
     ctx.bindRenderbuffer(ctx.RENDERBUFFER, renderbuffer);
     ctx.renderbufferStorage(ctx.RENDERBUFFER, ctx.DEPTH_COMPONENT16, width, height);
 
+    return renderbuffer;
+  }
+
+  /**
+   * @param {Parameters<Driver["texture"]>} args
+   * @returns {WebGLFramebuffer | null}
+   */
+  framebuffer(...args) {
+    const { ctx } = this;
+
     const framebuffer = ctx.createFramebuffer();
+    const texture = this.texture(...args);
+    const renderbuffer = this.renderbuffer(args[1], args[2]);
+
     ctx.bindFramebuffer(ctx.FRAMEBUFFER, framebuffer);
     ctx.framebufferTexture2D(ctx.FRAMEBUFFER, ctx.COLOR_ATTACHMENT0, ctx.TEXTURE_2D, texture, 0);
     ctx.framebufferRenderbuffer(ctx.FRAMEBUFFER, ctx.DEPTH_ATTACHMENT, ctx.RENDERBUFFER, renderbuffer);

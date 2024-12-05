@@ -53,6 +53,7 @@ export default class Renderer {
     requestAnimationFrame(() => {
       const { ctx } = this.#engine.driver;
 
+      ctx.bindFramebuffer(ctx.FRAMEBUFFER, null);
       ctx.clearColor(0, 0, 0, 0);
       ctx.clearDepth(1);
       ctx.clear(ctx.COLOR_BUFFER_BIT | ctx.DEPTH_BUFFER_BIT);

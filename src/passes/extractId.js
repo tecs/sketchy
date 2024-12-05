@@ -1,6 +1,5 @@
 import Body from '../engine/cad/body.js';
 import SubInstance from '../engine/cad/subinstance.js';
-import Id from '../engine/general/id.js';
 import Instance from '../engine/scene/instance.js';
 
 /**
@@ -22,7 +21,7 @@ const populateChildren = (instances, instancesToFindChildrenOf = instances) => {
 /** @type {RenderingPass} */
 export default (engine) => {
   const {
-    driver: { ctx, makeProgram, vert, frag, framebuffer },
+    driver: { ctx, makeProgram, vert, frag, framebuffer, renderbuffer, texture },
     camera,
     editor,
     entities,
@@ -38,47 +37,63 @@ export default (engine) => {
       uniform mat4 u_trs;
       uniform mat4 u_viewProjection;
       uniform float u_offset;
+      uniform float u_isLine;
+      uniform float u_isPoint;
+
+      out float v_lineId;
+      out float v_pointId;
 
       void main() {
         gl_Position = u_viewProjection * u_trs * a_position;
         gl_Position.z -= u_offset * 0.00001;
         gl_PointSize = 10.0;
+        v_lineId = float(gl_VertexID + 2) * u_isLine * 0.5;
+        v_pointId = float(gl_VertexID + 1) * u_isPoint;
       }
     `,
     frag`#version 300 es
       precision mediump float;
 
-      uniform vec4 u_instanceId;
+      in float v_lineId;
+      in float v_pointId;
 
-      out vec4 outId;
+      uniform uint u_instanceId;
+
+      out uvec4 outIds;
 
       void main() {
-        outId = u_instanceId;
+        outIds = uvec4(u_instanceId, v_lineId, v_pointId, 0);
       }
     `,
   );
 
   /** @type {Set<number>} */
-  const selectedIds = new Set();
+  const selectedInstanceIds = new Set();
+
+  /** @type {Set<number>} */
+  const selectedLineIds = new Set();
+
+  /** @type {Set<number>} */
+  const selectedPointIds = new Set();
 
   /** @type {typeof editor["temp"]["elements"]} */
   const selection = [];
 
-  let fb = framebuffer(ctx.UNSIGNED_BYTE);
-  let readData = new Uint8ClampedArray(4);
-  let frustum = camera.frustum;
-
-  let left = 0;
-  let top = 0;
-  let width = 1;
-  let height = 1;
-  let bufferSize = readData.length;
+  const fb = framebuffer(ctx.UNSIGNED_INT);
+  let readData = new Uint32Array(4);
 
   engine.on('viewportresize', ([w, h]) => {
     const size = w * h * 4;
+
+    const newTexture = texture(ctx.UNSIGNED_INT, w, h);
+    const newRenderbuffer = renderbuffer(w, h);
+
+    ctx.bindFramebuffer(ctx.FRAMEBUFFER, fb);
+    ctx.framebufferTexture2D(ctx.FRAMEBUFFER, ctx.COLOR_ATTACHMENT0, ctx.TEXTURE_2D, newTexture, 0);
+    ctx.framebufferRenderbuffer(ctx.FRAMEBUFFER, ctx.DEPTH_ATTACHMENT, ctx.RENDERBUFFER, newRenderbuffer);
+
     if (size > readData.length) {
-      fb = framebuffer(ctx.UNSIGNED_BYTE, w, h);
-      readData = new Uint8ClampedArray(w * h * 4);
+      readData = new Uint32Array(w * h * 4);
     }
   });
 
@@ -89,28 +104,15 @@ export default (engine) => {
 
       const { position: [x1, y1], lastClickedPosition: [x2, y2]} = input;
       const lasso = input.leftButton && tools.selected?.type === 'select' && x1 !== x2 && y1 !== y2;
-      if (lasso) {
-        left = Math.min(x1, x2);
-        top = camera.screenResolution[1] - Math.max(y1, y2) - 1;
-        width = Math.abs(x1 - x2);
-        height = Math.abs(y1 - y2);
-        bufferSize = width * height * 4;
-        frustum = camera.viewProjection;
-        selectedIds.clear();
-        selection.splice(0);
-      } else {
-        left = 0;
-        top = 0;
-        width = 1;
-        height = 1;
-        frustum = camera.frustum;
-      }
 
       ctx.bindFramebuffer(ctx.FRAMEBUFFER, fb);
-      ctx.clear(ctx.COLOR_BUFFER_BIT | ctx.DEPTH_BUFFER_BIT);
+      ctx.clearBufferuiv(ctx.COLOR, 0, [0, 0, 0, 0]);
+      ctx.clear(ctx.DEPTH_BUFFER_BIT);
 
       const activeInstances = editor.edited.getByType('instance').map(({ instance }) => instance);
       populateChildren(activeInstances);
+
+      ctx.uniformMatrix4fv(program.uLoc.u_viewProjection, false, lasso ? camera.viewProjection : camera.frustum);
 
       const bodies = entities.values(Body);
       for (const { currentModel: model, instances } of bodies) {
@@ -122,16 +124,16 @@ export default (engine) => {
         ctx.enableVertexAttribArray(program.aLoc.a_position);
         ctx.vertexAttribPointer(program.aLoc.a_position, 3, ctx.FLOAT, false, 0, 0);
 
-        ctx.uniformMatrix4fv(program.uLoc.u_viewProjection, false, frustum);
-
         // Geometry
         ctx.uniform1f(program.uLoc.u_offset, 0);
+        ctx.uniform1f(program.uLoc.u_isLine, 0);
+        ctx.uniform1f(program.uLoc.u_isPoint, 0);
         for (const instance of instances) {
           // Prevent self-picking when editing
           if (activeInstances.includes(instance)) continue;
 
           ctx.uniformMatrix4fv(program.uLoc.u_trs, false, instance.Placement.trs);
-          ctx.uniform4fv(program.uLoc.u_instanceId, instance.Id.vec4);
+          ctx.uniform1ui(program.uLoc.u_instanceId, instance.Id.int);
 
           ctx.drawElements(ctx.TRIANGLES, model.data.index.length, ctx.UNSIGNED_INT, 0);
         }
@@ -142,6 +144,8 @@ export default (engine) => {
         ctx.vertexAttribPointer(program.aLoc.a_position, 3, ctx.FLOAT, false, 0, 0);
 
         ctx.uniform1f(program.uLoc.u_offset, 1);
+        ctx.uniform1f(program.uLoc.u_isLine, 1);
+        ctx.uniform1f(program.uLoc.u_isPoint, 0);
         ctx.bindBuffer(ctx.ELEMENT_ARRAY_BUFFER, model.buffer.lineIndex);
         ctx.lineWidth(5);
         for (const instance of instances) {
@@ -149,7 +153,7 @@ export default (engine) => {
           if (activeInstances.includes(instance)) continue;
 
           ctx.uniformMatrix4fv(program.uLoc.u_trs, false, instance.Placement.trs);
-          ctx.uniform4fv(program.uLoc.u_instanceId, instance.Id.vec4);
+          ctx.uniform1ui(program.uLoc.u_instanceId, instance.Id.int);
 
           ctx.drawElements(ctx.LINES, model.data.lineIndex.length, ctx.UNSIGNED_INT, 0);
         }
@@ -157,27 +161,40 @@ export default (engine) => {
 
         // Points
         ctx.uniform1f(program.uLoc.u_offset, 2);
+        ctx.uniform1f(program.uLoc.u_isLine, 0);
+        ctx.uniform1f(program.uLoc.u_isPoint, 1);
         for (const instance of instances) {
           // Prevent self-picking when editing
           if (activeInstances.includes(instance)) continue;
 
           ctx.uniformMatrix4fv(program.uLoc.u_trs, false, instance.Placement.trs);
-          ctx.uniform4fv(program.uLoc.u_instanceId, instance.Id.vec4);
+          ctx.uniform1ui(program.uLoc.u_instanceId, instance.Id.int);
 
           ctx.drawArrays(ctx.POINTS, 0, model.data.lineVertex.length / 3);
         }
       }
 
-      ctx.readPixels(left, top, width, height, ctx.RGBA, ctx.UNSIGNED_BYTE, readData);
-
-      const { enteredInstance } = scene;
-
       if (lasso) {
-        for (let i = 0; i < bufferSize; i += 4) {
-          const id = Id.uuuuToInt(readData.subarray(i, i + 4));
-          if (!id || selectedIds.has(id)) continue;
+        const left = Math.min(x1, x2);
+        const top = camera.screenResolution[1] - Math.max(y1, y2) - 1;
+        const width = Math.abs(x1 - x2);
+        const height = Math.abs(y1 - y2);
+        const bufferSize = width * height * 4;
 
-          let instance = entities.getFirstByTypeAndIntId(Instance, id);
+        const { enteredInstance } = scene;
+
+        selectedInstanceIds.clear();
+        selectedLineIds.clear();
+        selectedPointIds.clear();
+        selection.splice(0);
+
+        ctx.readPixels(left, top, width, height, ctx.RGBA_INTEGER, ctx.UNSIGNED_INT, readData);
+
+        for (let i = 0; i < bufferSize; i += 4) {
+          const [instanceId, lineId, pointId] = readData.subarray(i, i + 3);
+          if (!instanceId || selectedInstanceIds.has(instanceId)) continue;
+
+          let instance = entities.getFirstByTypeAndIntId(Instance, instanceId);
           if (!instance) continue;
 
           let parent = SubInstance.getParent(instance);
@@ -185,121 +202,50 @@ export default (engine) => {
             instance = parent.instance;
             parent = SubInstance.getParent(instance);
           }
-          if ((parent?.instance ?? null) === enteredInstance && !selectedIds.has(instance.Id.int)) {
-            selectedIds.add(id);
-            selectedIds.add(instance.Id.int);
+
+          if ((parent?.instance ?? null) === enteredInstance && !selectedInstanceIds.has(instance.Id.int)) {
+            selectedInstanceIds.add(instanceId);
+            selectedInstanceIds.add(instance.Id.int);
             selection.push({ type: 'instance', index: instance.Id.int, instance });
+          }
+
+          if (enteredInstance !== instance) continue;
+
+          if (lineId > 0 && !selectedLineIds.has(lineId)) {
+            selectedLineIds.add(lineId);
+            selection.push({ type: 'line', index: lineId - 1, instance });
+          }
+
+          if (pointId > 0 && !selectedPointIds.has(pointId)) {
+            selectedPointIds.add(pointId);
+            selection.push({ type: 'point', index: pointId - 1, instance });
           }
         }
         editor.temp.set(selection);
-        if (selection.length) return;
-      } else {
-        scene.hoverOver(readData);
+        return;
       }
 
-      const model = enteredInstance?.body.currentModel;
-      if (!model) return;
+      ctx.readPixels(0, 0, 1, 1, ctx.RGBA_INTEGER, ctx.UNSIGNED_INT, readData);
 
-      const activePoints = editor.edited.getByType('point')
-        .filter(el => el.instance === enteredInstance)
-        .map(({ index }) => index);
-
-      ctx.clear(ctx.COLOR_BUFFER_BIT | ctx.DEPTH_BUFFER_BIT);
-
-      ctx.uniformMatrix4fv(program.uLoc.u_viewProjection, false, frustum);
-      ctx.uniformMatrix4fv(program.uLoc.u_trs, false, enteredInstance.Placement.trs);
-
-      // Geometry
-      ctx.bindBuffer(ctx.ARRAY_BUFFER, model.buffer.vertex);
-      ctx.enableVertexAttribArray(program.aLoc.a_position);
-      ctx.vertexAttribPointer(program.aLoc.a_position, 3, ctx.FLOAT, false, 0, 0);
-
-      ctx.uniform1f(program.uLoc.u_offset, 0);
-
-      ctx.bindBuffer(ctx.ELEMENT_ARRAY_BUFFER, model.buffer.index);
-      ctx.uniform4fv(program.uLoc.u_instanceId, Id.intToVec4(0));
-
-      ctx.drawElements(ctx.TRIANGLES, model.data.index.length, ctx.UNSIGNED_INT, 0);
-
-      // Lines
-      ctx.bindBuffer(ctx.ARRAY_BUFFER, model.buffer.lineVertex);
-      ctx.enableVertexAttribArray(program.aLoc.a_position);
-      ctx.vertexAttribPointer(program.aLoc.a_position, 3, ctx.FLOAT, false, 0, 0);
-
-      ctx.uniform1f(program.uLoc.u_offset, 1);
-
-      ctx.bindBuffer(ctx.ELEMENT_ARRAY_BUFFER, model.buffer.lineIndex);
-
-      ctx.lineWidth(5);
-      ctx.drawElements(ctx.LINES, model.data.lineIndex.length, ctx.UNSIGNED_INT, 0);
-      ctx.lineWidth(1);
-
-      // Points
-      ctx.uniform1f(program.uLoc.u_offset, 2);
-
-      for (let i = 0; i < model.data.lineVertex.length / 3; ++i) {
-        // Prevent self-picking when editing
-        if (!activePoints.includes(i)) {
-          ctx.uniform4fv(program.uLoc.u_instanceId, Id.intToVec4(i + 1));
-          ctx.drawArrays(ctx.POINTS, i, 1);
+      if (readData[0] && readData[1]) {
+        for (const { instance, index } of editor.edited.getByType('line')) {
+          if (instance.Id.int === readData[0] && index === readData[1] - 1) {
+            readData[1] = 0;
+            break;
+          }
         }
       }
 
-      ctx.readPixels(left, top, width, height, ctx.RGBA, ctx.UNSIGNED_BYTE, readData);
-      if (lasso) {
-        for (let i = 0; i < bufferSize; i += 4) {
-          const id = Id.uuuuToInt(readData.subarray(i, i + 4)) - 1;
-          if (id < 0 || selectedIds.has(id)) continue;
-          selectedIds.add(id);
-          selection.push({ type: 'point', index: id, instance: enteredInstance });
-        }
-      } else {
-        scene.hoverPoint(readData);
-        if (scene.hoveredPointIndex !== null) return;
-      }
-
-      const activeLines = editor.edited.getByType('line')
-        .filter(el => el.instance === enteredInstance)
-        .map(({ index }) => index);
-
-      ctx.clear(ctx.COLOR_BUFFER_BIT | ctx.DEPTH_BUFFER_BIT);
-
-      // Geometry
-      ctx.uniform1f(program.uLoc.u_offset, 0);
-
-      ctx.bindBuffer(ctx.ELEMENT_ARRAY_BUFFER, model.buffer.index);
-      ctx.uniform4fv(program.uLoc.u_instanceId, Id.intToVec4(0));
-
-      ctx.drawElements(ctx.TRIANGLES, model.data.index.length, ctx.UNSIGNED_INT, 0);
-
-      // Lines
-      ctx.uniform1f(program.uLoc.u_offset, 1);
-
-      ctx.bindBuffer(ctx.ELEMENT_ARRAY_BUFFER, model.buffer.lineIndex);
-
-      ctx.lineWidth(5);
-      for (let i = 0; i < model.data.lineIndex.length / 2; ++i) {
-        // Prevent self-picking when editing
-        if (!activeLines.includes(i)) {
-          ctx.uniform4fv(program.uLoc.u_instanceId, Id.intToVec4(i + 1));
-          ctx.drawElements(ctx.LINES, 2, ctx.UNSIGNED_INT, i * 8);
+      if (readData[0] && readData[2]) {
+        for (const { instance, index } of editor.edited.getByType('point')) {
+          if (instance.Id.int === readData[0] && index === readData[2] - 1) {
+            readData[2] = 0;
+            break;
+          }
         }
       }
-      ctx.lineWidth(1);
 
-      ctx.readPixels(left, top, width, height, ctx.RGBA, ctx.UNSIGNED_BYTE, readData);
-      if (lasso) {
-        selectedIds.clear();
-        for (let i = 0; i < bufferSize; i += 4) {
-          const id = Id.uuuuToInt(readData.subarray(i, i + 4)) - 1;
-          if (id < 0 || selectedIds.has(id)) continue;
-          selectedIds.add(id);
-          selection.push({ type: 'line', index: id, instance: enteredInstance });
-        }
-        editor.temp.set(selection);
-      } else {
-        scene.hoverLine(readData);
-      }
+      scene.hoverOver(readData);
     },
   };
 };
