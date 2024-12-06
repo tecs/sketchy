@@ -15,7 +15,7 @@ export default (engine) => {
     else selection.set(elements);
   };
 
-  /** @type {import("../engine/editor.js").Elements[]} */
+  /** @type {import("../engine/editor.js").Element[]} */
   let oldSelection = [];
 
   /** @type {BaseTool} */

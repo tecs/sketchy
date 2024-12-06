@@ -120,7 +120,7 @@ export default (engine) => {
             indices.push(data.startIndex);
           }
 
-          const activeElements = indices.map(index => ({ type: /** @type {"point" | "line"} */ ('point'), index, instance }));
+          const activeElements = indices.map(index => ({ type: 'point', index, instance }));
 
           const index = data.sketch.getLineIndex(data.line);
           if (index !== null) activeElements.push({ type: 'line', index, instance });

@@ -1,7 +1,7 @@
 import type { Event } from './general/events-types';
-import { Elements } from './editor.js';
+import { Element } from './editor.js';
 
-type ChangeEventProps = [current: Readonly<Elements>[], previous: Readonly<Elements>[]];
+type ChangeEventProps = [current: Readonly<Element>[], previous: Readonly<Element>[]];
 type SelectionChangeEvent = Event<'selectionchange', ChangeEventProps>;
 type CursorChangeEvent = Event<'cursorchange', [cursor?: string]>;
 

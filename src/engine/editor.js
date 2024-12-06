@@ -3,50 +3,41 @@ import Instance from './scene/instance.js';
 import SubInstance from './cad/subinstance.js';
 
 /**
- * @template {string} T
  * @typedef Element
- * @property {T} type
+ * @property {string} type
  * @property {number} index
  * @property {Instance} instance
  */
 
-/** @typedef {Element<"point">} PointElement */
-/** @typedef {Element<"line">} LineElement */
-/** @typedef {Element<"constraint">} ConstraintElement */
-/** @typedef {Element<"instance">} InstanceElement */
-
-/** @typedef {InstanceElement | LineElement | PointElement | ConstraintElement} Elements */
-
-/** @typedef {import("./general/events-types").Event<"change", [current: Elements[], previous: Elements[]]>} Changed */
+/** @typedef {import("./general/events-types").Event<"change", [current: Element[], previous: Element[]]>} Changed */
 
 /**
  * @augments Base<Changed>
  */
 export class Collection extends Base {
-  /** @type {Elements[]} */
+  /** @type {Element[]} */
   elements = [];
 
   /**
-   * @template {Elements} T
-   * @param {T} el
-   * @returns {T?}
+   * @param {Element} el
+   * @returns {Element?}
    */
   getElement(el) {
     for (const element of this.elements) {
       if (el.type === element.type && el.index === element.index && el.instance === element.instance) {
-        return /** @type {T} */ (element);
+        return element;
       }
     }
     return null;
   }
 
   /**
-   * @template {Elements["type"]} T
+   * @template {string} T
    * @param {T} type
-   * @returns {Extract<Elements, { type: T }>[]}
+   * @returns {(Element & { type: T })[]}
    */
   getByType(type) {
-    return /** @type {Extract<Elements, { type: T }>[]} */ (this.elements.filter(el => el.type === type));
+    return /** @type {(Element & { type: T })[]} */ (this.elements.filter(el => el.type === type));
   }
 
   clear() {
@@ -58,7 +49,7 @@ export class Collection extends Base {
   }
 
   /**
-   * @param {Elements | Elements[]} elements
+   * @param {Element | Element[]} elements
    */
   set(elements) {
     if (!Array.isArray(elements)) elements = [elements];
@@ -77,7 +68,7 @@ export class Collection extends Base {
   }
 
   /**
-   * @param {Elements | Elements[]} elements
+   * @param {Element | Element[]} elements
    */
   add(elements) {
     if (!Array.isArray(elements)) elements = [elements];
@@ -97,7 +88,7 @@ export class Collection extends Base {
   }
 
   /**
-   * @param {Elements | Elements[]} elements
+   * @param {Element | Element[]} elements
    */
   remove(elements) {
     if (!Array.isArray(elements)) elements = [elements];
@@ -118,7 +109,7 @@ export class Collection extends Base {
   }
 
   /**
-   * @param {Elements | Elements[]} elements
+   * @param {Element | Element[]} elements
    * @param {boolean} [forceState]
    */
   toggle(elements, forceState) {

@@ -33,7 +33,7 @@ export default (engine, tabs) => {
       const index = sketch.getLineIndex(elements[i]);
       if (index === null) continue;
 
-      const selected = selection.getElement({ type: 'line', index, instance })
+      const selected = !!selection.getElement({ type: 'line', index, instance })
         || sketch.getPoints(elements[i]).some(e => selection.getElement({ type: 'point', index: e.index, instance }));
 
       table.addRow(`${i + 1}`, elements[i].type).$element({
