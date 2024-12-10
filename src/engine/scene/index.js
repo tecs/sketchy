@@ -28,6 +28,9 @@ export default class Scene extends Base {
   hoveredInstance = null;
 
   /** @type {number?} */
+  hoveredFaceIndex = null;
+
+  /** @type {number?} */
   hoveredLineIndex = null;
 
   /** @type {number?} */
@@ -124,6 +127,7 @@ export default class Scene extends Base {
 
     this.enteredInstance = null;
     this.hoveredInstance = null;
+    this.hoveredFaceIndex = null;
     this.hoveredLineIndex = null;
     this.hoveredPointIndex = null;
     this.hoveredConstraintIndex = null;
@@ -247,23 +251,22 @@ export default class Scene extends Base {
   /**
    * @param {Readonly<Uint32Array>} ids
    */
-  hoverOver([instanceId, lineId, pointId]) {
+  hoverOver([instanceId, faceId, lineId, pointId]) {
     if ((instanceId || this.hoveredInstance) && instanceId !== this.hoveredInstance?.Id.int) {
       this.hoveredInstance = instanceId
         ? this.#engine.entities.getFirstByTypeAndIntId(Instance, instanceId) ?? null
         : null;
     }
 
-    if (!this.hoveredInstance) {
-      this.hoveredLineIndex = null;
-      this.hoveredPointIndex = null;
-      return;
-    }
+    this.hoveredFaceIndex = null;
+    this.hoveredLineIndex = null;
+    this.hoveredPointIndex = null;
 
-    if (this.hoveredInstance !== this.enteredInstance) return;
+    if (!this.hoveredInstance || this.hoveredInstance !== this.enteredInstance) return;
 
-    this.hoveredPointIndex = pointId > 0 ? pointId - 1 : null;
-    this.hoveredLineIndex = lineId > 0 && this.hoveredPointIndex === null ? lineId - 1 : null;
+    if (pointId > 0) this.hoveredPointIndex = pointId - 1;
+    else if (lineId > 0) this.hoveredLineIndex = lineId - 1;
+    else if (faceId > 0) this.hoveredFaceIndex = faceId;
   }
 
   /**

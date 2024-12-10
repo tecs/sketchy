@@ -56,13 +56,17 @@ export default (engine) => {
         hoveredInstance,
         hoveredPointIndex,
         hoveredLineIndex,
+        hoveredFaceIndex,
         hoveredConstraintIndex,
         currentStep,
       } = scene;
       const toggle = input.ctrl;
 
-      if (currentStep && enteredInstance) {
-        const hoveredSelf = hoveredInstance === enteredInstance;
+      const hoveredSelf = hoveredInstance === enteredInstance;
+      if (!currentStep && enteredInstance && hoveredSelf && hoveredFaceIndex !== null) {
+        toggleOrSet({ type: 'face', index: hoveredFaceIndex, instance: enteredInstance }, toggle);
+        return;
+      } else if (currentStep && enteredInstance) {
         if (hoveredSelf && hoveredLineIndex !== null) {
           toggleOrSet({ type: 'line', index: hoveredLineIndex, instance: enteredInstance }, toggle);
         } else if (hoveredSelf && hoveredPointIndex !== null) {
@@ -88,8 +92,7 @@ export default (engine) => {
         if (clicked === enteredInstance && !toggle) selection.clear();
         else if (clicked === enteredInstance) return;
         else if (clickedOwn) toggleOrSet(clicked ? { type: 'instance', index: clicked.Id.int, instance: clicked } : [], toggle);
-        else if (selectedInstances.length && !toggle) selection.clear();
-
+        else if (!toggle) selection.clear();
         return;
       }
 

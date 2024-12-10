@@ -51,11 +51,21 @@ export default (engine) => {
       precision mediump float;
 
       in vec4 v_color;
+      uniform float u_isFaceSelected;
 
       out vec4 outColor;
 
+      const float offset = 6.0;
+      const float scaleX = 1.0 / offset;
+      const float scaleY = scaleX * 2.0;
+
+      #define field(coord) fract((coord.x + coord.y) * scaleX) * fract(coord.y * scaleY)
+
+      const float sizeFract = field(vec2(offset - 1.0));
+
       void main() {
-        outColor = v_color;
+        float dotField = u_isFaceSelected * step(sizeFract, field(gl_FragCoord.xy));
+        outColor = v_color * (1.0 - dotField) + dotField * vec4(0, 0, 1, 1);
       }
     `,
   );
@@ -69,6 +79,7 @@ export default (engine) => {
       const bodies = entities.values(Body);
       const selectedInstances = selection.getByType('instance').map(({ instance }) => instance);
 
+      ctx.uniform1f(program.uLoc.u_isFaceSelected, 0);
       for (const { currentModel: model, instances } of bodies) {
         if (!model) continue;
         ctx.bindBuffer(ctx.ELEMENT_ARRAY_BUFFER, model.buffer.index);
@@ -102,6 +113,47 @@ export default (engine) => {
 
           ctx.drawElements(ctx.TRIANGLES, model.data.index.length, ctx.UNSIGNED_INT, 0);
         }
+      }
+
+      const selectedFaces = selection.getByType('face');
+      ctx.uniform1f(program.uLoc.u_isSelected, 0);
+      ctx.uniform1f(program.uLoc.u_isInShadow, 0);
+
+      ctx.uniform1f(program.uLoc.u_isFaceSelected, 1);
+      for (const { instance: { Placement: { trs }, body: { currentModel: model }}, index } of selectedFaces) {
+        if (!model) continue;
+
+        ctx.bindBuffer(ctx.ELEMENT_ARRAY_BUFFER, model.buffer.index);
+
+        ctx.bindBuffer(ctx.ARRAY_BUFFER, model.buffer.vertex);
+        ctx.enableVertexAttribArray(program.aLoc.a_position);
+        ctx.vertexAttribPointer(program.aLoc.a_position, 3, ctx.FLOAT, false, 0, 0);
+
+        ctx.bindBuffer(ctx.ARRAY_BUFFER, model.buffer.normal);
+        ctx.enableVertexAttribArray(program.aLoc.a_normal);
+        ctx.vertexAttribPointer(program.aLoc.a_normal, 3, ctx.FLOAT, false, 0, 0);
+
+        ctx.bindBuffer(ctx.ARRAY_BUFFER, model.buffer.color);
+        ctx.enableVertexAttribArray(program.aLoc.a_color);
+        ctx.vertexAttribPointer(program.aLoc.a_color, 3, ctx.UNSIGNED_BYTE, true, 0, 0);
+
+        ctx.uniformMatrix4fv(program.uLoc.u_viewProjection, false, camera.viewProjection);
+
+        ctx.uniformMatrix4fv(program.uLoc.u_trs, false, trs);
+
+        mat4.multiply(normalMvp, camera.world, trs);
+        mat4.transpose(normalMvp, normalMvp);
+        mat4.invert(normalMvp, normalMvp);
+        ctx.uniformMatrix4fv(program.uLoc.u_normalMvp, false, normalMvp);
+
+        const startIndex = model.data.faceIds.indexOf(index);
+        const endIndex = model.data.faceIds.lastIndexOf(index);
+
+        const offset = model.data.index.findIndex(idx => idx >= startIndex && idx <= endIndex);
+        const endOffset =  model.data.index.findLastIndex(idx => idx >= startIndex && idx <= endIndex);
+        const nIndices = 1 + endOffset - offset;
+
+        ctx.drawElements(ctx.TRIANGLES, nIndices, ctx.UNSIGNED_INT, offset * 4);
       }
     },
   };

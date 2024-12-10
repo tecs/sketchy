@@ -33,6 +33,7 @@ export default (engine) => {
   const program = makeProgram(
     vert`#version 300 es
       in vec4 a_position;
+      in uint a_faceId;
 
       uniform mat4 u_trs;
       uniform mat4 u_viewProjection;
@@ -40,6 +41,7 @@ export default (engine) => {
       uniform float u_isLine;
       uniform float u_isPoint;
 
+      out float v_faceId;
       out float v_lineId;
       out float v_pointId;
 
@@ -47,6 +49,7 @@ export default (engine) => {
         gl_Position = u_viewProjection * u_trs * a_position;
         gl_Position.z -= u_offset * 0.00001;
         gl_PointSize = 10.0;
+        v_faceId = float(a_faceId) * (1.0 - u_isLine) * (1.0 - u_isPoint);
         v_lineId = float(gl_VertexID + 2) * u_isLine * 0.5;
         v_pointId = float(gl_VertexID + 1) * u_isPoint;
       }
@@ -54,6 +57,7 @@ export default (engine) => {
     frag`#version 300 es
       precision mediump float;
 
+      in float v_faceId;
       in float v_lineId;
       in float v_pointId;
 
@@ -62,13 +66,16 @@ export default (engine) => {
       out uvec4 outIds;
 
       void main() {
-        outIds = uvec4(u_instanceId, v_lineId, v_pointId, 0);
+        outIds = uvec4(u_instanceId, v_faceId, v_lineId, v_pointId);
       }
     `,
   );
 
   /** @type {Set<number>} */
   const selectedInstanceIds = new Set();
+
+  /** @type {Set<number>} */
+  const selectedFaceIds = new Set();
 
   /** @type {Set<number>} */
   const selectedLineIds = new Set();
@@ -123,6 +130,10 @@ export default (engine) => {
         ctx.bindBuffer(ctx.ARRAY_BUFFER, model.buffer.vertex);
         ctx.enableVertexAttribArray(program.aLoc.a_position);
         ctx.vertexAttribPointer(program.aLoc.a_position, 3, ctx.FLOAT, false, 0, 0);
+
+        ctx.bindBuffer(ctx.ARRAY_BUFFER, model.buffer.faceIds);
+        ctx.enableVertexAttribArray(program.aLoc.a_faceId);
+        ctx.vertexAttribIPointer(program.aLoc.a_faceId, 1, ctx.UNSIGNED_INT, 0, 0);
 
         // Geometry
         ctx.uniform1f(program.uLoc.u_offset, 0);
@@ -184,6 +195,7 @@ export default (engine) => {
         const { enteredInstance } = scene;
 
         selectedInstanceIds.clear();
+        selectedFaceIds.clear();
         selectedLineIds.clear();
         selectedPointIds.clear();
         selection.splice(0);
@@ -191,7 +203,7 @@ export default (engine) => {
         ctx.readPixels(left, top, width, height, ctx.RGBA_INTEGER, ctx.UNSIGNED_INT, readData);
 
         for (let i = 0; i < bufferSize; i += 4) {
-          const [instanceId, lineId, pointId] = readData.subarray(i, i + 3);
+          const [instanceId, faceId, lineId, pointId] = readData.subarray(i, i + 4);
           if (!instanceId || selectedInstanceIds.has(instanceId)) continue;
 
           let instance = entities.getFirstByTypeAndIntId(Instance, instanceId);
@@ -216,6 +228,11 @@ export default (engine) => {
             selection.push({ type: 'line', index: lineId - 1, instance });
           }
 
+          if (faceId > 0 && !selectedFaceIds.has(faceId)) {
+            selectedFaceIds.add(faceId);
+            selection.push({ type: 'face', index: faceId, instance });
+          }
+
           if (pointId > 0 && !selectedPointIds.has(pointId)) {
             selectedPointIds.add(pointId);
             selection.push({ type: 'point', index: pointId - 1, instance });
@@ -228,8 +245,8 @@ export default (engine) => {
       ctx.readPixels(0, 0, 1, 1, ctx.RGBA_INTEGER, ctx.UNSIGNED_INT, readData);
 
       if (readData[0] && readData[1]) {
-        for (const { instance, index } of editor.edited.getByType('line')) {
-          if (instance.Id.int === readData[0] && index === readData[1] - 1) {
+        for (const { instance, index } of editor.edited.getByType('face')) {
+          if (instance.Id.int === readData[0] && index === readData[1]) {
             readData[1] = 0;
             break;
           }
@@ -237,9 +254,18 @@ export default (engine) => {
       }
 
       if (readData[0] && readData[2]) {
-        for (const { instance, index } of editor.edited.getByType('point')) {
+        for (const { instance, index } of editor.edited.getByType('line')) {
           if (instance.Id.int === readData[0] && index === readData[2] - 1) {
             readData[2] = 0;
+            break;
+          }
+        }
+      }
+
+      if (readData[0] && readData[3]) {
+        for (const { instance, index } of editor.edited.getByType('point')) {
+          if (instance.Id.int === readData[0] && index === readData[3] - 1) {
+            readData[3] = 0;
             break;
           }
         }

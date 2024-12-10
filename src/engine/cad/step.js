@@ -131,6 +131,7 @@ export default class Step extends Base.implement({ Properties }) {
       index: this.model.data.index.length,
       lineIndex: this.model.data.lineIndex.length,
       lineVertex: this.model.data.lineVertex.length,
+      faceIds: this.model.data.faceIds.length,
     };
 
     this.lengths = {
@@ -140,6 +141,7 @@ export default class Step extends Base.implement({ Properties }) {
       index: 0,
       lineIndex: 0,
       lineVertex: 0,
+      faceIds: 0,
     };
   }
 

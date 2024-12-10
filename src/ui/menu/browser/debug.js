@@ -67,18 +67,20 @@ export default (engine, tabs) => {
 
   const editorFns = Object.entries({
     'Current': () => [scene.currentInstance.Id.int],
-    'Hovered': () => [scene.hoveredInstance?.Id.int, scene.hoveredLineIndex, scene.hoveredPointIndex],
+    'Hovered': () => [scene.hoveredInstance?.Id.int, scene.hoveredFaceIndex, scene.hoveredLineIndex, scene.hoveredPointIndex],
     'Selected': () => [
       selection.getByType('instance').map(el => el.index).join(', '),
+      selection.getByType('face').map(el => el.index).join(', '),
       selection.getByType('line').map(el => el.index).join(', '),
       selection.getByType('point').map(el => el.index).join(', '),
     ],
     'Active': () => [
       active.getByType('instance').map(el => el.index).join(', '),
+      active.getByType('face').map(el => el.index).join(', '),
       active.getByType('line').map(el => el.index).join(', '),
       active.getByType('point').map(el => el.index).join(', '),
     ],
-  }).map(rowFn('Editor', 4, tab, undefined, '', 'Instance', 'Line', 'Point'));
+  }).map(rowFn('Editor', 5, tab, undefined, '', 'Instance', 'Face', 'Line', 'Point'));
 
   const toolFns = Object.entries({
     'Selected': () => [engine.tools.selected?.name],

@@ -696,9 +696,14 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
       this.#resizeModelBuffer('normal', 0);
       this.#resizeModelBuffer('color', 0);
     } else {
+      const lastFaceId = this.model.data.faceIds
+        .subarray(0, this.offsets.faceIds)
+        .reduce((max, next) => Math.max(next, max), 0);
+
       const faces = triangulate(lineVertices2D, lineIndices.map(i => i - this.offsets.lineIndex));
       const indices = faces.flatMap(face => face[0]);
       const vertices = transformFlatBuffer(faces.flatMap(face => face[1]), this.fromSketch);
+      const faceIds = faces.flatMap(([, { length }], i) => Array(length * 0.5).fill(i + lastFaceId + 1));
 
       const normals = new Uint8Array(vertices.length);
       for (let i = 0; i < normals.length; i += 3) {
@@ -711,9 +716,10 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
       this.#resizeModelBuffer('index', indices.map(i => i + startingVertex));
       this.#resizeModelBuffer('normal', normals);
       this.#resizeModelBuffer('color', new Array(vertices.length).fill(255));
+      this.#resizeModelBuffer('faceIds', faceIds);
     }
 
-    this.model.update('lineVertex', 'lineIndex', 'vertex', 'index', 'normal', 'color');
+    this.model.update('lineVertex', 'lineIndex', 'vertex', 'index', 'normal', 'color', 'faceIds');
   }
 
   recompute() {

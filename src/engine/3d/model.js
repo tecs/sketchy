@@ -9,6 +9,7 @@ import BoundingBox from './bounding-box.js';
  * @property {Uint8Array} color
  * @property {Uint32Array} lineIndex
  * @property {Float32Array} lineVertex
+ * @property {Uint32Array} faceIds
  */
 
 /** @typedef {Record<keyof ModelData, number[]>} PlainModelData */
@@ -50,6 +51,7 @@ export default class Model extends Base.implement({ BoundingBox }) {
       color: this.#ctx.createBuffer(),
       lineIndex: this.#ctx.createBuffer(),
       lineVertex: this.#ctx.createBuffer(),
+      faceIds: this.#ctx.createBuffer(),
     };
 
     this.import(data);
@@ -68,7 +70,10 @@ export default class Model extends Base.implement({ BoundingBox }) {
       index: new Uint32Array(data?.index ?? []),
       lineIndex: new Uint32Array(data?.lineIndex ?? []),
       lineVertex: new Float32Array(data?.lineVertex ?? []),
+      faceIds: new Uint32Array((data?.vertex?.length ?? 0) / 3),
     };
+
+    if (data?.faceIds) this.data.faceIds.set(data?.faceIds);
 
     this.#ctx.bindBuffer(this.#ctx.ELEMENT_ARRAY_BUFFER, this.buffer.index);
     this.#ctx.bufferData(this.#ctx.ELEMENT_ARRAY_BUFFER, this.data.index, this.#ctx.STATIC_DRAW);
@@ -88,6 +93,9 @@ export default class Model extends Base.implement({ BoundingBox }) {
     this.#ctx.bindBuffer(this.#ctx.ARRAY_BUFFER, this.buffer.lineVertex);
     this.#ctx.bufferData(this.#ctx.ARRAY_BUFFER, this.data.lineVertex, this.#ctx.STATIC_DRAW);
 
+    this.#ctx.bindBuffer(this.#ctx.ARRAY_BUFFER, this.buffer.faceIds);
+    this.#ctx.bufferData(this.#ctx.ARRAY_BUFFER, this.data.faceIds, this.#ctx.STATIC_DRAW);
+
     if (data) this.recalculateBoundingBox();
   }
 
@@ -102,6 +110,7 @@ export default class Model extends Base.implement({ BoundingBox }) {
       index: [...this.data.index],
       lineIndex: [...this.data.lineIndex],
       lineVertex: [...this.data.lineVertex],
+      faceIds: [...this.data.faceIds],
     }, this.body, this.#driver);
   }
 
@@ -118,7 +127,7 @@ export default class Model extends Base.implement({ BoundingBox }) {
    */
   update(...parts) {
     for (const part of parts) {
-      const isIndex = this.data[part] instanceof Uint32Array;
+      const isIndex = this.data[part] instanceof Uint32Array && part !== 'faceIds';
       const BUFFER_TYPE = isIndex ? this.#ctx.ELEMENT_ARRAY_BUFFER : this.#ctx.ARRAY_BUFFER;
       this.#ctx.bindBuffer(BUFFER_TYPE, this.buffer[part]);
       this.#ctx.bufferData(BUFFER_TYPE, this.data[part], this.#ctx.STATIC_DRAW);
