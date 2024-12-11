@@ -1,3 +1,5 @@
+import Sketch from '../engine/cad/sketch.js';
+
 const { mat4, vec3 } = glMatrix;
 
 /** @type {RenderingPass} */
@@ -5,6 +7,7 @@ export default (engine) => {
   const {
     driver: { ctx, makeProgram, vert, frag, buffer },
     camera,
+    editor,
     scene,
   } = engine;
 
@@ -16,12 +19,14 @@ export default (engine) => {
       in vec3 a_color;
 
       uniform mat4 u_matrix;
+      uniform float u_hovered;
 
       out vec3 v_color;
       out float v_distance;
 
       void main() {
         gl_Position = u_matrix * a_position;
+        gl_PointSize = 5.0 + u_hovered * 5.0;
 
         v_color = a_color;
         v_distance = a_position.x + a_position.y + a_position.z;
@@ -34,6 +39,7 @@ export default (engine) => {
       in float v_distance;
 
       uniform vec3 u_origin;
+      uniform float u_hovered;
 
       out vec4 outColor;
 
@@ -42,7 +48,7 @@ export default (engine) => {
         float isSolid = step(0.0, v_distance);
         float field = sin(length(centeredCoord));
         float dotField = step(0.0, field) * smoothstep(0.0, 0.1, field) * 0.8;
-        outColor = vec4(v_color, isSolid + (1.0 - isSolid) * dotField);
+        outColor = mix(vec4(v_color, isSolid + (1.0 - isSolid) * dotField), vec4(1.0), u_hovered);
       }
     `,
   );
@@ -54,6 +60,7 @@ export default (engine) => {
     0, 0, 0, 1, 0, 0,
     0, 0, 0, 0, 1, 0,
     0, 0, 0, 0, 0, 1,
+    0, 0, 0, 0, 0, 0,
   ]));
 
   const colorBuffer = buffer(new Float32Array([
@@ -63,6 +70,7 @@ export default (engine) => {
     1, 0, 0, 1, 0, 0,
     0, 1, 0, 0, 1, 0,
     0, 0, 1, 0, 0, 1,
+    0, 0, 0, 1, 0, 1,
   ]));
 
   // cached structures
@@ -82,6 +90,8 @@ export default (engine) => {
     program,
     render() {
       if (!setting.value) return;
+
+      const selectedAxes = editor.selection.getByType('axis').map(({ index }) => index);
 
       ctx.enable(ctx.BLEND);
 
@@ -109,8 +119,33 @@ export default (engine) => {
       mat4.scale(mvp, mvp, farPlaneV3);
       ctx.uniformMatrix4fv(program.uLoc.u_matrix, false, mvp);
 
+      if (scene.hoveredAxisIndex) {
+        ctx.uniform1f(program.uLoc.u_hovered, 1);
+        ctx.lineWidth(5);
+        ctx.drawArrays(ctx.LINES, scene.hoveredAxisIndex * 2 - 2, 2);
+        ctx.drawArrays(ctx.LINES, scene.hoveredAxisIndex * 2 + 4, 2);
+        ctx.uniform1f(program.uLoc.u_hovered, 0);
+      }
+
+      for (const selectedAxis of selectedAxes) {
+        if (selectedAxis > 0) {
+          ctx.lineWidth(3);
+          ctx.drawArrays(ctx.LINES, selectedAxis * 2 - 2, 2);
+          ctx.drawArrays(ctx.LINES, selectedAxis * 2 + 4, 2);
+        }
+      }
+
       ctx.lineWidth(1);
       ctx.drawArrays(ctx.LINES, 0, 12);
+
+      if (scene.currentStep instanceof Sketch) {
+        if (scene.hoveredAxisIndex === 0) {
+          ctx.uniform1f(program.uLoc.u_hovered, 1);
+          ctx.drawArrays(ctx.POINTS, 12, 1);
+          ctx.uniform1f(program.uLoc.u_hovered, 0);
+        }
+        ctx.drawArrays(ctx.POINTS, selectedAxes.includes(0) ? 13 : 12, 1);
+      }
 
       ctx.disable(ctx.BLEND);
     },

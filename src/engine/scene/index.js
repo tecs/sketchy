@@ -39,6 +39,9 @@ export default class Scene extends Base {
   /** @type {number?} */
   hoveredConstraintIndex = null;
 
+  /** @type {(0|1|2|3)?} */
+  hoveredAxisIndex = null;
+
   /** @type {AnyStep?} */
   currentStep = null;
 
@@ -131,6 +134,7 @@ export default class Scene extends Base {
     this.hoveredLineIndex = null;
     this.hoveredPointIndex = null;
     this.hoveredConstraintIndex = null;
+    this.hoveredAxisIndex = null;
     this.currentStep = null;
     this.selectedStep = null;
     this.selectedBody = null;
@@ -261,6 +265,7 @@ export default class Scene extends Base {
     this.hoveredFaceIndex = null;
     this.hoveredLineIndex = null;
     this.hoveredPointIndex = null;
+    this.hoveredAxisIndex = null;
 
     if (!this.hoveredInstance || this.hoveredInstance !== this.enteredInstance) return;
 
@@ -276,6 +281,19 @@ export default class Scene extends Base {
     if (this.hoveredLineIndex !== null || this.hoveredPointIndex !== null) return;
     const id = Id.uuuuToInt(id4u);
     this.hoveredConstraintIndex = id > 0 ? id - 1 : null;
+  }
+
+  /**
+   * @param {Scene["hoveredAxisIndex"]} index
+   */
+  hoverAxis(index) {
+    this.hoveredAxisIndex = index;
+    if (index !== null) {
+      this.hoveredInstance = null;
+      this.hoveredFaceIndex = null;
+      this.hoveredLineIndex = null;
+      this.hoveredPointIndex = null;
+    }
   }
 
   /**

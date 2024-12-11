@@ -1,6 +1,9 @@
 import Body from '../engine/cad/body.js';
+import Sketch from '../engine/cad/sketch.js';
 import SubInstance from '../engine/cad/subinstance.js';
 import Instance from '../engine/scene/instance.js';
+
+const { mat4, vec3 } = glMatrix;
 
 /**
  * @param {Instance[]} instances
@@ -21,7 +24,7 @@ const populateChildren = (instances, instancesToFindChildrenOf = instances) => {
 /** @type {RenderingPass} */
 export default (engine) => {
   const {
-    driver: { ctx, makeProgram, vert, frag, framebuffer, renderbuffer, texture },
+    driver: { ctx, makeProgram, vert, frag, buffer, framebuffer, renderbuffer, texture },
     camera,
     editor,
     entities,
@@ -70,6 +73,19 @@ export default (engine) => {
       }
     `,
   );
+
+  const axisBuffer = buffer(new Float32Array([
+    -1, 0, 0, 1, 0, 0,
+    0, -1, 0, 0, 1, 0,
+    0, 0, -1, 0, 0, 1,
+    0, 0, 0,
+  ]));
+
+  // cached structures
+  const maxId =  Math.pow(2, 32) - 1;
+  const mvp = mat4.create();
+  const origin = vec3.create();
+  const farPlaneV3 = vec3.fromValues(camera.farPlane, camera.farPlane, camera.farPlane);
 
   /** @type {Set<number>} */
   const selectedInstanceIds = new Set();
@@ -268,6 +284,56 @@ export default (engine) => {
             readData[3] = 0;
             break;
           }
+        }
+      }
+
+      if (scene.currentStep instanceof Sketch) {
+        const { trs } = scene.currentInstance.Placement;
+
+        mat4.getScaling(origin, trs);
+        vec3.inverse(origin, origin);
+        mat4.scale(mvp, trs, origin);
+        mat4.scale(mvp, mvp, farPlaneV3);
+
+        ctx.uniformMatrix4fv(program.uLoc.u_trs, false, mvp);
+        ctx.uniform1ui(program.uLoc.u_instanceId, maxId);
+
+        ctx.bindBuffer(ctx.ARRAY_BUFFER, axisBuffer);
+        ctx.enableVertexAttribArray(program.aLoc.a_position);
+        ctx.vertexAttribPointer(program.aLoc.a_position, 3, ctx.FLOAT, false, 0, 0);
+
+        // Axes
+        ctx.uniform1f(program.uLoc.u_offset, 1);
+        ctx.uniform1f(program.uLoc.u_isLine, 1);
+        ctx.uniform1f(program.uLoc.u_isPoint, 0);
+        ctx.lineWidth(5);
+
+        ctx.drawArrays(ctx.LINES, 0, 6);
+        ctx.lineWidth(1);
+
+        // Origin
+        ctx.uniform1f(program.uLoc.u_offset, 2);
+        ctx.uniform1f(program.uLoc.u_isLine, 0);
+        ctx.uniform1f(program.uLoc.u_isPoint, 1);
+
+        ctx.drawArrays(ctx.POINTS, 6, 1);
+        const sub = readData.subarray(4, 8);
+        ctx.readPixels(0, 0, 1, 1, ctx.RGBA_INTEGER, ctx.UNSIGNED_INT, sub);
+
+        if (sub[0] === maxId) {
+          if (sub[3] === 7) scene.hoverAxis(0);
+          else switch (sub[2]) {
+            case 1:
+              scene.hoverAxis(1);
+              break;
+            case 2:
+              scene.hoverAxis(2);
+              break;
+            case 3:
+              scene.hoverAxis(3);
+              break;
+          }
+          return;
         }
       }
 

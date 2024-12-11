@@ -58,6 +58,7 @@ export default (engine) => {
         hoveredLineIndex,
         hoveredFaceIndex,
         hoveredConstraintIndex,
+        hoveredAxisIndex,
         currentStep,
       } = scene;
       const toggle = input.ctrl;
@@ -73,6 +74,8 @@ export default (engine) => {
           toggleOrSet({ type: 'point', index: hoveredPointIndex, instance: enteredInstance }, toggle);
         } else if (hoveredConstraintIndex !== null && currentStep instanceof Sketch) {
           toggleOrSet({ type: 'constraint', index: hoveredConstraintIndex, instance: enteredInstance }, toggle);
+        } else if (hoveredAxisIndex !== null) {
+          toggleOrSet({ type: 'axis', index: hoveredAxisIndex, instance: enteredInstance }, toggle);
         } else if (!toggle) selection.clear();
         return;
       }
