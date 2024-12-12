@@ -180,7 +180,7 @@ const extractLinesOrPointPairs = (selection, sketch) => {
     }
   };
 
-  const pointPairs = pair(selection.getByType('point').map(({ index }) => index));
+  const pointPairs = extractPointPairs(selection);
   for (const [p1, p2] of pointPairs) {
     if (!pairs.find(([p3, p4]) => (p3 === p1 && p4 === p2) || (p3 === p2 && p4 === p1))) {
       pairs.push([p1, p2]);
