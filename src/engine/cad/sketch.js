@@ -193,13 +193,14 @@ const extractLinesOrPointPairs = (selection, sketch) => {
  * @template {Constraints} C
  * @param {C} constraint
  * @param {Sketch} sketch
+ * @param {boolean} [ignoreLocked]
  * @returns {import("./constraints.js").ConstraintData<C>?}
  */
-const getElements = (constraint, sketch) => {
+const getElements = (constraint, sketch, ignoreLocked = false) => {
   const pointsInfo = constraint.indices.map(index => sketch.getPointInfo(index)).filter(p => !!p);
   if (pointsInfo.length !== constraint.indices.length) return null;
 
-  const numLocked = pointsInfo.reduce((total, { locked }) => total + (locked ? 1 : 0), 0);
+  const numLocked = ignoreLocked ? 0 : pointsInfo.reduce((total, { locked }) => total + (locked ? 1 : 0), 0);
   if (numLocked === pointsInfo.length) return null;
 
   return {
@@ -665,6 +666,20 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
         }
       }
     } while (!solved && iteration < 1000);
+
+    if (lockedIndices.length === 0) return;
+
+    for (const constraint of this.data.constraints) {
+      if (!solved) break;
+
+      const constraintData = getElements(constraint, this, true);
+      if (!constraintData) continue;
+
+      [, solved] = /** @type {import("./constraints.js").CheckFn<typeof constraint>} */
+        (cs[constraint.type].check)(constraintData);
+    }
+
+    if (!solved) this.#solve([]);
   }
 
   /**
