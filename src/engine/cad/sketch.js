@@ -70,6 +70,23 @@ const forward = vec3.fromValues(0, 0, 1);
 const rotation = quat.create();
 const tempVertex = vec3.create();
 
+const originElement = /** @type {LineConstructionElement} */ ({ type: 'line', data: [0, 0, 0, 0] });
+const xAxisElement = /** @type {LineConstructionElement} */ ({ type: 'line', data: [-1, 0, 1, 0] });
+const yAxisElement = /** @type {LineConstructionElement} */ ({ type: 'line', data: [0, -1, 0, 1] });
+
+const originPoint = /** @type {PointInfo} */ ({
+  element: originElement,
+  elementIndex: -1,
+  offset: 0,
+  index: -1,
+  locked: true,
+  vec2: vec2.create(),
+});
+const xAxisPoint1 = { ...originPoint, index: -2, element: xAxisElement, vec2: vec2.fromValues(-1, 0) };
+const xAxisPoint2 = { ...xAxisPoint1, index: -3, offset: 2, vec2: vec2.fromValues(1, 0) };
+const yAxisPoint1 = { ...originPoint, index: -4, element: yAxisElement, vec2: vec2.fromValues(0, -1) };
+const yAxisPoint2 = { ...yAxisPoint1, index: -5, offset: 2, vec2: vec2.fromValues(0, 1) };
+
 /**
  * @param {number[]} flatBuffer
  * @param {ReadonlyMat4} transform
@@ -133,7 +150,10 @@ const pair = (dirtyCollection) => {
  * @param {Collection} selection
  * @returns {[number, number][]}
  */
-const extractPointPairs = selection => pair(selection.getByType('point').map(({ index }) => index));
+const extractPointPairs = selection => pair(
+  selection.getByType('point').map(({ index }) => index)
+    .concat(selection.getByType('axis').some(({ index }) => index === 0) ? -1 : []),
+);
 
 /**
  * @param {Collection} selection
@@ -155,6 +175,7 @@ const extractLinePairs = (selection, sketch) => pair(selection.getByType('line')
  */
 const extractAllPoints = (selection, sketch) => pair(selection.elements.flatMap(({ type, index }) => {
   switch (type) {
+    case 'axis': return index ? [] : -1;
     case 'point': return index;
     case 'line': {
       const line = sketch.getLine(index);
@@ -772,7 +793,7 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
       if (!lineIndices) return null;
 
       lineOrIndices = lineIndices;
-    } else if (lineOrIndices.some(idx => !this.hasPoint(idx))) return null;
+    } else if (lineOrIndices.some(idx => idx > -1 && !this.hasPoint(idx))) return null;
 
     return /** @type {DistanceConstraint} */ (this.#createConstraint('distance', lineOrIndices, length));
   }
@@ -788,7 +809,7 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
       if (!lineIndices) return null;
 
       lineOrIndices = lineIndices;
-    } else if (lineOrIndices.some(idx => !this.hasPoint(idx))) return null;
+    } else if (lineOrIndices.some(idx => idx > -1 && !this.hasPoint(idx))) return null;
 
     return /** @type {WidthConstraint} */ (this.#createConstraint('width', lineOrIndices, length));
   }
@@ -804,7 +825,7 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
       if (!lineIndices) return null;
 
       lineOrIndices = lineIndices;
-    } else if (lineOrIndices.some(idx => !this.hasPoint(idx))) return null;
+    } else if (lineOrIndices.some(idx => idx > -1 && !this.hasPoint(idx))) return null;
 
     return /** @type {HeightConstraint} */ (this.#createConstraint('height', lineOrIndices, length));
   }
@@ -921,11 +942,10 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
    * @returns {[LineConstructionElement, number]?}
    */
   getLineForPoint(index) {
-    const elementInfo = this.pointInfo.find(info => info.index === index);
+    const elementInfo = this.getPointInfo(index);
     if (!elementInfo) return null;
 
-    const line = this.data.elements[elementInfo.elementIndex];
-    return line ? [line, elementInfo.offset] : null;
+    return [elementInfo.element, elementInfo.offset];
   }
 
   /**
@@ -933,6 +953,13 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
    * @returns {PointInfo?}
    */
   getPointInfo(index) {
+    switch (index) {
+      case -1: return originPoint;
+      case -2: return xAxisPoint1;
+      case -3: return xAxisPoint2;
+      case -4: return yAxisPoint1;
+      case -5: return yAxisPoint2;
+    }
     return this.pointInfo.find(info => info.index === index) ?? null;
   }
 

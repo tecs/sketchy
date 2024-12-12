@@ -81,7 +81,7 @@ export default (engine) => {
     },
     start() {
       released = false;
-      const { enteredInstance, hoveredInstance, currentInstance, hoveredPointIndex } = scene;
+      const { enteredInstance, hoveredInstance, currentInstance, hoveredPointIndex, hoveredAxisIndex } = scene;
       const instance = enteredInstance ?? hoveredInstance ?? currentInstance;
       if (!(scene.currentStep instanceof Sketch)) {
         const normal = vec3.create();
@@ -105,6 +105,8 @@ export default (engine) => {
       let startingIndex = undefined;
       if (hoveredInstance === instance && hoveredPointIndex !== null && scene.currentStep.hasPoint(hoveredPointIndex)) {
         startingIndex = hoveredPointIndex;
+      } else if (hoveredAxisIndex === 0) {
+        startingIndex = -1;
       }
 
       historyAction = history.createAction('Draw rectangle', {
@@ -217,10 +219,15 @@ export default (engine) => {
       if (tooShort) return;
 
       const { data } = historyAction;
-      const { hoveredPointIndex, hoveredInstance } = scene;
+      const { hoveredPointIndex, hoveredInstance, hoveredAxisIndex } = scene;
 
       if (hoveredInstance === data.instance && hoveredPointIndex !== null && data.sketch.hasPoint(hoveredPointIndex)) {
         data.endIndex = hoveredPointIndex;
+      } else if (hoveredAxisIndex === 0) {
+        data.endIndex = -1;
+      }
+
+      if (data.endIndex !== undefined) {
         historyAction.append(({ endIndex, sketch, points }) => {
           if (endIndex !== undefined) {
             sketch.coincident([points[0].index, endIndex]);

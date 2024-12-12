@@ -91,6 +91,8 @@ export default (engine) => {
 
       if (instance === scene.hoveredInstance && scene.hoveredPointIndex !== null) {
         startIndex ??= scene.hoveredPointIndex;
+      } else if (scene.hoveredAxisIndex === 0) {
+        startIndex ??= -1;
       }
 
       historyAction = history.createAction('Draw line segment', {
@@ -149,16 +151,22 @@ export default (engine) => {
       if (tooShort) return;
 
       const { data } = historyAction;
-      const { hoveredPointIndex, hoveredInstance } = scene;
+      const { hoveredPointIndex, hoveredInstance, hoveredAxisIndex } = scene;
 
       if (hoveredInstance === data.instance && hoveredPointIndex !== null && data.sketch.hasPoint(hoveredPointIndex)) {
         data.endIndex = hoveredPointIndex;
+      } else if (hoveredAxisIndex === 0) {
+        data.endIndex = -1;
+      }
+
+      if (data.endIndex !== undefined) {
         historyAction.append(({ endIndex, sketch, points }) => {
           if (endIndex !== undefined) {
             sketch.coincident([points[1].index, endIndex]);
           }
         }, () => {});
       }
+
       const { endIndex } = historyAction.data;
 
       historyAction.commit();
