@@ -15,13 +15,15 @@ const { vec2, vec3 } = glMatrix;
 
 /** @typedef {TypedPropertyData<string, "plain">} PlainPropertyData */
 /** @typedef {TypedPropertyData<number, "number">} NumberPropertyData */
+/** @typedef {TypedPropertyData<boolean, "boolean">} BooleanPropertyData */
 /** @typedef {TypedPropertyData<vec2, "vec2">} Vec2PropertyData */
 /** @typedef {TypedPropertyData<vec3, "vec3">} Vec3PropertyData */
 /** @typedef {TypedPropertyData<vec2, "coord2d">} Coord2dPropertyData */
 /** @typedef {TypedPropertyData<vec3, "coord">} CoordPropertyData */
 /** @typedef {TypedPropertyData<number, "angle">} AnglePropertyData */
 /** @typedef {TypedPropertyData<number, "distance">} DistancePropertyData */
-/** @typedef {PlainPropertyData | NumberPropertyData | Vec2PropertyData | Vec3PropertyData} PlainPropertiesData */
+/** @typedef {PlainPropertyData | BooleanPropertyData | NumberPropertyData} PrimitivePropertiesData */
+/** @typedef {PrimitivePropertiesData | Vec2PropertyData | Vec3PropertyData} PlainPropertiesData */
 /** @typedef {DistancePropertyData | Coord2dPropertyData | CoordPropertyData} DistancePropertiesData */
 /** @typedef {PlainPropertiesData | DistancePropertiesData | AnglePropertyData} PropertyData */
 /** @typedef {Record<string, Record<string, PropertyData>>} PropertyDefinitions */
@@ -67,6 +69,28 @@ export class Properties {
     const parsed = parseFloat(value);
     if (Number.isNaN(parsed) || !Number.isFinite(parsed)) return null;
     return parsed;
+  }
+
+  /**
+   * @param {string} value
+   * @returns {boolean?}
+   */
+  static parseBoolean(value) {
+    switch(value.toLowerCase().trim()) {
+      case '1':
+      case 'y':
+      case 'yes':
+      case 't':
+      case 'true':
+        return true;
+      case '0':
+      case 'n':
+      case 'no':
+      case 'f':
+      case 'false':
+        return false;
+    }
+    return null;
   }
 
   /**
@@ -169,6 +193,7 @@ export class Properties {
       case 'coord': return Properties.parseCoord3d(value);
       case 'angle': return Properties.parseAngle(value);
       case 'distance': return Properties.parseDistance(value);
+      case 'boolean': return Properties.parseBoolean(value);
       case 'plain': return value;
     }
 
@@ -248,6 +273,7 @@ export class Properties {
       case 'angle': return Properties.stringifyAngle(value, precision);
       case 'distance': return Properties.stringifyDistance(value, precision);
       case 'number': return Properties.stringifyNumber(value, precision);
+      case 'boolean': return String(value);
       case 'plain': return value;
       default: return '<<UNSUPPORTED PROPERTY TYPE>>';
     }
