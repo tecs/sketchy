@@ -26,12 +26,12 @@ export default (engine, tabs) => {
     if (constraints.length) table.addRow('', 'type', 'value').$element({ className: 'disabled' });
     else table.addHeader('', 'No constraints yet');
 
-    const selectedConstraints = selection.getByType('constraint').map(({ index }) => index);
+    const selectedConstraints = selection.getByType('constraint').map(({ id }) => id);
     const selectedLineConstraints = selection.getByType('line')
-      .map(({ index }) => sketch.getLine(index))
+      .map(({ id }) => sketch.getLine(id))
       .flatMap(line => line ? sketch.getConstraints(line) : []);
 
-    const selectedPointIndices = selection.getByType('point').map(({ index }) => index);
+    const selectedPointIndices = selection.getByType('point').map(({ id }) => id);
 
     for (let i = 0; i < constraints.length; ++i) {
       const constraint = constraints[i];
@@ -42,7 +42,7 @@ export default (engine, tabs) => {
       table.addRow(`${i + 1}`, constraint.type, constraint.data !== null ? Properties.stringifyDistance(constraint.data, 3) : '').$element({
         onclick: ({ detail }) => {
           if (detail === 1) {
-            selection.set({ index: i, type: 'constraint', instance: scene.currentInstance });
+            selection.set({ id: i, type: 'constraint', instance: scene.currentInstance });
             return;
           }
           const isDistance = constraint.type === 'distance' || constraint.type === 'width' || constraint.type === 'height';

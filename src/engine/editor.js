@@ -5,7 +5,7 @@ import SubInstance from './cad/subinstance.js';
 /**
  * @typedef Element
  * @property {string} type
- * @property {number} index
+ * @property {number} id
  * @property {Instance} instance
  */
 
@@ -24,7 +24,7 @@ export class Collection extends Base {
    */
   getElement(el) {
     for (const element of this.elements) {
-      if (el.type === element.type && el.index === element.index && el.instance === element.instance) {
+      if (el.type === element.type && el.id === element.id && el.instance === element.instance) {
         return element;
       }
     }
@@ -116,7 +116,7 @@ export class Collection extends Base {
     if (!Array.isArray(elements)) elements = [elements];
 
     elements = elements.filter((v, i, a) =>
-      a.findIndex(v2 => v.index === v2.index && v.type === v2.type && v.instance === v2.instance) === i,
+      a.findIndex(v2 => v.id === v2.id && v.type === v2.type && v.instance === v2.instance) === i,
     );
     if (!elements.length) return;
 

@@ -1,24 +1,31 @@
-const { glMatrix: { equals }, vec2 } = glMatrix;
+const { glMatrix: { equals }, vec2, vec3, quat } = glMatrix;
 
 /** @typedef {[i1: number, i2: number, angle: number]} Line */
-/** @typedef {[indices: number[], vertices: number[]]} Face */
+
 /**
  * @typedef Loop
  * @property {number[]} indices
  * @property {Line[]} lines
  */
+
 /**
  * @typedef Triangulation
  * @property {number[]} meshIndices
  * @property {Loop} loop
+ * @property {number[][]} holes
  * @property {Bucket[]} descendentBuckets
  */
+
 /**
  * @typedef Bucket
  * @property {Triangulation[]} triangulations
  * @property {number[]} outline
  */
 
+// cached structures
+const temp = vec3.create();
+const rotation = quat.create();
+const forward = vec3.fromValues(0, 0, 1);
 const twoPI = Math.PI * 2;
 
 /**
@@ -148,6 +155,30 @@ const earClip = (vertices, sortedIndices, loop, holeLoops) => {
   polygons.push(...loop);
 
   return polygons;
+};
+
+/**
+ * @param {Readonly<number[]>} vertices
+ * @param {ReadonlyVec3} normal
+ * @returns {number[]}
+ */
+export const flattenVertices = (vertices, normal) => {
+  const nVertices = vertices.length / 3;
+
+  quat.rotationTo(rotation, normal, forward);
+  const flatVertices = new Array(nVertices * 2);
+  for (let i = 0; i < nVertices; ++i) {
+    temp[0] = vertices[i * 3];
+    temp[1] = vertices[i * 3 + 1];
+    temp[2] = vertices[i * 3 + 2];
+
+    vec3.transformQuat(temp, temp, rotation);
+
+    flatVertices[i * 2] = temp[0];
+    flatVertices[i * 2 + 1] = temp[1];
+  }
+
+  return flatVertices;
 };
 
 /**
@@ -343,7 +374,7 @@ const lineSorter = (uniquePoints, clockwise = false) => {
 
 /**
  * @param {Readonly<Line[]>} lines
- * @param {boolean} outline
+ * @param {boolean} [outline]
  * @returns {Loop[]}
  */
 const findLoops = (lines, outline = false) => {
@@ -543,19 +574,19 @@ const setHoles = (triangulations, uniqueVertices) => {
       }
     }
 
-    const holes = loop.descendentBuckets.map(({ outline }) => outline);
-    loop.meshIndices = triangulateFace(flatVertices, loop.loop.indices, holes);
+    loop.holes = loop.descendentBuckets.map(({ outline }) => outline);
+    loop.meshIndices = triangulateFace(flatVertices, loop.loop.indices, loop.holes);
   }
 };
 
 /**
  * @param {Readonly<number[]>} vertices
  * @param {Readonly<number[]>} lineIndices A-B,B-C,C-D,...
- * @returns {Face[]}
+ * @param {PlainVec2[]} [uniquePoints]
+ * @returns {Triangulation[]}
  */
-export default (vertices, lineIndices) => {
+export const triangulate = (vertices, lineIndices, uniquePoints = []) => {
   const lines = /** @type {Line[]} */ ([]);
-  const uniquePoints = /** @type {PlainVec2[]} */ ([]);
 
   // remove duplicate and zero-length lines and duplicate vertices
   for (let i = 1; i < lineIndices.length; i += 2) {
@@ -594,7 +625,7 @@ export default (vertices, lineIndices) => {
 
   lines.sort(lineSorter(uniquePoints));
 
-  const loops = findLoops(lines);
+  const loops = findLoops(lines, false);
 
   const triangulations = /** @type {Triangulation[]} */ ([]);
 
@@ -604,28 +635,11 @@ export default (vertices, lineIndices) => {
       meshIndices: triangulateFace(flatVertices, loop.indices),
       loop,
       descendentBuckets: [],
+      holes: [],
     });
   }
 
   setHoles(triangulations, uniquePoints);
 
-  const faces = /** @type {Face[]} */ ([]);
-  let startingIndex = 0;
-  for (const { meshIndices } of triangulations) {
-    const face = /** @type {Face} */ ([[], []]);
-    const indexMap = /** @type {number[]} */ ([]);
-    for (const index of meshIndices) {
-      let newIndex = indexMap.indexOf(index);
-      if (newIndex === -1) {
-        newIndex = indexMap.length;
-        indexMap.push(index);
-        face[1].push(...uniquePoints[index]);
-      }
-      face[0].push(newIndex + startingIndex);
-    }
-    faces.push(face);
-    startingIndex += indexMap.length;
-  }
-
-  return faces;
+  return triangulations;
 };

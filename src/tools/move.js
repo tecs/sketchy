@@ -20,7 +20,7 @@ export default (engine) => {
    * @typedef LineElement
    * @property {"line"} type
    * @property {import("../engine/cad/sketch.js").LineConstructionElement} line
-   * @property {number} index
+   * @property {number} id
    * @property {Instance} instance
    * @property {Sketch} sketch
    */
@@ -30,7 +30,7 @@ export default (engine) => {
    * @property {"point"} type
    * @property {import("../engine/cad/sketch.js").LineConstructionElement} line
    * @property {number} offset
-   * @property {number} index
+   * @property {number} id
    * @property {Instance} instance
    * @property {Sketch} sketch
    */
@@ -103,7 +103,7 @@ export default (engine) => {
     },
     start() {
       released = false;
-      const { currentStep, hoveredInstance, enteredInstance, hoveredPointIndex, hoveredLineIndex } = scene;
+      const { currentStep, hoveredInstance, enteredInstance, hoveredPointId, hoveredLineId } = scene;
 
       const sketch = currentStep ?? enteredInstance?.body.step ?? null;
       const movementSelection = /** @type {Elements[]} */ ([]);
@@ -113,12 +113,12 @@ export default (engine) => {
       const candidateLines = selection.getByType('line');
 
       if (!selectedInstances.length && hoveredInstance === enteredInstance && hoveredInstance) {
-        if (!candidatePoints.length && hoveredPointIndex !== null) {
-          candidatePoints.push({ type: 'point', index: hoveredPointIndex, instance: hoveredInstance });
+        if (!candidatePoints.length && hoveredPointId !== null) {
+          candidatePoints.push({ type: 'point', id: hoveredPointId, instance: hoveredInstance });
         }
 
-        if (!candidateLines.length && hoveredLineIndex !== null) {
-          candidateLines.push({ type: 'line', index: hoveredLineIndex, instance: hoveredInstance });
+        if (!candidateLines.length && hoveredLineId !== null) {
+          candidateLines.push({ type: 'line', id: hoveredLineId, instance: hoveredInstance });
         }
       }
 
@@ -126,23 +126,23 @@ export default (engine) => {
       const pointIndices = /** @type {number[]} */ ([]);
       if (sketch instanceof Sketch) {
         for (const candidate of candidateLines) {
-          const line = sketch.getLine(candidate.index);
+          const line = sketch.getLine(candidate.id);
           if (!line) continue;
 
           mat4.multiply(transformation, candidate.instance.Placement.inverseTrs, sketch.toSketch);
           movementSelection.push({ ...candidate, sketch, line });
-          pointIndices.push(...sketch.getPoints(line).map(({ index }) => index));
+          pointIndices.push(...sketch.getPoints(line).map(({ id }) => id));
         }
 
         for (const candidate of candidatePoints) {
-          if (pointIndices.includes(candidate.index)) continue;
+          if (pointIndices.includes(candidate.id)) continue;
 
-          const line = sketch.getLineForPoint(candidate.index);
+          const line = sketch.getLineForPoint(candidate.id);
           if (!line) continue;
 
           mat4.multiply(transformation, candidate.instance.Placement.inverseTrs, sketch.toSketch);
           movementSelection.push({ ...candidate, sketch, line: line[0], offset: line[1] });
-          pointIndices.push(candidate.index);
+          pointIndices.push(candidate.id);
         }
       } else {
         if (!selectedInstances.length && hoveredInstance) {
@@ -187,7 +187,7 @@ export default (engine) => {
 
       selection.set(movementSelection.map(element => ({
         type: element.type,
-        index: element.type === 'instance' ? element.instance.Id.int : element.index,
+        id: element.type === 'instance' ? element.instance.Id.int : element.id,
         instance: element.instance,
       })));
 

@@ -42,11 +42,20 @@ export default class Step extends Base.implement({ Properties }) {
   /** @type {Step<Value> | undefined} */
   previousStep;
 
-  /** @type {Readonly<Record<keyof Model["data"], number>>} */
-  offsets;
+  /** @type {number} */
+  lastFaceId;
 
-  /** @type {Record<keyof Model["data"], number>} */
-  lengths;
+  /** @type {number} */
+  lastLineId;
+
+  /** @type {number} */
+  lastPointId;
+
+  /** @type {number} */
+  lastVerticesLength;
+
+  /** @type {number} */
+  lastSegmentsLength;
 
   /** @type {Engine} */
   engine;
@@ -95,8 +104,11 @@ export default class Step extends Base.implement({ Properties }) {
 
     this.#recompute();
     this.model = this.assertProperty('model');
-    this.offsets = this.assertProperty('offsets');
-    this.lengths = this.assertProperty('lengths');
+    this.lastFaceId = this.assertProperty('lastFaceId');
+    this.lastLineId = this.assertProperty('lastLineId');
+    this.lastPointId = this.assertProperty('lastPointId');
+    this.lastVerticesLength = this.assertProperty('lastVerticesLength');
+    this.lastSegmentsLength = this.assertProperty('lastSegmentsLength');
   }
 
   /**
@@ -124,34 +136,11 @@ export default class Step extends Base.implement({ Properties }) {
 
     this.model = this.previousStep?.model.clone() ?? new Model(undefined, this.body, this.engine.driver);
 
-    this.offsets = {
-      vertex: this.model.data.vertex.length,
-      normal: this.model.data.normal.length,
-      color: this.model.data.color.length,
-      index: this.model.data.index.length,
-      lineIndex: this.model.data.lineIndex.length,
-      lineVertex: this.model.data.lineVertex.length,
-      faceIds: this.model.data.faceIds.length,
-    };
-
-    this.lengths = {
-      vertex: 0,
-      normal: 0,
-      color: 0,
-      index: 0,
-      lineIndex: 0,
-      lineVertex: 0,
-      faceIds: 0,
-    };
-  }
-
-  /**
-   * @param {keyof Model["data"]} part
-   * @param {number} index
-   * @returns {boolean}
-   */
-  indexBelongsTo(part, index) {
-    return index >= this.offsets[part] && index <= this.offsets[part] + this.lengths[part];
+    this.lastFaceId = this.model.lastFaceId;
+    this.lastLineId = this.model.lastLineId;
+    this.lastPointId = this.model.lastPointId;
+    this.lastVerticesLength = this.model.data.vertices.length;
+    this.lastSegmentsLength = this.model.data.segments.length;
   }
 
   recompute() {

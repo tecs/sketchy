@@ -1,6 +1,6 @@
 import Step from './step.js';
 
-/** @typedef {Partial<import("../3d/model.js").PlainModelData>} Data */
+/** @typedef {import("../3d/model.js").PlainModelData} Data */
 /** @typedef {import("./step.js").BaseParams<Data>} BaseParams */
 
 export default class RawData extends /** @type {typeof Step<Data>} */ (Step) {

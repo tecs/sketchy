@@ -2,7 +2,7 @@ import { Properties } from '../general/properties.js';
 import Input from '../input.js';
 import cs from './constraints.js';
 import Step from './step.js';
-import triangulate from './triangulate.js';
+import { triangulate } from './triangulate.js';
 
 const { vec2, vec3, mat4, quat } = glMatrix;
 
@@ -34,7 +34,7 @@ const { vec2, vec3, mat4, quat } = glMatrix;
  * @property {ConstructionElements} element
  * @property {number} elementIndex
  * @property {number} offset
- * @property {number} index
+ * @property {number} id
  * @property {boolean} locked
  * @property {vec2} vec2
  */
@@ -65,10 +65,18 @@ const { vec2, vec3, mat4, quat } = glMatrix;
 /** @typedef {Exclude<import("./constraints.js").DistanceConstraints, EqualConstraint>["type"]} DistanceType */
 /** @typedef {Exclude<Constraints["type"], DistanceType>} ConstraintType */
 
+/**
+ * @typedef IndexMapping
+ * @property {number} [nextIndex]
+ * @property {number} [duplicate]
+ * @property {Map<number, number>} mapping
+ */
+
 // cached structures
 const forward = vec3.fromValues(0, 0, 1);
 const rotation = quat.create();
 const tempVertex = vec3.create();
+const tempVertex2 = vec3.create();
 
 const originElement = /** @type {LineConstructionElement} */ ({ type: 'line', data: [0, 0, 0, 0] });
 const xAxisElement = /** @type {LineConstructionElement} */ ({ type: 'line', data: [-1, 0, 1, 0] });
@@ -78,7 +86,7 @@ const originPoint = /** @type {PointInfo} */ ({
   element: originElement,
   elementIndex: -1,
   offset: 0,
-  index: -1,
+  id: -1,
   locked: true,
   vec2: vec2.create(),
 });
@@ -88,38 +96,51 @@ const yAxisPoint1 = { ...originPoint, index: -4, element: yAxisElement, vec2: ve
 const yAxisPoint2 = { ...yAxisPoint1, index: -5, offset: 2, vec2: vec2.fromValues(0, 1) };
 
 /**
- * @param {number[]} flatBuffer
+ * @param {Readonly<number[]>} flatBuffer
+ * @param {number[]} buffer
  * @param {ReadonlyMat4} transform
- * @returns {Float32Array}
+ * @param {IndexMapping} mapping
  */
-const transformFlatBuffer = (flatBuffer, transform) => {
-  const nVertices = flatBuffer.length / 2;
-  const buffer = new Float32Array(nVertices * 3);
+const appendFlatBuffer = (flatBuffer, buffer, transform, mapping) => {
+  mapping.nextIndex ??= buffer.length / 3;
+  mapping.duplicate ??= 0;
 
-  /** @type {[x: number, y: number, index: number][]} */
-  const verticesCache = [];
-
-  for (let i = 0; i < nVertices; ++i) {
-    const flatIndex = i * 2;
-    const index = i * 3;
-
-    const dataX = flatBuffer[flatIndex];
-    const dataY = flatBuffer[flatIndex + 1];
-
-    const cacheIndex = verticesCache.find(([x, y]) => x === dataX && y === dataY)?.[2];
-    if (cacheIndex !== undefined) {
-      buffer.copyWithin(index, cacheIndex, cacheIndex + 3);
-      continue;
-    }
-
-    vec3.set(tempVertex, dataX, dataY, 0);
+  for (let i = 0; i < flatBuffer.length; i += 2) {
+    vec3.set(tempVertex, flatBuffer[i], flatBuffer[i + 1], 0);
     vec3.transformMat4(tempVertex, tempVertex, transform);
 
-    verticesCache.push([dataX, dataY, index]);
-    buffer.set(tempVertex, index);
-  }
+    let found = false;
+    for (let k = 0; k < buffer.length; k += 3) {
+      vec3.set(tempVertex2, buffer[k], buffer[k + 1], buffer[k + 2]);
+      if (vec3.equals(tempVertex, tempVertex2)) {
+        ++mapping.duplicate;
+        found = true;
+        mapping.mapping.set(mapping.nextIndex, k / 3);
+        break;
+      }
+    }
 
-  return buffer;
+    if (!found) {
+      if (mapping.duplicate > 0) mapping.mapping.set(mapping.nextIndex, mapping.nextIndex - mapping.duplicate);
+      buffer.push(...tempVertex);
+    }
+
+    ++mapping.nextIndex;
+  }
+};
+
+/**
+ * @param {Readonly<number[]>} indices
+ * @param {Readonly<IndexMapping>} mapping
+ * @returns {number[]}
+ */
+const remapIndices = (indices, { mapping }) => {
+  const newIndices = indices.slice();
+  for (let i = 0; i < newIndices.length; ++i) {
+    const toIndex = mapping.get(newIndices[i]);
+    if (toIndex !== undefined) newIndices[i] = toIndex;
+  }
+  return newIndices;
 };
 
 /**
@@ -151,8 +172,8 @@ const pair = (dirtyCollection) => {
  * @returns {[number, number][]}
  */
 const extractPointPairs = selection => pair(
-  selection.getByType('point').map(({ index }) => index)
-    .concat(selection.getByType('axis').some(({ index }) => index === 0) ? -1 : []),
+  selection.getByType('point').map(({ id }) => id)
+    .concat(selection.getByType('axis').some(({ id }) => id === 0) ? -1 : []),
 );
 
 /**
@@ -160,10 +181,10 @@ const extractPointPairs = selection => pair(
  * @param {Sketch} sketch
  * @returns {[number, number, number, number][]}
  */
-const extractLinePairs = (selection, sketch) => pair(selection.getByType('line').map(({ index }) => sketch.getLine(index)))
+const extractLinePairs = (selection, sketch) => pair(selection.getByType('line').map(({ id }) => sketch.getLine(id)))
   .reduce((indices, [l1, l2]) => {
-    const i1 = sketch.getLineIndices(l1);
-    const i2 = sketch.getLineIndices(l2);
+    const i1 = sketch.getLineIds(l1);
+    const i2 = sketch.getLineIds(l2);
     if (i1 && i2) indices.push([...i1, ...i2]);
     return indices;
   }, /** @type {[number, number, number, number][]} */ ([]));
@@ -173,13 +194,13 @@ const extractLinePairs = (selection, sketch) => pair(selection.getByType('line')
  * @param {Sketch} sketch
  * @returns {[number, number][]}
  */
-const extractAllPoints = (selection, sketch) => pair(selection.elements.flatMap(({ type, index }) => {
+const extractAllPoints = (selection, sketch) => pair(selection.elements.flatMap(({ type, id }) => {
   switch (type) {
-    case 'axis': return index ? [] : -1;
-    case 'point': return index;
+    case 'axis': return id ? [] : -1;
+    case 'point': return id;
     case 'line': {
-      const line = sketch.getLine(index);
-      return line ? sketch.getLineIndices(line) ?? [] : [];
+      const line = sketch.getLine(id);
+      return line ? sketch.getLineIds(line) ?? [] : [];
     }
   }
   return [];
@@ -192,10 +213,10 @@ const extractAllPoints = (selection, sketch) => pair(selection.elements.flatMap(
  */
 const extractLinesOrPointPairs = (selection, sketch) => {
   const pairs = /** @type {[number, number][]} */ ([]);
-  const lines = selection.getByType('line').map(({ index }) => sketch.getLine(index));
+  const lines = selection.getByType('line').map(({ id }) => sketch.getLine(id));
   for (const line of lines) {
     if (!line) continue;
-    const indices = sketch.getLineIndices(line);
+    const indices = sketch.getLineIds(line);
     if (indices) {
       pairs.push(indices);
     }
@@ -473,8 +494,8 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
 
       const elements = selection.elements.filter(el => el.type === 'line' || el.type === 'point');
       const selectedConstraints = selection.getByType('constraint');
-      const lines = elements.reduce((out, { type, index }) => {
-        const line = type === 'line' ? sketch.getLine(index) : sketch.getLineForPoint(index)?.[0];
+      const lines = elements.reduce((out, { type, id }) => {
+        const line = type === 'line' ? sketch.getLine(id) : sketch.getLineForPoint(id)?.[0];
         if (line && !out.includes(line)) {
           out.push(line);
         }
@@ -483,7 +504,7 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
         .map(line => /** @type {const} */ ([line, sketch.listElements().indexOf(line)]));
 
       const constraints = lines.flatMap(([line]) => sketch.getConstraints(line))
-        .concat(selectedConstraints.map(({ index }) => sketch.data.constraints[index]))
+        .concat(selectedConstraints.map(({ id }) => sketch.data.constraints[id]))
         .filter((v, i, a) => v && a.indexOf(v) === i)
         .map(constraint => /** @type {const} */ ([constraint, sketch.listConstraints().indexOf(constraint)]));
 
@@ -516,14 +537,14 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
     });
 
     engine.on('mousedown', (button, count) => {
-      const { currentInstance, hoveredInstance, currentStep, hoveredLineIndex, hoveredPointIndex } = scene;
+      const { currentInstance, hoveredInstance, currentStep, hoveredLineId, hoveredPointId } = scene;
       if (button !== 'left' || count !== 2 || hoveredInstance !== currentInstance) return;
 
       const sketch = currentInstance.body.step;
       if (!(sketch instanceof Sketch) || sketch === currentStep) return;
 
-      if (hoveredLineIndex !== null && sketch.hasLine(hoveredLineIndex)) scene.setCurrentStep(sketch);
-      else if (hoveredPointIndex !== null && sketch.hasPoint(hoveredPointIndex)) scene.setCurrentStep(sketch);
+      if (hoveredLineId !== null && sketch.hasLine(hoveredLineId)) scene.setCurrentStep(sketch);
+      else if (hoveredPointId !== null && sketch.hasPoint(hoveredPointId)) scene.setCurrentStep(sketch);
     });
 
     engine.on('stepchange', (current, previous, isSelectionChange) => {
@@ -589,24 +610,6 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
   }
 
   /**
-   * @param {keyof import("../3d/model.js").ModelData} part
-   * @param {number|ArrayLike<number>} elements
-   */
-  #resizeModelBuffer(part, elements) {
-    const isNumber = typeof elements === 'number';
-    this.lengths[part] = isNumber ? elements : elements.length;
-    const newSize = this.offsets[part] + this.lengths[part];
-    if (newSize !== this.model.data[part].length) {
-      const oldData = this.model.data[part].subarray(0, this.offsets[part]);
-      this.model.data[part] = new /** @type {new (e: number) => any} */ (this.model.data[part].constructor)(newSize);
-      this.model.data[part].set(oldData);
-    }
-    if (!isNumber) {
-      this.model.data[part].set(elements, this.offsets[part]);
-    }
-  }
-
-  /**
    * @template {ConstructionElements} T
    * @param {T["type"]} type
    * @param {T["data"]} data
@@ -639,21 +642,21 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
   }
 
   /**
-   * @param {number[]} lockedIndices
+   * @param {number[]} lockedIds
    */
-  #solve(lockedIndices) {
-    const firstIndex = this.offsets.lineVertex / 3;
+  #solve(lockedIds) {
+    const nextPointId = this.lastPointId + 1;
     this.pointInfo = [];
     for (let elementIndex = 0; elementIndex < this.data.elements.length; ++elementIndex) {
       const element = this.data.elements[elementIndex];
       for (let offset = 0; offset < element.data.length; offset += 2) {
-        const index = firstIndex + this.pointInfo.length;
+        const id = nextPointId + this.pointInfo.length;
         this.pointInfo.push({
           element,
           elementIndex,
           offset,
-          index,
-          locked: lockedIndices.includes(index),
+          id,
+          locked: lockedIds.includes(id),
           vec2: vec2.fromValues(element.data[offset], element.data[offset + 1]),
         });
       }
@@ -688,7 +691,7 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
       }
     } while (!solved && iteration < 1000);
 
-    if (lockedIndices.length === 0) return;
+    if (lockedIds.length === 0) return;
 
     for (const constraint of this.data.constraints) {
       if (!solved) break;
@@ -712,50 +715,45 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
     const lineVertices2D = /** @type {number[]} */ ([]);
     const lineIndices = /** @type {number[]} */ ([]);
 
-    for (const { element, vec2: [dataX, dataY], index } of this.pointInfo) {
+    const nextFaceId = this.lastFaceId + 1;
+    const nextIndex = this.lastVerticesLength / 3;
+
+    const newData = this.model.export();
+
+    newData.faces.splice(nextFaceId - 1);
+    newData.vertices.splice(this.lastVerticesLength);
+    newData.segments.splice(this.lastSegmentsLength);
+
+    for (const { element, vec2: [dataX, dataY] } of this.pointInfo) {
       switch (element.type) {
         case 'line':
+          lineIndices.push(nextIndex + lineVertices2D.length / 2);
           lineVertices2D.push(dataX, dataY);
-          lineIndices.push(index);
           break;
       }
     }
 
-    const lineVertices = transformFlatBuffer(lineVertices2D, this.fromSketch);
-    this.#resizeModelBuffer('lineVertex', lineVertices);
-    this.#resizeModelBuffer('lineIndex', lineIndices);
+    const mapping = /** @type {IndexMapping} */ ({ mapping: new Map() });
+    appendFlatBuffer(lineVertices2D, newData.vertices, this.fromSketch, mapping);
+    newData.segments.push(...remapIndices(lineIndices, mapping));
 
     // don't triangulate while editing the sketch
-    if (this.engine.scene.currentStep === this) {
-      this.#resizeModelBuffer('vertex', 0);
-      this.#resizeModelBuffer('index', 0);
-      this.#resizeModelBuffer('normal', 0);
-      this.#resizeModelBuffer('color', 0);
-    } else {
-      const lastFaceId = this.model.data.faceIds
-        .subarray(0, this.offsets.faceIds)
-        .reduce((max, next) => Math.max(next, max), 0);
-
-      const faces = triangulate(lineVertices2D, lineIndices.map(i => i - this.offsets.lineIndex));
-      const indices = faces.flatMap(face => face[0]);
-      const vertices = transformFlatBuffer(faces.flatMap(face => face[1]), this.fromSketch);
-      const faceIds = faces.flatMap(([, { length }], i) => Array(length * 0.5).fill(i + lastFaceId + 1));
-
-      const normals = new Uint8Array(vertices.length);
-      for (let i = 0; i < normals.length; i += 3) {
-        normals.set(this.data.attachment.normal, i);
+    if (this.engine.scene.currentStep !== this) {
+      const vertices2D = /** @type {PlainVec2[]} */ ([]);
+      const triangulations = triangulate(lineVertices2D, lineIndices.map(i => i - nextIndex), vertices2D);
+      const nextVertexIndex = mapping.nextIndex ?? 0;
+      appendFlatBuffer(vertices2D.flat(), newData.vertices, this.fromSketch, mapping);
+      for (const { loop, holes } of triangulations) {
+        newData.faces.push({
+          color: [255, 255, 255],
+          normal: [...this.data.attachment.normal],
+          holes: holes.map(hole => remapIndices(hole.map(i => i + nextVertexIndex), mapping)),
+          loop: remapIndices(loop.indices.map(i => i + nextVertexIndex), mapping),
+        });
       }
-
-      const startingVertex = this.offsets.vertex / 3;
-
-      this.#resizeModelBuffer('vertex', vertices);
-      this.#resizeModelBuffer('index', indices.map(i => i + startingVertex));
-      this.#resizeModelBuffer('normal', normals);
-      this.#resizeModelBuffer('color', new Array(vertices.length).fill(255));
-      this.#resizeModelBuffer('faceIds', faceIds);
     }
 
-    this.model.update('lineVertex', 'lineIndex', 'vertex', 'index', 'normal', 'color', 'faceIds');
+    this.model.import(newData);
   }
 
   recompute() {
@@ -764,10 +762,10 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
   }
 
   /**
-   * @param {number[]} [lockedIndices]
+   * @param {number[]} [lockedIds]
    */
-  update(lockedIndices = []) {
-    this.#recalculate(lockedIndices);
+  update(lockedIds = []) {
+    this.#recalculate(lockedIds);
     super.update();
   }
 
@@ -784,183 +782,183 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
 
   /**
    * @param {number} length
-   * @param {LineConstructionElement | [number, number]} lineOrIndices
+   * @param {LineConstructionElement | [number, number]} lineOrPointIds
    * @returns {Readonly<DistanceConstraint>?}
    */
-  distance(length, lineOrIndices) {
-    if (!Array.isArray(lineOrIndices)) {
-      const lineIndices = this.getLineIndices(lineOrIndices);
-      if (!lineIndices) return null;
+  distance(length, lineOrPointIds) {
+    if (!Array.isArray(lineOrPointIds)) {
+      const ids = this.getLineIds(lineOrPointIds);
+      if (!ids) return null;
 
-      lineOrIndices = lineIndices;
-    } else if (lineOrIndices.some(idx => idx > -1 && !this.hasPoint(idx))) return null;
+      lineOrPointIds = ids;
+    } else if (lineOrPointIds.some(idx => idx > -1 && !this.hasPoint(idx))) return null;
 
-    return /** @type {DistanceConstraint} */ (this.#createConstraint('distance', lineOrIndices, length));
+    return /** @type {DistanceConstraint} */ (this.#createConstraint('distance', lineOrPointIds, length));
   }
 
   /**
    * @param {number} length
-   * @param {LineConstructionElement | [number, number]} lineOrIndices
+   * @param {LineConstructionElement | [number, number]} lineOrPointIds
    * @returns {Readonly<WidthConstraint>?}
    */
-  width(length, lineOrIndices) {
-    if (!Array.isArray(lineOrIndices)) {
-      const lineIndices = this.getLineIndices(lineOrIndices);
-      if (!lineIndices) return null;
+  width(length, lineOrPointIds) {
+    if (!Array.isArray(lineOrPointIds)) {
+      const ids = this.getLineIds(lineOrPointIds);
+      if (!ids) return null;
 
-      lineOrIndices = lineIndices;
-    } else if (lineOrIndices.some(idx => idx > -1 && !this.hasPoint(idx))) return null;
+      lineOrPointIds = ids;
+    } else if (lineOrPointIds.some(idx => idx > -1 && !this.hasPoint(idx))) return null;
 
-    return /** @type {WidthConstraint} */ (this.#createConstraint('width', lineOrIndices, length));
+    return /** @type {WidthConstraint} */ (this.#createConstraint('width', lineOrPointIds, length));
   }
 
   /**
    * @param {number} length
-   * @param {LineConstructionElement | [number, number]} lineOrIndices
+   * @param {LineConstructionElement | [number, number]} lineOrPointIds
    * @returns {Readonly<HeightConstraint>?}
    */
-  height(length, lineOrIndices) {
-    if (!Array.isArray(lineOrIndices)) {
-      const lineIndices = this.getLineIndices(lineOrIndices);
-      if (!lineIndices) return null;
+  height(length, lineOrPointIds) {
+    if (!Array.isArray(lineOrPointIds)) {
+      const ids = this.getLineIds(lineOrPointIds);
+      if (!ids) return null;
 
-      lineOrIndices = lineIndices;
-    } else if (lineOrIndices.some(idx => idx > -1 && !this.hasPoint(idx))) return null;
+      lineOrPointIds = ids;
+    } else if (lineOrPointIds.some(idx => idx > -1 && !this.hasPoint(idx))) return null;
 
-    return /** @type {HeightConstraint} */ (this.#createConstraint('height', lineOrIndices, length));
+    return /** @type {HeightConstraint} */ (this.#createConstraint('height', lineOrPointIds, length));
   }
 
   /**
-   * @param {[LineConstructionElement, LineConstructionElement] | [number, number, number, number]} indices
+   * @param {[LineConstructionElement, LineConstructionElement] | [number, number, number, number]} ids
    * @returns {Readonly<EqualConstraint>?}
    */
-  equal(indices) {
-    if (indices.length === 2) {
-      if (indices[0] === indices[1] || indices.some(line => !this.data.elements.includes(line))) return null;
+  equal(ids) {
+    if (ids.length === 2) {
+      if (ids[0] === ids[1] || ids.some(line => !this.data.elements.includes(line))) return null;
 
-      const i1 = this.getLineIndices(indices[0]);
-      const i2 = this.getLineIndices(indices[1]);
+      const i1 = this.getLineIds(ids[0]);
+      const i2 = this.getLineIds(ids[1]);
       if (!i1 || !i2) return null;
 
-      indices = [...i1, ...i2];
+      ids = [...i1, ...i2];
     } else {
-      if (indices.some((v, i, a) => a.indexOf(v) !== i)) return null;
+      if (ids.some((v, i, a) => a.indexOf(v) !== i)) return null;
 
-      const lines = indices.map(index => this.getLineForPoint(index)?.[0]);
+      const lines = ids.map(index => this.getLineForPoint(index)?.[0]);
       if (lines.some(v => v === null)) return null;
       if (lines[0] !== lines[1] || lines[1] === lines[2] || lines[2] !== lines[3]) return null;
     }
 
-    if (indices.length !== 4) return null;
+    if (ids.length !== 4) return null;
 
-    return /** @type {EqualConstraint} */ (this.#createConstraint('equal', indices, null));
+    return /** @type {EqualConstraint} */ (this.#createConstraint('equal', ids, null));
   }
 
   /**
-   * @param {[number, number]} indices
+   * @param {[number, number]} ids
    * @returns {Readonly<CoincidentConstraint>?}
    */
-  coincident(indices) {
-    if (indices[0] === indices[1]) return null;
+  coincident(ids) {
+    if (ids[0] === ids[1]) return null;
 
-    const p1 = this.getPointInfo(indices[0]);
+    const p1 = this.getPointInfo(ids[0]);
     if (!p1) return null;
 
-    const p2 = this.getPointInfo(indices[1]);
+    const p2 = this.getPointInfo(ids[1]);
     if (!p2) return null;
 
     if (p1.element === p2.element) return null;
 
-    return /** @type {CoincidentConstraint} */ (this.#createConstraint('coincident', indices, null));
+    return /** @type {CoincidentConstraint} */ (this.#createConstraint('coincident', ids, null));
   }
 
   /**
-   * @param {LineConstructionElement | [number, number]} lineOrIndices
+   * @param {LineConstructionElement | [number, number]} lineOrPointIds
    * @returns {Readonly<HorizontalConstraint>?}
    */
-  horizontal(lineOrIndices) {
-    if (!Array.isArray(lineOrIndices)) {
-      const lineIndices = this.getLineIndices(lineOrIndices);
-      if (!lineIndices) return null;
+  horizontal(lineOrPointIds) {
+    if (!Array.isArray(lineOrPointIds)) {
+      const ids = this.getLineIds(lineOrPointIds);
+      if (!ids) return null;
 
-      lineOrIndices = lineIndices;
-    } else if (lineOrIndices[0] === lineOrIndices[1]) return null;
+      lineOrPointIds = ids;
+    } else if (lineOrPointIds[0] === lineOrPointIds[1]) return null;
 
-    return /** @type {HorizontalConstraint} */ (this.#createConstraint('horizontal', lineOrIndices, null));
+    return /** @type {HorizontalConstraint} */ (this.#createConstraint('horizontal', lineOrPointIds, null));
   }
 
   /**
-   * @param {LineConstructionElement | [number, number]} lineOrIndices
+   * @param {LineConstructionElement | [number, number]} lineOrPointIds
    * @returns {Readonly<VerticalConstraint>?}
    */
-  vertical(lineOrIndices) {
-    if (!Array.isArray(lineOrIndices)) {
-      const lineIndices = this.getLineIndices(lineOrIndices);
-      if (!lineIndices) return null;
+  vertical(lineOrPointIds) {
+    if (!Array.isArray(lineOrPointIds)) {
+      const ids = this.getLineIds(lineOrPointIds);
+      if (!ids) return null;
 
-      lineOrIndices = lineIndices;
-    } else if (lineOrIndices[0] === lineOrIndices[1]) return null;
+      lineOrPointIds = ids;
+    } else if (lineOrPointIds[0] === lineOrPointIds[1]) return null;
 
-    return /** @type {VerticalConstraint} */ (this.#createConstraint('vertical', lineOrIndices, null));
+    return /** @type {VerticalConstraint} */ (this.#createConstraint('vertical', lineOrPointIds, null));
   }
 
   /**
-   * @param {number} index
+   * @param {number} lineId
    * @returns {LineConstructionElement?}
    */
-  getLine(index) {
-    if (!this.hasLine(index)) return null;
-    return this.data.elements[index - this.offsets.lineIndex / 2] ?? null;
+  getLine(lineId) {
+    if (!this.hasLine(lineId)) return null;
+    return this.data.elements[lineId - this.lastLineId - 1] ?? null;
   }
 
   /**
    * @param {LineConstructionElement} line
    * @returns {number?}
    */
-  getLineIndex(line) {
+  getLineId(line) {
     const elementIndex = this.data.elements.indexOf(line);
     if (elementIndex === -1) return null;
-    return this.offsets.lineIndex / 2 + elementIndex;
+    return this.lastLineId + elementIndex + 1;
   }
 
   /**
    * @param {LineConstructionElement} line
    * @returns {[number, number]?}
    */
-  getLineIndices(line) {
+  getLineIds(line) {
     const index = this.data.elements.indexOf(line);
     if (index === -1) return null;
 
-    const indices = this.pointInfo.filter(info => info.elementIndex === index).map(info => info.index);
-    if (indices.length !== 2) return null;
+    const ids = this.pointInfo.filter(info => info.elementIndex === index).map(info => info.id);
+    if (ids.length !== 2) return null;
 
-    return /** @type {[number, number]} */ (indices);
+    return /** @type {[number, number]} */ (ids);
   }
 
   /**
-   * @param {number} index
+   * @param {number} pointId
    * @returns {[LineConstructionElement, number]?}
    */
-  getLineForPoint(index) {
-    const elementInfo = this.getPointInfo(index);
+  getLineForPoint(pointId) {
+    const elementInfo = this.getPointInfo(pointId);
     if (!elementInfo) return null;
 
     return [elementInfo.element, elementInfo.offset];
   }
 
   /**
-   * @param {number} index
+   * @param {number} pointId
    * @returns {PointInfo?}
    */
-  getPointInfo(index) {
-    switch (index) {
+  getPointInfo(pointId) {
+    switch (pointId) {
       case -1: return originPoint;
       case -2: return xAxisPoint1;
       case -3: return xAxisPoint2;
       case -4: return yAxisPoint1;
       case -5: return yAxisPoint2;
     }
-    return this.pointInfo.find(info => info.index === index) ?? null;
+    return this.pointInfo.find(info => info.id === pointId) ?? null;
   }
 
   /**
@@ -979,7 +977,7 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
    * @returns {R[]}
    */
   getConstraints(element, type) {
-    const indices = this.getPoints(element).map(info => info.index);
+    const indices = this.getPoints(element).map(info => info.id);
     const constraints = this.data.constraints
       .filter(constraint => constraint.indices.some(index => indices.includes(index)));
     return /** @type {R[]} */ (type !== undefined ? constraints.filter(c => c.type === type) : constraints);
@@ -1026,7 +1024,7 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
     if (index === -1) return;
 
     const constraints = this.getConstraints(element);
-    const pointIndices = this.getPoints(element).map(point => point.index);
+    const pointIndices = this.getPoints(element).map(point => point.id);
     this.data.elements.splice(index, 1);
 
     for (const constraint of constraints) {
@@ -1076,18 +1074,18 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
   }
 
   /**
-   * @param {number} index
+   * @param {number} lineId
    * @returns {boolean}
    */
-  hasLine(index) {
-    return this.indexBelongsTo('lineIndex', index * 2);
+  hasLine(lineId) {
+    return lineId > this.lastLineId && lineId <= this.model.lastLineId;
   }
 
   /**
-   * @param {number} index
+   * @param {number} pointId
    * @returns {boolean}
    */
-  hasPoint(index) {
-    return this.indexBelongsTo('lineVertex', index * 3);
+  hasPoint(pointId) {
+    return pointId > this.lastPointId && pointId <= this.model.lastPointId;
   }
 }

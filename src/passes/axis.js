@@ -91,7 +91,7 @@ export default (engine) => {
     render() {
       if (!setting.value) return;
 
-      const selectedAxes = editor.selection.getByType('axis').map(({ index }) => index);
+      const selectedAxes = editor.selection.getByType('axis').map(({ id }) => id);
 
       ctx.enable(ctx.BLEND);
 
@@ -119,11 +119,11 @@ export default (engine) => {
       mat4.scale(mvp, mvp, farPlaneV3);
       ctx.uniformMatrix4fv(program.uLoc.u_matrix, false, mvp);
 
-      if (scene.hoveredAxisIndex) {
+      if (scene.hoveredAxisId) {
         ctx.uniform1f(program.uLoc.u_hovered, 1);
         ctx.lineWidth(5);
-        ctx.drawArrays(ctx.LINES, scene.hoveredAxisIndex * 2 - 2, 2);
-        ctx.drawArrays(ctx.LINES, scene.hoveredAxisIndex * 2 + 4, 2);
+        ctx.drawArrays(ctx.LINES, scene.hoveredAxisId * 2 - 2, 2);
+        ctx.drawArrays(ctx.LINES, scene.hoveredAxisId * 2 + 4, 2);
         ctx.uniform1f(program.uLoc.u_hovered, 0);
       }
 
@@ -139,7 +139,7 @@ export default (engine) => {
       ctx.drawArrays(ctx.LINES, 0, 12);
 
       if (scene.currentStep instanceof Sketch) {
-        if (scene.hoveredAxisIndex === 0) {
+        if (scene.hoveredAxisId === 0) {
           ctx.uniform1f(program.uLoc.u_hovered, 1);
           ctx.drawArrays(ctx.POINTS, 12, 1);
           ctx.uniform1f(program.uLoc.u_hovered, 0);

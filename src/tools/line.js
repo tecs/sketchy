@@ -10,8 +10,8 @@ const { vec3, mat4 } = glMatrix;
  * @property {Sketch} sketch
  * @property {Line} line
  * @property {number} length
- * @property {number | undefined} startIndex
- * @property {number | undefined} endIndex
+ * @property {number | undefined} startId
+ * @property {number | undefined} endId
  * @property {Instance} instance
  * @property {import("../engine/cad/sketch").PointInfo[]} points
  */
@@ -29,7 +29,7 @@ export default (engine) => {
   const origin = vec3.create();
   const coord = vec3.create();
 
-  /** @type {Omit<LineTool, "start"> & { start: (click?: number, startIndex?: number) => void }} */
+  /** @type {Omit<LineTool, "start"> & { start: (click?: number, startId?: number) => void }} */
   const lineTool = {
     type: 'line',
     name: 'Line/Arc',
@@ -62,8 +62,8 @@ export default (engine) => {
 
       this.end();
     },
-    start(_, startIndex) {
-      released = startIndex !== undefined;
+    start(_, startId) {
+      released = startId !== undefined;
       const instance = scene.enteredInstance ?? scene.hoveredInstance ?? scene.currentInstance;
 
       if (!(scene.currentStep instanceof Sketch)) {
@@ -81,7 +81,7 @@ export default (engine) => {
 
       if (!(scene.currentStep instanceof Sketch)) return;
 
-      if (startIndex === undefined) {
+      if (startId === undefined) {
         mat4.multiply(transformation, instance.Placement.inverseTrs, scene.currentStep.toSketch);
         vec3.transformMat4(origin, scene.hovered, transformation);
         vec3.copy(coord, origin);
@@ -89,18 +89,18 @@ export default (engine) => {
         vec3.copy(origin, coord);
       }
 
-      if (instance === scene.hoveredInstance && scene.hoveredPointIndex !== null) {
-        startIndex ??= scene.hoveredPointIndex;
-      } else if (scene.hoveredAxisIndex === 0) {
-        startIndex ??= -1;
+      if (instance === scene.hoveredInstance && scene.hoveredPointId !== null) {
+        startId ??= scene.hoveredPointId;
+      } else if (scene.hoveredAxisId === 0) {
+        startId ??= -1;
       }
 
       historyAction = history.createAction('Draw line segment', {
         sketch: scene.currentStep,
         line: Sketch.makeConstructionElement('line', [origin[0], origin[1], coord[0], coord[1]]),
         length: 0,
-        startIndex,
-        endIndex: undefined,
+        startId,
+        endId: undefined,
         instance,
         points: [],
       }, () => {
@@ -116,16 +116,16 @@ export default (engine) => {
         (data) => {
           data.sketch.addElement(data.line);
           data.points = data.sketch.getPoints(data.line);
-          const indices = data.points.map(({ index }) => index);
-          if (data.startIndex !== undefined) {
-            data.sketch.coincident([data.startIndex, indices[0]]);
-            indices.push(data.startIndex);
+          const ids = data.points.map(({ id }) => id);
+          if (data.startId !== undefined) {
+            data.sketch.coincident([data.startId, ids[0]]);
+            ids.push(data.startId);
           }
 
-          const activeElements = indices.map(index => ({ type: 'point', index, instance }));
+          const activeElements = ids.map(id => ({ type: 'point', id, instance }));
 
-          const index = data.sketch.getLineIndex(data.line);
-          if (index !== null) activeElements.push({ type: 'line', index, instance });
+          const id = data.sketch.getLineId(data.line);
+          if (id !== null) activeElements.push({ type: 'line', id, instance });
 
           active.set(activeElements);
         },
@@ -151,26 +151,26 @@ export default (engine) => {
       if (tooShort) return;
 
       const { data } = historyAction;
-      const { hoveredPointIndex, hoveredInstance, hoveredAxisIndex } = scene;
+      const { hoveredPointId, hoveredInstance, hoveredAxisId } = scene;
 
-      if (hoveredInstance === data.instance && hoveredPointIndex !== null && data.sketch.hasPoint(hoveredPointIndex)) {
-        data.endIndex = hoveredPointIndex;
-      } else if (hoveredAxisIndex === 0) {
-        data.endIndex = -1;
+      if (hoveredInstance === data.instance && hoveredPointId !== null && data.sketch.hasPoint(hoveredPointId)) {
+        data.endId = hoveredPointId;
+      } else if (hoveredAxisId === 0) {
+        data.endId = -1;
       }
 
-      if (data.endIndex !== undefined) {
-        historyAction.append(({ endIndex, sketch, points }) => {
-          if (endIndex !== undefined) {
-            sketch.coincident([points[1].index, endIndex]);
+      if (data.endId !== undefined) {
+        historyAction.append(({ endId, sketch, points }) => {
+          if (endId !== undefined) {
+            sketch.coincident([points[1].id, endId]);
           }
         }, () => {});
       }
 
-      const { endIndex } = historyAction.data;
+      const { endId } = historyAction.data;
 
       historyAction.commit();
-      if (endIndex === undefined) this.start(1, data.points[1].index);
+      if (endId === undefined) this.start(1, data.points[1].id);
     },
     abort() {
       if (engine.tools.selected?.type === 'orbit') return;

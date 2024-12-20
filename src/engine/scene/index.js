@@ -28,19 +28,19 @@ export default class Scene extends Base {
   hoveredInstance = null;
 
   /** @type {number?} */
-  hoveredFaceIndex = null;
+  hoveredFaceId = null;
 
   /** @type {number?} */
-  hoveredLineIndex = null;
+  hoveredLineId = null;
 
   /** @type {number?} */
-  hoveredPointIndex = null;
+  hoveredPointId = null;
 
   /** @type {number?} */
   hoveredConstraintIndex = null;
 
   /** @type {(0|1|2|3)?} */
-  hoveredAxisIndex = null;
+  hoveredAxisId = null;
 
   /** @type {AnyStep?} */
   currentStep = null;
@@ -130,11 +130,11 @@ export default class Scene extends Base {
 
     this.enteredInstance = null;
     this.hoveredInstance = null;
-    this.hoveredFaceIndex = null;
-    this.hoveredLineIndex = null;
-    this.hoveredPointIndex = null;
+    this.hoveredFaceId = null;
+    this.hoveredLineId = null;
+    this.hoveredPointId = null;
     this.hoveredConstraintIndex = null;
-    this.hoveredAxisIndex = null;
+    this.hoveredAxisId = null;
     this.currentStep = null;
     this.selectedStep = null;
     this.selectedBody = null;
@@ -262,37 +262,37 @@ export default class Scene extends Base {
         : null;
     }
 
-    this.hoveredFaceIndex = null;
-    this.hoveredLineIndex = null;
-    this.hoveredPointIndex = null;
-    this.hoveredAxisIndex = null;
+    this.hoveredFaceId = null;
+    this.hoveredLineId = null;
+    this.hoveredPointId = null;
+    this.hoveredAxisId = null;
 
     if (!this.hoveredInstance || this.hoveredInstance !== this.enteredInstance) return;
 
-    if (pointId > 0) this.hoveredPointIndex = pointId - 1;
-    else if (lineId > 0) this.hoveredLineIndex = lineId - 1;
-    else if (faceId > 0) this.hoveredFaceIndex = faceId;
+    if (pointId > 0) this.hoveredPointId = pointId;
+    else if (lineId > 0) this.hoveredLineId = lineId;
+    else if (faceId > 0) this.hoveredFaceId = faceId;
   }
 
   /**
    * @param {Readonly<Uint8Array | Uint8ClampedArray>} id4u
    */
   hoverConstraint(id4u) {
-    if (this.hoveredLineIndex !== null || this.hoveredPointIndex !== null) return;
+    if (this.hoveredLineId !== null || this.hoveredPointId !== null) return;
     const id = Id.uuuuToInt(id4u);
     this.hoveredConstraintIndex = id > 0 ? id - 1 : null;
   }
 
   /**
-   * @param {Scene["hoveredAxisIndex"]} index
+   * @param {Scene["hoveredAxisId"]} index
    */
   hoverAxis(index) {
-    this.hoveredAxisIndex = index;
+    this.hoveredAxisId = index;
     if (index !== null) {
       this.hoveredInstance = null;
-      this.hoveredFaceIndex = null;
-      this.hoveredLineIndex = null;
-      this.hoveredPointIndex = null;
+      this.hoveredFaceId = null;
+      this.hoveredLineId = null;
+      this.hoveredPointId = null;
     }
   }
 

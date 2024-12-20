@@ -67,18 +67,18 @@ export default (engine, tabs) => {
 
   const editorFns = Object.entries({
     'Current': () => [scene.currentInstance.Id.int],
-    'Hovered': () => [scene.hoveredInstance?.Id.int, scene.hoveredFaceIndex, scene.hoveredLineIndex, scene.hoveredPointIndex],
+    'Hovered': () => [scene.hoveredInstance?.Id.int, scene.hoveredFaceId, scene.hoveredLineId, scene.hoveredPointId],
     'Selected': () => [
-      selection.getByType('instance').map(el => el.index).join(', '),
-      selection.getByType('face').map(el => el.index).join(', '),
-      selection.getByType('line').map(el => el.index).join(', '),
-      selection.getByType('point').map(el => el.index).join(', '),
+      selection.getByType('instance').map(el => el.id).join(', '),
+      selection.getByType('face').map(el => el.id).join(', '),
+      selection.getByType('line').map(el => el.id).join(', '),
+      selection.getByType('point').map(el => el.id).join(', '),
     ],
     'Active': () => [
-      active.getByType('instance').map(el => el.index).join(', '),
-      active.getByType('face').map(el => el.index).join(', '),
-      active.getByType('line').map(el => el.index).join(', '),
-      active.getByType('point').map(el => el.index).join(', '),
+      active.getByType('instance').map(el => el.id).join(', '),
+      active.getByType('face').map(el => el.id).join(', '),
+      active.getByType('line').map(el => el.id).join(', '),
+      active.getByType('point').map(el => el.id).join(', '),
     ],
   }).map(rowFn('Editor', 5, tab, undefined, '', 'Instance', 'Face', 'Line', 'Point'));
 
@@ -92,12 +92,12 @@ export default (engine, tabs) => {
       size(entities.values(Body)
         .flatMap(body => body.listSteps().map(step => step.model))
         .filter((v, i, a) => a.indexOf(v) === i)
-        .map(model => Object.values(model.data).reduce((sum, data) => sum + data.length * 4, 0))
+        .map(model => Object.values(model.bufferData).reduce((sum, data) => sum + data.length * 4, 0))
         .reduce((sum, v) => sum + v, 0)),
     ],
     'Instances': () => [entities.values(Body).reduce((sum, b) => sum + b.instances.length, 0)],
-    'Triangles': () => [entities.values(Body).reduce((sum, b) => sum + (b.instances.length * (b.currentModel?.data.index.length ?? 0)) / 3, 0)],
-    'Lines': () => [entities.values(Body).reduce((sum, b) => sum + (b.instances.length * (b.currentModel?.data.lineIndex.length ?? 0)) / 2, 0)],
+    'Triangles': () => [entities.values(Body).reduce((sum, b) => sum + (b.instances.length * (b.currentModel?.bufferData.index.length ?? 0)) / 3, 0)],
+    'Lines': () => [entities.values(Body).reduce((sum, b) => sum + (b.instances.length * (b.currentModel?.bufferData.lineIndex.length ?? 0)) / 2, 0)],
   }).map(rowFn('Driver', 2, tab));
 
   const fns = [coordsFns, editorFns, toolFns, driverFns].flat();

@@ -111,7 +111,7 @@ export default (engine) => {
           mat4.invert(normalMvp, normalMvp);
           ctx.uniformMatrix4fv(program.uLoc.u_normalMvp, false, normalMvp);
 
-          ctx.drawElements(ctx.TRIANGLES, model.data.index.length, ctx.UNSIGNED_INT, 0);
+          ctx.drawElements(ctx.TRIANGLES, model.bufferData.index.length, ctx.UNSIGNED_INT, 0);
         }
       }
 
@@ -120,7 +120,7 @@ export default (engine) => {
       ctx.uniform1f(program.uLoc.u_isInShadow, 0);
 
       ctx.uniform1f(program.uLoc.u_isFaceSelected, 1);
-      for (const { instance: { Placement: { trs }, body: { currentModel: model }}, index } of selectedFaces) {
+      for (const { instance: { Placement: { trs }, body: { currentModel: model }}, id } of selectedFaces) {
         if (!model) continue;
 
         ctx.bindBuffer(ctx.ELEMENT_ARRAY_BUFFER, model.buffer.index);
@@ -146,11 +146,11 @@ export default (engine) => {
         mat4.invert(normalMvp, normalMvp);
         ctx.uniformMatrix4fv(program.uLoc.u_normalMvp, false, normalMvp);
 
-        const startIndex = model.data.faceIds.indexOf(index);
-        const endIndex = model.data.faceIds.lastIndexOf(index);
+        const startIndex = model.bufferData.faceIds.indexOf(id);
+        const endIndex = model.bufferData.faceIds.lastIndexOf(id);
 
-        const offset = model.data.index.findIndex(idx => idx >= startIndex && idx <= endIndex);
-        const endOffset =  model.data.index.findLastIndex(idx => idx >= startIndex && idx <= endIndex);
+        const offset = model.bufferData.index.findIndex(idx => idx >= startIndex && idx <= endIndex);
+        const endOffset =  model.bufferData.index.findLastIndex(idx => idx >= startIndex && idx <= endIndex);
         const nIndices = 1 + endOffset - offset;
 
         ctx.drawElements(ctx.TRIANGLES, nIndices, ctx.UNSIGNED_INT, offset * 4);

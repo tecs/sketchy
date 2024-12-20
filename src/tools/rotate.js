@@ -79,7 +79,7 @@ export default (engine) => {
       });
       if (!historyAction) return;
 
-      selection.set({ type: 'instance', index: instance.Id.int, instance });
+      selection.set({ type: 'instance', id: instance.Id.int, instance });
       active.set(selection.elements);
 
       vec3.copy(mouseOrigin, input.position);

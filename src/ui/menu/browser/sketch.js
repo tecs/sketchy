@@ -30,14 +30,14 @@ export default (engine, tabs) => {
     if (!instance) return;
 
     for (let i = 0; i < elements.length; ++i) {
-      const index = sketch.getLineIndex(elements[i]);
-      if (index === null) continue;
+      const id = sketch.getLineId(elements[i]);
+      if (id === null) continue;
 
-      const selected = !!selection.getElement({ type: 'line', index, instance })
-        || sketch.getPoints(elements[i]).some(e => selection.getElement({ type: 'point', index: e.index, instance }));
+      const selected = !!selection.getElement({ type: 'line', id, instance })
+        || sketch.getPoints(elements[i]).some(e => selection.getElement({ type: 'point', id: e.id, instance }));
 
       table.addRow(`${i + 1}`, elements[i].type).$element({
-        onclick: () => selection.set({ type: 'line', index, instance }),
+        onclick: () => selection.set({ type: 'line', id, instance }),
         style: { fontWeight: selected ? 'bold' : '' },
       });
     }

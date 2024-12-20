@@ -90,7 +90,7 @@ export default (engine) => {
       });
       if (!historyAction) return;
 
-      selection.set(scaleSelection.map(instance => ({ type: 'instance', index: instance.Id.int, instance })));
+      selection.set(scaleSelection.map(instance => ({ type: 'instance', id: instance.Id.int, instance })));
 
       active.set(selection.elements);
 

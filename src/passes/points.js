@@ -48,12 +48,12 @@ export default (engine) => {
   return {
     program,
     render() {
-      const { enteredInstance, hoveredInstance, hoveredPointIndex } = scene;
-      const pointIsHovered = hoveredPointIndex !== null && enteredInstance === hoveredInstance;
+      const { enteredInstance, hoveredInstance, hoveredPointId } = scene;
+      const pointIsHovered = hoveredPointId !== null && enteredInstance === hoveredInstance;
       const sketch = scene.currentStep;
 
-      const selectedPointIndices = selection.getByType('point').map(({ index }) => index);
-      if (!selectedPointIndices.length && !pointIsHovered && !(sketch instanceof Sketch)) return;
+      const selectedPointIds = selection.getByType('point').map(({ id }) => id);
+      if (!selectedPointIds.length && !pointIsHovered && !(sketch instanceof Sketch)) return;
 
       const model = enteredInstance?.body.currentModel;
       if (!model) return;
@@ -67,22 +67,24 @@ export default (engine) => {
       ctx.uniformMatrix4fv(program.uLoc.u_trs, false, enteredInstance.Placement.trs);
 
       if (pointIsHovered) {
+        const index = model.bufferData.pointIds.indexOf(hoveredPointId);
         ctx.uniform1f(program.uLoc.u_isSelected, 0);
         ctx.uniform1f(program.uLoc.u_isHovered, 1);
-        ctx.drawArrays(ctx.POINTS, hoveredPointIndex, 1);
+        ctx.drawArrays(ctx.POINTS, index, 1);
         ctx.uniform1f(program.uLoc.u_isHovered, 0);
-        ctx.drawArrays(ctx.POINTS, hoveredPointIndex, 1);
+        ctx.drawArrays(ctx.POINTS, index, 1);
       }
       if (sketch instanceof Sketch) {
         ctx.uniform1f(program.uLoc.u_isSelected, 0);
         ctx.uniform1f(program.uLoc.u_isHovered, 0);
-        ctx.drawArrays(ctx.POINTS, 0, model.data.lineVertex.length / 3);
+        ctx.drawArrays(ctx.POINTS, 0, model.bufferData.lineVertex.length / 3);
       }
-      if (selectedPointIndices.length) {
+      if (selectedPointIds.length) {
         ctx.uniform1f(program.uLoc.u_isSelected, 1);
         ctx.uniform1f(program.uLoc.u_isHovered, 0);
-        for (const selectedPointIndex of selectedPointIndices) {
-          ctx.drawArrays(ctx.POINTS, selectedPointIndex, 1);
+        for (const pointId of selectedPointIds) {
+          const index = model.bufferData.pointIds.indexOf(pointId);
+          ctx.drawArrays(ctx.POINTS, index, 1);
         }
       }
     },

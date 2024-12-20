@@ -9,10 +9,10 @@ const { vec2, vec3, mat4 } = glMatrix;
  * @property {import("../engine/cad/sketch.js").LineConstructionElement} lineOriginHorizontal
  * @property {import("../engine/cad/sketch.js").LineConstructionElement} lineCoordVertical
  * @property {import("../engine/cad/sketch.js").LineConstructionElement} lineCoordHorizontal
- * @property {number[]} lockedIndices
+ * @property {number[]} lockedIds
  * @property {[number, number]} length
- * @property {number | undefined} startIndex
- * @property {number | undefined} endIndex
+ * @property {number | undefined} startId
+ * @property {number | undefined} endId
  * @property {Instance} instance
  * @property {import("../engine/cad/sketch").PointInfo[]} points
  */
@@ -61,7 +61,7 @@ export default (engine) => {
     setValue([d1, d2]) {
       if (!historyAction || d1 <= 0 || d2 <= 0) return;
 
-      const { sketch, lineCoordHorizontal, lockedIndices } = historyAction.data;
+      const { sketch, lineCoordHorizontal, lockedIds } = historyAction.data;
 
       coord[0] = origin[0] + (coord[0] > origin[0] ? d1 : -d1);
       coord[1] = origin[1] + (coord[1] > origin[1] ? d2 : -d2);
@@ -69,7 +69,7 @@ export default (engine) => {
       lineCoordHorizontal.data[2] = coord[0];
       lineCoordHorizontal.data[3] = coord[1];
 
-      sketch.update(lockedIndices);
+      sketch.update(lockedIds);
 
       historyAction.data.length = [d1, d2];
       historyAction.append((data) => {
@@ -81,7 +81,7 @@ export default (engine) => {
     },
     start() {
       released = false;
-      const { enteredInstance, hoveredInstance, currentInstance, hoveredPointIndex, hoveredAxisIndex } = scene;
+      const { enteredInstance, hoveredInstance, currentInstance, hoveredPointId, hoveredAxisId } = scene;
       const instance = enteredInstance ?? hoveredInstance ?? currentInstance;
       if (!(scene.currentStep instanceof Sketch)) {
         const normal = vec3.create();
@@ -102,11 +102,11 @@ export default (engine) => {
       vec3.transformMat4(origin, scene.hovered, transformation);
       vec3.copy(coord, origin);
 
-      let startingIndex = undefined;
-      if (hoveredInstance === instance && hoveredPointIndex !== null && scene.currentStep.hasPoint(hoveredPointIndex)) {
-        startingIndex = hoveredPointIndex;
-      } else if (hoveredAxisIndex === 0) {
-        startingIndex = -1;
+      let startingId = undefined;
+      if (hoveredInstance === instance && hoveredPointId !== null && scene.currentStep.hasPoint(hoveredPointId)) {
+        startingId = hoveredPointId;
+      } else if (hoveredAxisId === 0) {
+        startingId = -1;
       }
 
       historyAction = history.createAction('Draw rectangle', {
@@ -115,10 +115,10 @@ export default (engine) => {
         lineOriginVertical:   Sketch.makeConstructionElement('line', [origin[0], origin[1], origin[0], coord[1]]),
         lineCoordHorizontal:  Sketch.makeConstructionElement('line', [origin[0], coord[1], coord[0], coord[1]]),
         lineCoordVertical:    Sketch.makeConstructionElement('line', [coord[0], origin[1], coord[0], coord[1]]),
-        lockedIndices: [],
+        lockedIds: [],
         length: [0, 0],
-        startIndex: startingIndex,
-        endIndex: undefined,
+        startId: startingId,
+        endId: undefined,
         instance,
         points: [],
       }, () => {
@@ -137,8 +137,8 @@ export default (engine) => {
           lineCoordVertical,
           lineOriginHorizontal,
           lineOriginVertical,
-          lockedIndices,
-          startIndex,
+          lockedIds,
+          startId,
           points,
         }) => {
           sketch.addElement(lineOriginHorizontal);
@@ -153,17 +153,17 @@ export default (engine) => {
 
           points[0] = pointCoordHorizontal[1];
 
-          sketch.coincident([pointOriginHorizontal[0].index, pointOriginVertical[0].index]);
-          sketch.coincident([pointOriginHorizontal[1].index, pointCoordVertical[0].index]);
-          sketch.coincident([pointCoordHorizontal[0].index, pointOriginVertical[1].index]);
-          sketch.coincident([pointCoordHorizontal[1].index, pointCoordVertical[1].index]);
+          sketch.coincident([pointOriginHorizontal[0].id, pointOriginVertical[0].id]);
+          sketch.coincident([pointOriginHorizontal[1].id, pointCoordVertical[0].id]);
+          sketch.coincident([pointCoordHorizontal[0].id, pointOriginVertical[1].id]);
+          sketch.coincident([pointCoordHorizontal[1].id, pointCoordVertical[1].id]);
 
           sketch.horizontal(lineOriginHorizontal);
           sketch.horizontal(lineCoordHorizontal);
           sketch.vertical(lineOriginVertical);
           sketch.vertical(lineCoordVertical);
 
-          lockedIndices.push(pointOriginHorizontal[0].index, pointCoordHorizontal[1].index);
+          lockedIds.push(pointOriginHorizontal[0].id, pointCoordHorizontal[1].id);
 
           active.set([
             lineOriginHorizontal,
@@ -178,15 +178,15 @@ export default (engine) => {
             const isPoint = Array.isArray(el);
             const type = isPoint ? 'point' : 'line';
 
-            if (isPoint) return el.map(({ index }) => ({ type, index, instance }));
+            if (isPoint) return el.map(({ id }) => ({ type, id, instance }));
 
-            const index = sketch.getLineIndex(el);
-            return index !== null ? { type, index, instance } : [];
+            const id = sketch.getLineId(el);
+            return id !== null ? { type, id, instance } : [];
           }));
 
-          if (startIndex !== undefined) {
-            sketch.coincident([startIndex, pointOriginHorizontal[0].index]);
-            active.add({ type: 'point', index: startIndex, instance });
+          if (startId !== undefined) {
+            sketch.coincident([startId, pointOriginHorizontal[0].id]);
+            active.add({ type: 'point', id: startId, instance });
           }
         },
         (data) => {
@@ -195,21 +195,21 @@ export default (engine) => {
           data.sketch.deleteElement(data.lineCoordHorizontal);
           data.sketch.deleteElement(data.lineCoordVertical);
 
-          data.lockedIndices = [];
+          data.lockedIds = [];
         },
       );
     },
     update() {
       if (!historyAction) return;
 
-      const { sketch, lineCoordHorizontal, lockedIndices } = historyAction.data;
+      const { sketch, lineCoordHorizontal, lockedIds } = historyAction.data;
 
       vec3.transformMat4(coord, scene.hovered, transformation);
 
       lineCoordHorizontal.data[2] = coord[0];
       lineCoordHorizontal.data[3] = coord[1];
 
-      sketch.update(lockedIndices);
+      sketch.update(lockedIds);
     },
     end() {
       if (!historyAction) return;
@@ -219,18 +219,18 @@ export default (engine) => {
       if (tooShort) return;
 
       const { data } = historyAction;
-      const { hoveredPointIndex, hoveredInstance, hoveredAxisIndex } = scene;
+      const { hoveredPointId, hoveredInstance, hoveredAxisId } = scene;
 
-      if (hoveredInstance === data.instance && hoveredPointIndex !== null && data.sketch.hasPoint(hoveredPointIndex)) {
-        data.endIndex = hoveredPointIndex;
-      } else if (hoveredAxisIndex === 0) {
-        data.endIndex = -1;
+      if (hoveredInstance === data.instance && hoveredPointId !== null && data.sketch.hasPoint(hoveredPointId)) {
+        data.endId = hoveredPointId;
+      } else if (hoveredAxisId === 0) {
+        data.endId = -1;
       }
 
-      if (data.endIndex !== undefined) {
-        historyAction.append(({ endIndex, sketch, points }) => {
-          if (endIndex !== undefined) {
-            sketch.coincident([points[0].index, endIndex]);
+      if (data.endId !== undefined) {
+        historyAction.append(({ endId, sketch, points }) => {
+          if (endId !== undefined) {
+            sketch.coincident([points[0].id, endId]);
           }
         }, () => {});
       }

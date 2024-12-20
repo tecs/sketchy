@@ -25,11 +25,11 @@ export default (engine, tabs) => {
 
           const { enteredInstance } = scene;
           if (instance !== enteredInstance && SubInstance.belongsTo(instance, enteredInstance)) {
-            selection.set({ type: 'instance', instance, index: instance.Id.int });
+            selection.set({ type: 'instance', instance, id: instance.Id.int });
           }
         },
         style: { fontWeight: instance === currentInstance ? 'bold' : undefined },
-        className: selection.getElement({ type: 'instance', instance, index: instance.Id.int }) ? 'selected' : '',
+        className: selection.getElement({ type: 'instance', instance, id: instance.Id.int }) ? 'selected' : '',
       });
       instanceCache[instance.Id.str] = instanceContainer;
     }

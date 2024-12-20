@@ -257,7 +257,7 @@ export default (engine) => {
       const constraints = sketch.listConstraints();
       if (constraints.length === 0) return;
 
-      const selected = selection.getByType('constraint').map(({ index }) => index);
+      const selected = selection.getByType('constraint').map(({ id }) => id);
 
       mat4.multiply(trs, currentInstance.Placement.trs, sketch.fromSketch);
       mat4.multiply(mvp, camera.viewProjection, trs);

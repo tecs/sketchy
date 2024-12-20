@@ -98,7 +98,7 @@ export default (engine) => {
       ctx.vertexAttribPointer(program.aLoc.a_position, 3, ctx.FLOAT, false, 0, 0);
 
       ctx.bindBuffer(ctx.ELEMENT_ARRAY_BUFFER, model.buffer.index);
-      ctx.drawElements(ctx.TRIANGLES, model.data.index.length, ctx.UNSIGNED_INT, 0);
+      ctx.drawElements(ctx.TRIANGLES, model.bufferData.index.length, ctx.UNSIGNED_INT, 0);
 
       // Lines
       ctx.enableVertexAttribArray(program.aLoc.a_position);
@@ -107,11 +107,11 @@ export default (engine) => {
 
       ctx.bindBuffer(ctx.ELEMENT_ARRAY_BUFFER, model.buffer.lineIndex);
       ctx.lineWidth(5);
-      ctx.drawElements(ctx.LINES, model.data.lineIndex.length, ctx.UNSIGNED_INT, 0);
+      ctx.drawElements(ctx.LINES, model.bufferData.lineIndex.length, ctx.UNSIGNED_INT, 0);
       ctx.lineWidth(1);
 
       // Points
-      ctx.drawArrays(ctx.POINTS, 0, model.data.lineVertex.length / 3);
+      ctx.drawArrays(ctx.POINTS, 0, model.bufferData.lineVertex.length / 3);
 
       ctx.readPixels(0, 0, 1, 1, ctx.RGBA, ctx.FLOAT, coords);
 

@@ -72,7 +72,7 @@ export default (engine) => {
   return {
     program,
     render() {
-      const { enteredInstance, hoveredInstance, hoveredLineIndex } = scene;
+      const { enteredInstance, hoveredInstance, hoveredLineId } = scene;
       const selectedLines = selection.getByType('line');
       const selectedInstances = selection.getByType('instance').map(({ instance }) => instance);
 
@@ -91,7 +91,7 @@ export default (engine) => {
         for (const instance of instances) {
           const isSelected = selectedInstances.some(inst => SubInstance.belongsTo(instance, inst)) ? 1 : 0;
           const isInShadow = !isSelected && !SubInstance.belongsTo(instance, enteredInstance) ? 1 : 0;
-          const hoveredIndex = enteredInstance === instance && hoveredInstance === instance ? hoveredLineIndex : null;
+          const hoveredIndex = enteredInstance === instance && hoveredInstance === instance ? hoveredLineId : null;
 
           ctx.uniformMatrix4fv(program.uLoc.u_trs, false, instance.Placement.trs);
           ctx.uniform1f(program.uLoc.u_isSelected, isSelected);
@@ -100,19 +100,19 @@ export default (engine) => {
           if (hoveredIndex !== null) {
             ctx.uniform1f(program.uLoc.u_isHovered, 1);
             ctx.lineWidth(5);
-            ctx.drawElements(ctx.LINES, 2, ctx.UNSIGNED_INT, hoveredIndex * 8);
+            ctx.drawElements(ctx.LINES, 2, ctx.UNSIGNED_INT, (hoveredIndex - 1) * 8);
             ctx.uniform1f(program.uLoc.u_isHovered, 0);
           }
 
           ctx.lineWidth(1 + isSelected);
-          ctx.drawElements(ctx.LINES, model.data.lineIndex.length, ctx.UNSIGNED_INT, 0);
+          ctx.drawElements(ctx.LINES, model.bufferData.lineIndex.length, ctx.UNSIGNED_INT, 0);
 
           const instanceLines = selectedLines.filter(el => el.instance === instance);
           if (instanceLines.length) {
             ctx.uniform1f(program.uLoc.u_isSelected, 1);
             ctx.lineWidth(2);
             for (const selectedLine of instanceLines) {
-              ctx.drawElements(ctx.LINES, 2, ctx.UNSIGNED_INT, selectedLine.index * 8);
+              ctx.drawElements(ctx.LINES, 2, ctx.UNSIGNED_INT, (selectedLine.id - 1) * 8);
             }
           }
         }

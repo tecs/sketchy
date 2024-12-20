@@ -54,28 +54,28 @@ export default (engine) => {
       const {
         enteredInstance,
         hoveredInstance,
-        hoveredPointIndex,
-        hoveredLineIndex,
-        hoveredFaceIndex,
+        hoveredPointId,
+        hoveredLineId,
+        hoveredFaceId,
         hoveredConstraintIndex,
-        hoveredAxisIndex,
+        hoveredAxisId,
         currentStep,
       } = scene;
       const toggle = input.ctrl;
 
       const hoveredSelf = hoveredInstance === enteredInstance;
-      if (!currentStep && enteredInstance && hoveredSelf && hoveredFaceIndex !== null) {
-        toggleOrSet({ type: 'face', index: hoveredFaceIndex, instance: enteredInstance }, toggle);
+      if (!currentStep && enteredInstance && hoveredSelf && hoveredFaceId !== null) {
+        toggleOrSet({ type: 'face', id: hoveredFaceId, instance: enteredInstance }, toggle);
         return;
       } else if (currentStep && enteredInstance) {
-        if (hoveredSelf && hoveredLineIndex !== null) {
-          toggleOrSet({ type: 'line', index: hoveredLineIndex, instance: enteredInstance }, toggle);
-        } else if (hoveredSelf && hoveredPointIndex !== null) {
-          toggleOrSet({ type: 'point', index: hoveredPointIndex, instance: enteredInstance }, toggle);
+        if (hoveredSelf && hoveredLineId !== null) {
+          toggleOrSet({ type: 'line', id: hoveredLineId, instance: enteredInstance }, toggle);
+        } else if (hoveredSelf && hoveredPointId !== null) {
+          toggleOrSet({ type: 'point', id: hoveredPointId, instance: enteredInstance }, toggle);
         } else if (hoveredConstraintIndex !== null && currentStep instanceof Sketch) {
-          toggleOrSet({ type: 'constraint', index: hoveredConstraintIndex, instance: enteredInstance }, toggle);
-        } else if (hoveredAxisIndex !== null) {
-          toggleOrSet({ type: 'axis', index: hoveredAxisIndex, instance: enteredInstance }, toggle);
+          toggleOrSet({ type: 'constraint', id: hoveredConstraintIndex, instance: enteredInstance }, toggle);
+        } else if (hoveredAxisId !== null) {
+          toggleOrSet({ type: 'axis', id: hoveredAxisId, instance: enteredInstance }, toggle);
         } else if (!toggle) selection.clear();
         return;
       }
@@ -94,7 +94,7 @@ export default (engine) => {
 
         if (clicked === enteredInstance && !toggle) selection.clear();
         else if (clicked === enteredInstance) return;
-        else if (clickedOwn) toggleOrSet(clicked ? { type: 'instance', index: clicked.Id.int, instance: clicked } : [], toggle);
+        else if (clickedOwn) toggleOrSet(clicked ? { type: 'instance', id: clicked.Id.int, instance: clicked } : [], toggle);
         else if (!toggle) selection.clear();
         return;
       }
