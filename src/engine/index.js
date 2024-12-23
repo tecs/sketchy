@@ -13,6 +13,7 @@ import Tools from './tools.js';
 
 import Body from './cad/body.js';
 import Sketch from './cad/sketch.js';
+import PushPull from './cad/push-pull.js';
 import RawData from './cad/rawdata.js';
 import SubInstance from './cad/subinstance.js';
 
@@ -80,6 +81,7 @@ export default class Engine extends Base {
     this.tools = new Tools(this);
 
     Body.registerStep(Sketch, this);
+    Body.registerStep(PushPull, this);
     Body.registerStep(RawData, this);
     Body.registerStep(SubInstance, this);
   }

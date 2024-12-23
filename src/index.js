@@ -20,6 +20,7 @@ import RotateTool from './tools/rotate.js';
 import ScaleTool from './tools/scale.js';
 import OrbitTool from './tools/orbit.js';
 import ZoomTool from './tools/zoom.js';
+import PushPullTool from './tools/push-pull.js';
 
 import makeSystemMenu from './ui/menu/system/index.js';
 import makeToolsMenu from './ui/menu/tools.js';
@@ -49,6 +50,7 @@ window.addEventListener('load', () => {
 
   engine.tools.addTool(SelectTool);
   engine.tools.addTool(MoveTool);
+  engine.tools.addTool(PushPullTool);
   engine.tools.addTool(RotateTool);
   engine.tools.addTool(ScaleTool);
   engine.tools.addTool(LineTool);

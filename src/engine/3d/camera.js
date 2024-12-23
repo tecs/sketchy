@@ -100,7 +100,7 @@ export default class Camera {
       }
     });
 
-    const pKey = config.createString('shortcuts.changePerspective', 'Change perspective', 'key', Input.stringify('p'));
+    const pKey = config.createString('shortcuts.changePerspective', 'Change perspective', 'key', Input.stringify([['v'], ['p']]));
 
     engine.input.registerShortcuts(
       cameraFaceXkey,
