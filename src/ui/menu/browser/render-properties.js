@@ -54,6 +54,14 @@ export const renderInput = ({ type, value, onEdit }, container) => {
       } });
       break;
     }
+    case 'boolean': {
+      const input = container.addInput('', {
+        type: 'checkbox',
+        checked: value,
+        onchange: () => onEdit(input.element.checked),
+      });
+      break;
+    }
     case 'plain': {
       const input = container.addInput(value, { onchange: () => {
         if (input.value !== value) onEdit(input.value);
