@@ -21,7 +21,7 @@ const { vec2, vec3, mat4 } = glMatrix;
 
 /** @type {(engine: Engine) => RectTool} */
 export default (engine) => {
-  const { editor: { edited: active }, history, scene, emit } = engine;
+  const { editor: { selection, edited: active }, history, scene, emit } = engine;
 
   /** @type {import("../engine/history.js").HistoryAction<RectData>|undefined} */
   let historyAction;
@@ -87,8 +87,12 @@ export default (engine) => {
         const normal = vec3.create();
         vec3.transformQuat(normal, scene.axisNormal, instance.Placement.inverseRotation);
 
+        const faceId = selection.getByType('face')
+          .filter(sel => sel.instance === instance)
+          .pop()?.id ?? scene.hoveredFaceId;
+
         const sketch = instance.body.createStep(Sketch, {
-          attachment: {
+          attachment: faceId !== null ? { type: 'face', faceId } : {
             type: 'plane',
             normal: /** @type {PlainVec3} */ ([...normal]),
           },

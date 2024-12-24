@@ -45,7 +45,13 @@ const { vec2, vec3, mat4, quat } = glMatrix;
  * @property {PlainVec3} normal
  */
 
-/** @typedef {AxisAttachment} Attachment */
+/**
+ * @typedef FaceAttachment
+ * @property {"face"} type
+ * @property {number} faceId
+ */
+
+/** @typedef {AxisAttachment | FaceAttachment} Attachment */
 
 /**
  * @typedef SketchState
@@ -254,6 +260,7 @@ const getElements = (constraint, sketch, ignoreLocked = false) => {
 
 export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Step) {
   normal = vec3.create();
+  offset = vec3.create();
   toSketch = mat4.create();
   fromSketch = mat4.create();
 
@@ -270,11 +277,19 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
     }
     super(.../** @type {BaseParams} */ (args));
 
+    /** @type {Record<string, import("../general/properties.js").PropertyData>} */
+    const attachmentProperties = {
+      Type: { value: this.State.data.attachment.type, type: 'plain' },
+      Normal: { value: this.normal, type: 'vec3' },
+      Offset: { value: this.offset, type: 'vec3' },
+    };
+
+    if (this.State.data.attachment.type === 'face') {
+      attachmentProperties.FaceId = { value: String(this.State.data.attachment.faceId), type: 'plain' };
+    }
+
     this.Properties.extend(properties => Properties.merge(properties, {
-      Attachment: {
-        Type: { value: this.State.data.attachment.type, type: 'plain' },
-        Normal: { value: this.normal, type: 'vec3' },
-      },
+      Attachment: attachmentProperties,
     }));
 
     this.#recompute();
@@ -601,9 +616,19 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
   }
 
   #recompute() {
-    vec3.set(this.normal, ...this.data.attachment.normal);
+    if (this.data.attachment.type === 'plane') vec3.set(this.normal, ...this.data.attachment.normal);
+    else {
+      const face = this.model.data.faces[this.data.attachment.faceId - 1];
+      const index = face?.loop[0] ?? face?.holes[0]?.[0];
+      if (index !== undefined) {
+        vec3.copy(this.normal, face.normal);
+        tempVertex.set(this.model.data.vertices.slice(index * 3, index * 3 + 3));
+        vec3.scale(this.offset, this.normal, -vec3.dot(this.normal, tempVertex));
+      }
+    }
     quat.rotationTo(rotation, this.normal, forward);
     mat4.fromQuat(this.toSketch, rotation);
+    mat4.translate(this.toSketch, this.toSketch, this.offset);
     mat4.invert(this.fromSketch, this.toSketch);
 
     this.#recalculate([]);
@@ -746,7 +771,7 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
       for (const { loop, holes } of triangulations) {
         newData.faces.push({
           color: [255, 255, 255],
-          normal: [...this.data.attachment.normal],
+          normal: /** @type {PlainVec3} */ ([...this.normal]),
           holes: holes.map(hole => remapIndices(hole.map(i => i + nextVertexIndex), mapping)),
           loop: remapIndices(loop.indices.map(i => i + nextVertexIndex), mapping),
         });
