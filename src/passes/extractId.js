@@ -83,6 +83,8 @@ export default (engine) => {
     0, 0, 0,
   ]));
 
+  const axisIdBuffer = buffer(new Uint32Array([1, 1, 2, 2, 3, 3, 4]), undefined, false);
+
   // cached structures
   const maxId =  Math.pow(2, 32) - 1;
   const mvp = mat4.create();
@@ -314,6 +316,13 @@ export default (engine) => {
         ctx.enableVertexAttribArray(program.aLoc.a_position);
         ctx.vertexAttribPointer(program.aLoc.a_position, 3, ctx.FLOAT, false, 0, 0);
 
+        ctx.bindBuffer(ctx.ARRAY_BUFFER, axisIdBuffer);
+        ctx.enableVertexAttribArray(program.aLoc.a_lineId);
+        ctx.vertexAttribIPointer(program.aLoc.a_lineId, 1, ctx.UNSIGNED_INT, 0, 0);
+
+        ctx.enableVertexAttribArray(program.aLoc.a_pointId);
+        ctx.vertexAttribIPointer(program.aLoc.a_pointId, 1, ctx.UNSIGNED_INT, 0, 0);
+
         // Axes
         ctx.uniform1f(program.uLoc.u_offset, 1);
         ctx.uniform1f(program.uLoc.u_isLine, 1);
@@ -333,7 +342,7 @@ export default (engine) => {
         ctx.readPixels(0, 0, 1, 1, ctx.RGBA_INTEGER, ctx.UNSIGNED_INT, sub);
 
         if (sub[0] === maxId) {
-          if (sub[3] === 7) scene.hoverAxis(0);
+          if (sub[3] === 4) scene.hoverAxis(0);
           else switch (sub[2]) {
             case 1:
               scene.hoverAxis(1);

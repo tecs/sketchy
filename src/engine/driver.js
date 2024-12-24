@@ -164,11 +164,12 @@ export default class Driver extends Base {
   /**
    * @param {Float32Array | Uint8Array | Uint32Array} data
    * @param {35040 | 35044 | 35048} usage
+   * @param {boolean} [index]
    * @returns {WebGLBuffer | null}
    */
-  buffer(data, usage = this.ctx.STATIC_DRAW) {
+  buffer(data, usage = this.ctx.STATIC_DRAW, index = undefined) {
     const { ctx } = this;
-    const type = data instanceof Uint32Array ? ctx.ELEMENT_ARRAY_BUFFER : ctx.ARRAY_BUFFER;
+    const type = (index ?? data instanceof Uint32Array) ? ctx.ELEMENT_ARRAY_BUFFER : ctx.ARRAY_BUFFER;
 
     const buffer = ctx.createBuffer();
     ctx.bindBuffer(type, buffer);
