@@ -281,7 +281,7 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
     const attachmentProperties = {
       Type: { value: this.State.data.attachment.type, type: 'plain' },
       Normal: { value: this.normal, type: 'vec3' },
-      Offset: { value: this.offset, type: 'vec3' },
+      Offset: { value: this.offset, type: 'coord' },
     };
 
     if (this.State.data.attachment.type === 'face') {
