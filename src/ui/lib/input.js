@@ -14,4 +14,8 @@ export default class UIInput extends UIElement {
   constructor(value, options = {}) {
     super($('input', { value, ...options }));
   }
+
+  select() {
+    this.element.select();
+  }
 }

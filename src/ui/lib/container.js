@@ -19,6 +19,7 @@ import UIElement, { $ } from './element.js';
  * @property {typeof import(".").UILabel} UILabel
  * @property {typeof import(".").UIButton} UIButton
  * @property {typeof import(".").UIInput} UIInput
+ * @property {typeof import(".").UIColorPicker} UIColorPicker
  * @property {typeof import(".").UIPlainContainer} UIPlainContainer
  * @property {typeof import(".").UIGroup} UIGroup
  * @property {typeof import(".").UITable} UITable
@@ -119,6 +120,14 @@ export default class UIContainer extends UIElement {
    */
   addInput(...params) {
     return this.addChild(new UIContainer.#typeMap.UIInput(...params));
+  }
+
+  /**
+   * @param  {ConstructorParameters<UITypes["UIColorPicker"]>} params
+   * @returns {InstanceType<UITypes["UIColorPicker"]>}
+   */
+  addColorPicker(...params) {
+    return this.addChild(new UIContainer.#typeMap.UIColorPicker(...params));
   }
 
   /**

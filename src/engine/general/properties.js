@@ -16,6 +16,7 @@ const { vec2, vec3 } = glMatrix;
 /** @typedef {TypedPropertyData<string, "plain">} PlainPropertyData */
 /** @typedef {TypedPropertyData<number, "number">} NumberPropertyData */
 /** @typedef {TypedPropertyData<boolean, "boolean">} BooleanPropertyData */
+/** @typedef {TypedPropertyData<PlainVec3, "color">} ColorPropertyData */
 /** @typedef {TypedPropertyData<vec2, "vec2">} Vec2PropertyData */
 /** @typedef {TypedPropertyData<vec3, "vec3">} Vec3PropertyData */
 /** @typedef {TypedPropertyData<vec2, "coord2d">} Coord2dPropertyData */
@@ -23,7 +24,7 @@ const { vec2, vec3 } = glMatrix;
 /** @typedef {TypedPropertyData<number, "angle">} AnglePropertyData */
 /** @typedef {TypedPropertyData<number, "distance">} DistancePropertyData */
 /** @typedef {PlainPropertyData | BooleanPropertyData | NumberPropertyData} PrimitivePropertiesData */
-/** @typedef {PrimitivePropertiesData | Vec2PropertyData | Vec3PropertyData} PlainPropertiesData */
+/** @typedef {PrimitivePropertiesData | Vec2PropertyData | Vec3PropertyData | ColorPropertyData} PlainPropertiesData */
 /** @typedef {DistancePropertyData | Coord2dPropertyData | CoordPropertyData} DistancePropertiesData */
 /** @typedef {PlainPropertiesData | DistancePropertiesData | AnglePropertyData} PropertyData */
 /** @typedef {Record<string, Record<string, PropertyData>>} PropertyDefinitions */
@@ -136,6 +137,17 @@ export class Properties {
 
   /**
    * @param {string} value
+   * @returns {PlainVec3?}
+   */
+  static parseColor(value) {
+    value = value.trim().toUpperCase();
+    if (!/^#[0-9A-F]{6}$/.test(value)) return null;
+
+    return [Number(`0x${value.slice(1, 3)}`), Number(`0x${value.slice(3, 5)}`), Number(`0x${value.slice(5)}`)];
+  }
+
+  /**
+   * @param {string} value
    * @returns {vec2?}
    */
   static parseVec2(value) {
@@ -189,6 +201,7 @@ export class Properties {
       case 'number': return Properties.parseNumber(value);
       case 'vec2': return Properties.parseVec2(value);
       case 'vec3': return Properties.parseVec3(value);
+      case 'color': return Properties.parseColor(value);
       case 'coord2d': return Properties.parseCoord2d(value);
       case 'coord': return Properties.parseCoord3d(value);
       case 'angle': return Properties.parseAngle(value);
@@ -249,6 +262,14 @@ export class Properties {
   }
 
   /**
+   * @param {PlainVec3} value
+   * @returns {string}
+   */
+  static stringifyColor(value) {
+    return `#${value.map(i => Math.min(Math.round(i), 255).toString(16).padStart(2, '0')).join('').toUpperCase()}`;
+  }
+
+  /**
    * @param {ReadonlyVec2 | ReadonlyVec3 | number[]} value
    * @param {number} [precision]
    * @returns {string}
@@ -268,6 +289,7 @@ export class Properties {
     switch(type) {
       case 'vec2':
       case 'vec3': return Properties.stringifyVec(value, precision);
+      case 'color': return Properties.stringifyColor(value);
       case 'coord2d':
       case 'coord': return Properties.stringifyCoord(value, precision);
       case 'angle': return Properties.stringifyAngle(value, precision);

@@ -1,6 +1,7 @@
 import UILabel from './label.js';
 import UIButton from './button.js';
 import UIInput from './input.js';
+import UIColorPicker from './color-picker.js';
 import UIContainer, { UIPlainContainer } from './container.js';
 import UIGroup from './group.js';
 import UITable from './table.js';
@@ -13,6 +14,7 @@ UIContainer.setTypes({
   UILabel,
   UIButton,
   UIInput,
+  UIColorPicker,
   UIPlainContainer,
   UIGroup,
   UITable,
@@ -26,6 +28,7 @@ export { default as UIElement, $ } from './element.js';
 export { default as UILabel } from './label.js';
 export { default as UIButton } from './button.js';
 export { default as UIInput } from './input.js';
+export { default as UIColorPicker } from './color-picker.js';
 export { default as UIContainer, UIPlainContainer } from './container.js';
 export { default as UIGroup } from './group.js';
 export { default as UITable } from './table.js';

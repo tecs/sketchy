@@ -411,3 +411,44 @@ dialog::backdrop {
 .rightMenu .tabContents > * {
   width: calc(var(--rightMenuWidth) - 2em);
 }
+
+/* Color picker */
+
+.colorPicker {
+  display: grid;
+  grid-template-columns: auto auto;
+  gap: 1em;
+  margin-bottom: 1em;
+}
+
+.colorPicker .square {
+  width: 256px;
+  height: 256px;
+  position: relative;
+  cursor: pointer;
+}
+.colorPicker .square::after, .colorPicker .square::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+.colorPicker .square::before {
+  background: linear-gradient(to right, #FFF 0%, #FFFFFF00 100%);
+}
+.colorPicker .square::after {
+  background: linear-gradient(to top, #000 0%, #00000000 100%);
+}
+
+.colorPicker .hue {
+  height: 256px;
+  cursor: pointer;
+  background: linear-gradient(to bottom, #F00 0%, #FF0 17%, #0F0 33%, #0FF 50%, #00F 66%, #f0f 83%, #F00 100%);
+}
+
+.colorPicker .preview {
+  width: 32px;
+  height: 32px;
+}

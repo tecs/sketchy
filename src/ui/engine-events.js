@@ -18,15 +18,18 @@ export default (engine, container) => {
       window.remove();
     };
 
-    const input = window.addContainer().addInput(Properties.stringify(property), { onkeydown: ({ key }) => {
-      if (key === 'Enter') submit();
-    }});
+    const value = Properties.stringify(property);
+    const input = property.type === 'color'
+      ? window.addContainer().addColorPicker(value)
+      : window.addContainer().addInput(value, { onkeydown: ({ key }) => {
+        if (key === 'Enter') submit();
+      }});
 
     const buttons = window.addContainer();
     buttons.addButton('OK', submit);
     buttons.addButton('Cancel', () => window.remove());
     window.show();
-    requestAnimationFrame(() => input.element.select());
+    requestAnimationFrame(() => input.select());
   });
 
   engine.on('cursorchange', cursor => void(engine.driver.canvas.style.cursor = cursor ?? 'default'));
