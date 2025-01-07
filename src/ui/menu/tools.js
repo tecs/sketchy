@@ -34,8 +34,9 @@ export default (engine) => {
     }
 
     contextMenu.show();
+    contextMenu.clearChildren();
     for (const action of actions) {
-      contextActions.set(action, contextMenu.addButton(action.icon, action.call, action.name));
+      contextActions.set(action, contextMenu.addButton(action.icon, action.call, action.name, action.style));
     }
   });
 

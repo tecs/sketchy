@@ -21,6 +21,7 @@ import ScaleTool from './tools/scale.js';
 import OrbitTool from './tools/orbit.js';
 import ZoomTool from './tools/zoom.js';
 import PushPullTool from './tools/push-pull.js';
+import BucketTool from './tools/bucket.js';
 
 import makeSystemMenu from './ui/menu/system/index.js';
 import makeToolsMenu from './ui/menu/tools.js';
@@ -55,6 +56,7 @@ window.addEventListener('load', () => {
   engine.tools.addTool(ScaleTool);
   engine.tools.addTool(LineTool);
   engine.tools.addTool(RectangleTool);
+  engine.tools.addTool(BucketTool);
   engine.tools.addTool(OrbitTool);
   engine.tools.addTool(ZoomTool);
 

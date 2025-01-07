@@ -32,14 +32,15 @@ export default class UIMenu extends UIContainer {
    * @param {string} label
    * @param {() => void} onClick
    * @param {string} [title]
+   * @param {import('./element.js').WritableCSSDeclaration} [style]
    * @returns {UIButton}
    */
-  addButton(label, onClick, title = label) {
+  addButton(label, onClick, title = label, style = {}) {
     const button = super.addButton(label, () => {
       if (this.selected !== button && !button.disabled) {
         onClick();
       }
-    });
+    }, { style });
     button.$element({ title });
     return button;
   }

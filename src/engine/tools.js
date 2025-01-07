@@ -28,6 +28,7 @@ import Input from './input.js';
  * @typedef Action
  * @property {string} name
  * @property {string} icon
+ * @property {Record<string, string>} [style]
  * @property {() => void} call
  */
 
