@@ -14,6 +14,19 @@ const { vec3 } = glMatrix;
  * @property {import("./instance.js").InstanceState[]} instances
  */
 
+/**
+ * @typedef SubHovered
+ * @property {Model} model
+ * @property {"face" | "line" | "point"} type
+ * @property {number} id
+ */
+
+/**
+ * @typedef Hovered
+ * @property {Instance} instance
+ * @property {SubHovered?} sub
+ */
+
 export default class Scene extends Base {
   /** @type {Engine} */
   #engine;
@@ -41,6 +54,9 @@ export default class Scene extends Base {
 
   /** @type {(0|1|2|3)?} */
   hoveredAxisId = null;
+
+  /** @type {Hovered?} */
+  globallyHovered = null;
 
   /** @type {AnyStep?} */
   currentStep = null;
@@ -135,6 +151,7 @@ export default class Scene extends Base {
     this.hoveredPointId = null;
     this.hoveredConstraintIndex = null;
     this.hoveredAxisId = null;
+    this.globallyHovered = null;
     this.currentStep = null;
     this.selectedStep = null;
     this.selectedBody = null;
@@ -266,12 +283,35 @@ export default class Scene extends Base {
     this.hoveredLineId = null;
     this.hoveredPointId = null;
     this.hoveredAxisId = null;
+    this.globallyHovered = null;
 
-    if (!this.hoveredInstance || this.hoveredInstance !== this.enteredInstance) return;
+    if (!this.hoveredInstance) return;
 
-    if (pointId > 0) this.hoveredPointId = pointId;
-    else if (lineId > 0) this.hoveredLineId = lineId;
-    else if (faceId > 0) this.hoveredFaceId = faceId;
+    this.globallyHovered = { instance: this.hoveredInstance, sub: null };
+
+    const model = this.hoveredInstance.body.currentModel;
+
+    if (!model) return;
+
+    this.globallyHovered.sub = { model, type: 'face', id: faceId };
+
+    if (pointId > 0) {
+      this.globallyHovered.sub.id = pointId;
+      this.globallyHovered.sub.type = 'point';
+    } else if (lineId > 0) {
+      this.globallyHovered.sub.id = lineId;
+      this.globallyHovered.sub.type = 'line';
+    } else if (faceId === 0) {
+      this.globallyHovered.sub = null;
+    }
+
+    if (this.hoveredInstance !== this.enteredInstance || !this.globallyHovered.sub) return;
+
+    switch (this.globallyHovered.sub.type) {
+      case 'point': this.hoveredPointId = this.globallyHovered.sub.id; break;
+      case 'line': this.hoveredLineId = this.globallyHovered.sub.id; break;
+      case 'face': this.hoveredFaceId = this.globallyHovered.sub.id; break;
+    }
   }
 
   /**
