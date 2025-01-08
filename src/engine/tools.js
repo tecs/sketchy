@@ -41,7 +41,7 @@ export default class Tools {
   /** @type {Engine} */
   #engine;
 
-  /** @type {{ tool: AnyTool, shortcut: import("./config").StringSetting }[]} */
+  /** @type {{ tool: AnyTool, shortcut: import("./config").StringSetting, enabled: boolean }[]} */
   #tools = [];
 
   /** @type {AnyTool?} */
@@ -71,7 +71,7 @@ export default class Tools {
 
     engine.on('shortcut', setting => {
       const tool = this.#tools.find(({ shortcut }) => shortcut === setting);
-      if (tool) this.setTool(tool.tool);
+      if (tool?.enabled) this.setTool(tool.tool);
     });
   }
 
@@ -86,7 +86,7 @@ export default class Tools {
       'key',
       Input.stringify(tool.shortcut),
     );
-    this.#tools.push({ tool, shortcut });
+    this.#tools.push({ tool, shortcut, enabled: true });
     this.#engine.input.registerShortcuts(shortcut);
     if (!this.selected) this.setTool(tool);
   }
@@ -104,6 +104,34 @@ export default class Tools {
 
     this.#engine.emit('cursorchange', tool?.cursor);
     this.#engine.emit('toolchange', tool, previous);
+  }
+
+  /**
+   * @param {AnyTool} tool
+   */
+  enable(tool) {
+    const toolSettings = this.#tools.find(toolSetting => toolSetting.tool === tool);
+    if (toolSettings?.enabled !== false) return;
+
+    toolSettings.enabled = true;
+    this.#engine.emit('toolenabled', tool);
+
+    if (!this.selected) this.setTool(tool);
+  }
+
+  /**
+   * @param {AnyTool} tool
+   */
+  disable(tool) {
+    const toolSettings = this.#tools.find(toolSetting => toolSetting.tool === tool);
+    if (toolSettings?.enabled !== true) return;
+
+    toolSettings.enabled = false;
+    this.#engine.emit('tooldisabled', tool);
+    if (tool === this.selected) {
+      const nextTool = this.#tools.find(({ enabled }) => enabled)?.tool;
+      this.setTool(nextTool ?? null);
+    }
   }
 
   /**

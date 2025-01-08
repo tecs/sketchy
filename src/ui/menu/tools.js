@@ -19,6 +19,9 @@ export default (engine) => {
     if (tool) menu.select(toolMap[tool.type]);
   });
 
+  engine.on('toolenabled', tool => toolMap[tool.type].show());
+  engine.on('tooldisabled', tool => toolMap[tool.type].hide());
+
   const contextMenu = menu.addMenu();
   contextMenu.hide();
 
