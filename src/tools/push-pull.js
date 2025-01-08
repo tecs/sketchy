@@ -20,7 +20,9 @@ export default (engine) => {
     editor: { selection, edited },
     history,
     scene,
+    tools,
     emit,
+    on,
   } = engine;
   /** @type {import("../engine/history.js").HistoryAction<PushPullAction>|undefined} */
   let historyAction;
@@ -117,11 +119,17 @@ export default (engine) => {
 
     },
     abort() {
-      if (engine.tools.selected?.type === 'orbit') return;
+      if (tools.selected?.type === 'orbit') return;
 
       historyAction?.discard();
     },
   };
+
+  on('stepchange', (current, previous) => {
+    if (current !== scene.currentStep) return;
+    if (current && !previous) tools.disable(pushPull);
+    else if (!current && previous) tools.enable(pushPull);
+  });
 
   return pushPull;
 };

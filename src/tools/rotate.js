@@ -6,7 +6,16 @@ const { vec3 } = glMatrix;
 
 /** @type {(engine: Engine) => RotateTool} */
 export default (engine) => {
-  const { camera, editor: { edited: active, selection }, input, scene, history, emit } = engine;
+  const {
+    camera,
+    editor: { edited: active, selection },
+    input,
+    scene,
+    tools,
+    history,
+    emit,
+    on,
+  } = engine;
 
   /**
    * @typedef RotateData
@@ -131,11 +140,17 @@ export default (engine) => {
       historyAction?.commit();
     },
     abort() {
-      if (engine.tools.selected?.type === 'orbit') return;
+      if (tools.selected?.type === 'orbit') return;
 
       historyAction?.discard();
     },
   };
+
+  on('stepchange', (current, previous) => {
+    if (current !== scene.currentStep) return;
+    if (current && !previous) tools.disable(rotate);
+    else if (!current && previous) tools.enable(rotate);
+  });
 
   return rotate;
 };

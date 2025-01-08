@@ -8,7 +8,14 @@ const { vec3, mat4 } = glMatrix;
 
 /** @type {(engine: Engine) => MoveTool} */
 export default (engine) => {
-  const { editor: { edited: active, selection }, scene, history, emit } = engine;
+  const {
+    editor: { edited: active, selection },
+    scene,
+    tools,
+    history,
+    emit,
+    on,
+  } = engine;
 
   /**
    * @typedef InstanceElement
@@ -288,11 +295,23 @@ export default (engine) => {
       historyAction?.commit();
     },
     abort() {
-      if (engine.tools.selected?.type === 'orbit') return;
+      if (tools.selected?.type === 'orbit') return;
 
       historyAction?.discard();
     },
   };
+
+  /**
+   * @param {Readonly<import("../engine/cad/body.js").AnyStep>?} tool
+   * @returns {boolean}
+   */
+  const shouldShow = (tool) => !tool || tool instanceof Sketch;
+
+  on('stepchange', (current, previous) => {
+    if (current !== scene.currentStep) return;
+    if (!shouldShow(current) && shouldShow(previous)) tools.disable(move);
+    else if (shouldShow(current) && !shouldShow(previous)) tools.enable(move);
+  });
 
   return move;
 };

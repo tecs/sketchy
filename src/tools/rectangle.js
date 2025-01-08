@@ -21,7 +21,14 @@ const { vec2, vec3, mat4 } = glMatrix;
 
 /** @type {(engine: Engine) => RectTool} */
 export default (engine) => {
-  const { editor: { selection, edited: active }, history, scene, emit } = engine;
+  const {
+    editor: { selection, edited: active },
+    history,
+    scene,
+    tools,
+    emit,
+    on,
+  } = engine;
 
   /** @type {import("../engine/history.js").HistoryAction<RectData>|undefined} */
   let historyAction;
@@ -242,10 +249,22 @@ export default (engine) => {
       historyAction.commit();
     },
     abort() {
-      if (!historyAction || engine.tools.selected?.type === 'orbit') return;
+      if (!historyAction || tools.selected?.type === 'orbit') return;
       historyAction.discard();
     },
   };
+
+  /**
+   * @param {Readonly<import("../engine/cad/body.js").AnyStep>?} tool
+   * @returns {boolean}
+   */
+  const shouldShow = (tool) => !tool || tool instanceof Sketch;
+
+  on('stepchange', (current, previous) => {
+    if (current !== scene.currentStep) return;
+    if (!shouldShow(current) && shouldShow(previous)) tools.disable(rectangle);
+    else if (shouldShow(current) && !shouldShow(previous)) tools.enable(rectangle);
+  });
 
   return rectangle;
 };

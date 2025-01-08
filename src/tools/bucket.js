@@ -10,7 +10,15 @@ const colorEquals = (c1, c2) => c1[0] === c2[0] && c1[1] === c2[1] && c1[2] === 
 
 /** @type {(engine: Engine) => BaseTool} */
 export default (engine) => {
-  const { editor: { selection }, input, scene, tools, history, emit, on } = engine;
+  const {
+    editor: { selection },
+    input,
+    scene,
+    tools,
+    history,
+    emit,
+    on,
+  } = engine;
 
   /** @type {PlainVec3[]} */
   const lastColors = [
@@ -149,6 +157,12 @@ export default (engine) => {
       engine.emit('cursorchange', bucket.cursor);
       engine.emit('contextactions', regenerateActions());
     }
+  });
+
+  on('stepchange', (current, previous) => {
+    if (current !== scene.currentStep) return;
+    if (current && !previous) tools.disable(bucket);
+    else if (!current && previous) tools.enable(bucket);
   });
 
   return bucket;

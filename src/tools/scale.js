@@ -6,7 +6,14 @@ const { vec3, glMatrix: { equals } } = glMatrix;
 
 /** @type {(engine: Engine) => ScaleTool} */
 export default (engine) => {
-  const { editor: { edited: active, selection }, scene, history, emit } = engine;
+  const {
+    editor: { edited: active, selection },
+    scene,
+    tools,
+    history,
+    emit,
+    on,
+  } = engine;
 
   /**
    * @typedef ScaleData
@@ -144,11 +151,17 @@ export default (engine) => {
       historyAction?.commit();
     },
     abort() {
-      if (engine.tools.selected?.type === 'orbit') return;
+      if (tools.selected?.type === 'orbit') return;
 
       historyAction?.discard();
     },
   };
+
+  on('stepchange', (current, previous) => {
+    if (current !== scene.currentStep) return;
+    if (current && !previous) tools.disable(scale);
+    else if (!current && previous) tools.enable(scale);
+  });
 
   return scale;
 };
