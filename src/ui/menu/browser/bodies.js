@@ -8,7 +8,7 @@ const { vec3 } = glMatrix;
  * @param {import("../../lib/index.js").UITabs} tabs
  */
 export default (engine, tabs) => {
-  const { editor: { selection }, entities, scene, tools } = engine;
+  const { editor: { selection }, entities, history, scene, tools } = engine;
   const tab = tabs.addTab('Bodies');
 
   const render = () => {
@@ -29,11 +29,35 @@ export default (engine, tabs) => {
             }
 
             const { enteredInstance } = scene;
-            const instance = enteredInstance
-              ? enteredInstance.body.createStep(SubInstance, { bodyId: body.Id.str }).instances.at(0)
-              : body.instantiate();
 
+            const action = history.createAction(`Create a new instance of "${body.name}"`, {
+              parent: enteredInstance,
+              instance: /** @type {Instance | undefined} */ (undefined),
+            });
+            if (!action) return;
+
+            action.append(
+              data => void(data.instance = data.parent
+                ? data.parent.body.createStep(SubInstance, { bodyId: body.Id.str }).instances.at(0)
+                : body.instantiate()
+              ),
+              ({ parent, instance }) => {
+                if (!instance) return;
+
+                if (!parent) {
+                  body.uninstantiate(instance);
+                  return;
+                }
+
+                const step = SubInstance.getParent(instance)?.subInstance;
+                if (step) parent.body.removeStep(step);
+              },
+            );
+
+            const { instance } = action.data;
             if (!instance) return;
+
+            action.commit();
 
             selection.set({ type: 'instance', instance, id: instance.Id.int });
             scene.hover(vec3.create());
