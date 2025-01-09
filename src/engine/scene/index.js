@@ -115,6 +115,52 @@ export default class Scene extends Base {
 
       this.#engine.emit('scenechange');
     });
+
+    engine.on('paste', action => {
+      const instances = action.data.elements.filter(({ type }) => type === 'instance').map(({ instance }) => instance);
+      if (!instances.length) return;
+
+      const { enteredInstance } = engine.scene;
+
+      const newInstances = /** @type {Instance[]} */ ([]);
+
+      action.append(
+        () => {
+          for (const instance of instances) {
+            const trs = instance.State.export().trs;
+            const newInstance = enteredInstance
+              ? enteredInstance.body.createStep(SubInstance, { bodyId: instance.body.Id.str, placement: trs })
+                .instances
+                .find(child => SubInstance.getParent(child)?.instance === enteredInstance)
+              : instance.body.instantiate({ trs });
+
+            if (newInstance) newInstances.push(newInstance);
+          }
+
+          selection.set(newInstances.map(instance => ({ instance, id: instance.Id.int, type: 'instance' })));
+        },
+        () => {
+          for (const instance of newInstances) {
+            const parent = SubInstance.getParent(instance);
+            if (!parent) {
+              instance.body.uninstantiate(instance);
+              return;
+            }
+
+            parent.body.removeStep(parent.subInstance);
+          }
+
+          newInstances.splice(0);
+        },
+      );
+
+      action.data.onSuccess.push(() => {
+        const { tools } = engine;
+        const tool = tools.get('move');
+        tools.setTool(tool);
+        tool?.start();
+      });
+    });
   }
 
   #autoSetCurrentInstance() {
