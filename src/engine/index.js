@@ -72,8 +72,8 @@ export default class Engine extends Base {
     this.entities = new Entities(this);
     this.config = new Config(this);
     this.driver = new Driver(this, canvas);
-    this.editor = new Editor(this);
     this.input = new Input(this);
+    this.editor = new Editor(this);
     this.history = new History(this);
     this.camera = new Camera(this);
     this.renderer = new Renderer(this);

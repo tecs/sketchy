@@ -1,12 +1,19 @@
 import Base from './general/base.js';
 import Instance from './scene/instance.js';
 import SubInstance from './cad/subinstance.js';
+import Input from './input.js';
 
 /**
  * @typedef Element
  * @property {string} type
  * @property {number} id
  * @property {Instance} instance
+ */
+
+/**
+ * @typedef CopyActionData
+ * @property {Readonly<Element[]>} elements
+ * @property {Function[]} onSuccess
  */
 
 /** @typedef {import("./general/events-types").Event<"change", [current: Element[], previous: Element[]]>} Changed */
@@ -136,18 +143,23 @@ export class Collection extends Base {
 }
 
 export default class Editor {
-  /** @type {Tuple<Collection, 3>} */
-  #collections = [new Collection(), new Collection(), new Collection()];
+  /** @type {Tuple<Collection, 4>} */
+  #collections = [new Collection(), new Collection(), new Collection(), new Collection()];
 
   selection = this.#collections[0];
-  edited = this.#collections[1];
-  temp = this.#collections[2];
+  clipboard = this.#collections[1];
+  edited = this.#collections[2];
+  temp = this.#collections[3];
 
   /**
    * @param {Engine} engine
    */
   constructor(engine) {
     this.selection.on('change', (cur, prev) => engine.emit('selectionchange', cur, prev));
+
+    const copyShortcut = engine.config.createString('shortcuts.copy', 'Copy', 'key', Input.stringify(['ctrl', 'c']));
+    const pasteShortcut = engine.config.createString('shortcuts.paste', 'Paste', 'key', Input.stringify(['ctrl', 'v']));
+    engine.input.registerShortcuts(copyShortcut, pasteShortcut);
 
     engine.on('currentchange', () => this.reset());
     engine.on('entityremoved', (entity) => {
@@ -157,6 +169,29 @@ export default class Editor {
         const deleted = collection.getByType('instance')
           .filter(({ instance }) => SubInstance.belongsTo(instance, entity));
         collection.remove(deleted);
+      }
+    });
+
+    engine.on('shortcut', (shortcut) => {
+      switch (shortcut) {
+        case copyShortcut:
+          this.clipboard.set(this.selection.elements);
+          engine.emit('copy', this.clipboard);
+          break;
+        case pasteShortcut:
+          if (!this.clipboard.elements.length) break;
+
+          const onSuccess = /** @type {CopyActionData["onSuccess"]} */ ([]);
+
+          const copyAction = engine.history.createAction('Paste elements', /** @type {CopyActionData} */ ({
+            elements: this.clipboard.elements.slice(),
+            onSuccess,
+          }), () => onSuccess.forEach(fn => fn()));
+          if (!copyAction) break;
+
+          engine.emit('paste', copyAction);
+          copyAction.commit();
+          break;
       }
     });
   }

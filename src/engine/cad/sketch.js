@@ -575,6 +575,63 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
     });
 
     engine.on('toolchange', () => cancellableTask.drop(false));
+
+    engine.on('copy', entities => {
+      const sketch = scene.currentStep;
+
+      if (!(sketch instanceof Sketch)) {
+        // don't copy sketch elements if outside an active sketch
+        const entityTypes = ['line', 'constraint', 'point'];
+        entities.remove(entities.elements.filter(({ type }) => entityTypes.includes(type)));
+        return;
+      }
+
+      // only lines are supported for copying
+      entities.remove(entities.elements.filter(({ type }) => type !== 'line'));
+    });
+
+    engine.on('paste', action => {
+      const sketch = scene.currentStep;
+      if (!(sketch instanceof Sketch)) return;
+
+      const instance = scene.currentInstance;
+
+      const lines = action.data.elements.map(({ id }) => sketch.getLine(id)).filter(line => line !== null);
+      const linePoints = lines.map(line => sketch.getLineIds(line)).filter(points => points !== null);
+      const pointMap = new Map(linePoints.flat().map((id, i) => [id, sketch.model.lastPointId + i + 1]));
+      const linesToAdd = lines.map(line => Sketch.cloneConstructionElement(line));
+
+      const constraints = [
+        ...pair(linePoints.flat()).flatMap(pointPair => sketch.getConstraintsForPoints(pointPair)),
+        ...pair(linePoints).flatMap(pointPair => sketch.getConstraintsForPoints(pointPair.flat())),
+      ].filter((v, i, a) => a.indexOf(v) === i);
+
+      const constraintsToAdd = constraints.map(constraint => {
+        const newConstraint = Sketch.cloneConstraint(constraint);
+        for (let i = 0; i < newConstraint.indices.length; ++i) {
+          const oldId = newConstraint.indices[i];
+          newConstraint.indices[i] = pointMap.get(oldId) ?? oldId;
+        }
+        return newConstraint;
+      });
+
+      action.append(
+        () => {
+          linesToAdd.forEach(line => sketch.addElement(line));
+          constraintsToAdd.forEach(constraint => sketch.addConstraint(constraint));
+          const lineIds = linesToAdd.map(line => sketch.getLineId(line)).filter(id => id !== null);
+          selection.set(lineIds.map(id => ({ id, instance, type: 'line' })));
+        },
+        () => linesToAdd.forEach(line => sketch.deleteElement(line)),
+      );
+
+      action.data.onSuccess.push(() => {
+        const { tools } = engine;
+        const tool = tools.get('move');
+        tools.setTool(tool);
+        tool?.start();
+      });
+    });
   }
 
   /**
@@ -613,6 +670,15 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
       clone.data[i] = element.data[i];
     }
     return clone;
+  }
+
+  /**
+   * @template {Constraints} T
+   * @param {T} constraint
+   * @returns {T}
+   */
+  static cloneConstraint(constraint) {
+    return /** @type {T} */ ({ type: constraint.type, data: constraint.data, indices: [...constraint.indices] });
   }
 
   #recompute() {
