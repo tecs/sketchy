@@ -16,7 +16,7 @@ export default (engine, ui) => {
    * @returns {(e: KeyboardEvent) => void} e
    */
   const keyHandler = (down) => ({ key, altKey, ctrlKey, shiftKey, target }) => {
-    if (target instanceof HTMLInputElement) return;
+    if (target instanceof HTMLInputElement && !key.startsWith('Arrow')) return;
 
     if (key === 'GroupNext') {
       shiftKey ||= down;

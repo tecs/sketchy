@@ -51,6 +51,14 @@ export default class Input {
       case ' ': return 'space';
       case 'control': return 'ctrl';
       case 'escape': return 'esc';
+      case 'left':
+      case 'arrowleft': return '←';
+      case 'right':
+      case 'arrowright': return '→';
+      case 'down':
+      case 'arrowdown': return '↓';
+      case 'up':
+      case 'arrowup': return '↑';
     }
     return key;
   }
@@ -186,7 +194,7 @@ export default class Input {
     const keyCombo = Input.stringify(combo);
 
     if (key === 'esc') this.#resetShortcuts();
-    else if (originalKey.length === 1 && down) this.#triggerShortcuts(keyCombo);
+    else if ((originalKey.length === 1 || originalKey.startsWith('Arrow')) && down) this.#triggerShortcuts(keyCombo);
 
     if (down) this.#engine.emit('keydown', key, keyCombo);
     else this.#engine.emit('keyup', key, keyCombo);

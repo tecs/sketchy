@@ -3,6 +3,7 @@ import Base from '../general/base.js';
 import Id from '../general/id.js';
 import Body from '../cad/body.js';
 import SubInstance from '../cad/subinstance.js';
+import Input from '../input.js';
 
 const { vec3 } = glMatrix;
 
@@ -26,6 +27,11 @@ const { vec3 } = glMatrix;
  * @property {Instance} instance
  * @property {SubHovered?} sub
  */
+
+// cached structures
+const axisXNormal = vec3.fromValues(1, 0, 0);
+const axisYNormal = vec3.fromValues(0, 1, 0);
+const axisZNormal = vec3.fromValues(0, 0, 1);
 
 export default class Scene extends Base {
   /** @type {Engine} */
@@ -69,6 +75,10 @@ export default class Scene extends Base {
 
   /** @type {ReadonlyVec3} */
   axisNormal = vec3.create();
+
+  /** @type {ReadonlyVec3?} */
+  axisAlignedNormal = null;
+
   hoveredView = vec3.create();
   hovered = vec3.create();
 
@@ -94,7 +104,7 @@ export default class Scene extends Base {
     });
     engine.on('entityadded', (entity) => {
       if (entity instanceof Instance) {
-        this.#engine.emit('scenechange');
+        engine.emit('scenechange');
       }
     });
     engine.on('entityremoved', (entity) => {
@@ -113,8 +123,28 @@ export default class Scene extends Base {
         }
       }
 
-      this.#engine.emit('scenechange');
+      engine.emit('scenechange');
     });
+
+    const alignAxisX = engine.config.createString('shortcuts.alignAxisX', 'Align X-Axis', 'key', Input.stringify('right'));
+    const alignAxisY = engine.config.createString('shortcuts.alignAxisY', 'Align Y-Axis', 'key', Input.stringify('up'));
+    const alignAxisZ = engine.config.createString('shortcuts.alignAxisZ', 'Align Z-Axis', 'key', Input.stringify('left'));
+    engine.input.registerShortcuts(alignAxisX, alignAxisY, alignAxisZ);
+    engine.on('shortcut', shortcut => {
+      if (!engine.tools.selected?.active) return;
+
+      const oldAxis = this.axisAlignedNormal;
+      switch (shortcut) {
+        case alignAxisX: this.axisAlignedNormal = axisXNormal; break;
+        case alignAxisY: this.axisAlignedNormal = axisYNormal; break;
+        case alignAxisZ: this.axisAlignedNormal = axisZNormal; break;
+        default: return;
+      }
+
+      if (oldAxis === this.axisAlignedNormal) this.axisAlignedNormal = null;
+      engine.emit('scenechange');
+    });
+    engine.on('toolinactive', () => void(this.axisAlignedNormal = null));
 
     engine.on('paste', action => {
       const instances = action.data.elements.filter(({ type }) => type === 'instance').map(({ instance }) => instance);
@@ -185,6 +215,7 @@ export default class Scene extends Base {
     this.#engine.entities.clear();
 
     vec3.set(this.axisNormal, 0, 1, 0);
+    this.axisAlignedNormal = null;
     vec3.zero(this.hovered);
     vec3.zero(this.hoveredView);
 
@@ -397,6 +428,13 @@ export default class Scene extends Base {
    */
   setAxis(normal) {
     vec3.copy(this.axisNormal, normal);
+  }
+
+  /**
+   * @param {ReadonlyVec3} normal
+   */
+  setAxisAligned(normal) {
+    this.axisAlignedNormal = vec3.clone(normal);
   }
 
   /**

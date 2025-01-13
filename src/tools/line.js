@@ -12,6 +12,7 @@ const { vec3, mat4 } = glMatrix;
  * @property {number} length
  * @property {number | undefined} startId
  * @property {number | undefined} endId
+ * @property {0 | 1 | undefined} alignedAxis
  * @property {Instance} instance
  * @property {import("../engine/cad/sketch").PointInfo[]} points
  */
@@ -112,6 +113,7 @@ export default (engine) => {
         length: 0,
         startId,
         endId: undefined,
+        alignedAxis: undefined,
         instance,
         points: [],
       }, () => {
@@ -147,7 +149,13 @@ export default (engine) => {
       if (!historyAction) return;
       const { sketch, line } = historyAction.data;
 
+      historyAction.data.alignedAxis = !scene.axisAlignedNormal?.[2]
+        ? /** @type {0 | 1 | undefined} */ (scene.axisAlignedNormal?.[0])
+        : undefined;
+      const { alignedAxis } = historyAction.data;
+
       vec3.transformMat4(coord, scene.hovered, transformation);
+      if (alignedAxis !== undefined) coord[alignedAxis] = line.data[alignedAxis];
 
       line.data[2] = coord[0];
       line.data[3] = coord[1];
@@ -174,6 +182,15 @@ export default (engine) => {
         historyAction.append(({ endId, sketch, points }) => {
           if (endId !== undefined) {
             sketch.coincident([points[1].id, endId]);
+          }
+        }, () => {});
+      }
+
+      if (data.alignedAxis !== undefined) {
+        historyAction.append(({ alignedAxis, sketch, line }) => {
+          switch (alignedAxis) {
+            case 0: sketch.vertical(line); break;
+            case 1: sketch.horizontal(line); break;
           }
         }, () => {});
       }
