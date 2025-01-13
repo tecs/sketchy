@@ -59,6 +59,7 @@ export default (engine) => {
   const transformation = mat4.create();
   const origin = vec3.create();
   const diff = vec3.create();
+  const alignedHovered = vec3.create();
 
   /** @type {MoveTool} */
   const move = {
@@ -259,9 +260,16 @@ export default (engine) => {
 
       const { elements, translation, lockedIndices } = historyAction.data;
 
-      vec3.subtract(diff, scene.hovered, origin);
+      if (scene.axisAlignedNormal) {
+        alignedHovered[0] = scene.axisAlignedNormal[0] ? scene.hovered[0] : origin[0];
+        alignedHovered[1] = scene.axisAlignedNormal[1] ? scene.hovered[1] : origin[1];
+        alignedHovered[2] = scene.axisAlignedNormal[2] ? scene.hovered[2] : origin[2];
+      } else {
+        vec3.copy(alignedHovered, scene.hovered);
+      }
+      vec3.subtract(diff, alignedHovered, origin);
       vec3.subtract(diff, diff, translation);
-      vec3.subtract(translation, scene.hovered, origin);
+      vec3.subtract(translation, alignedHovered, origin);
       Placement.toRelativeCords(diff, diff, transformation);
 
       for (const element of elements) {
