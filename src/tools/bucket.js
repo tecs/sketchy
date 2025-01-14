@@ -86,7 +86,7 @@ export default (engine) => {
     name: 'Bucket',
     shortcut: 'b',
     icon: '🪣',
-    cursor: 'alias',
+    cursor: 'url(/assets/bucket.svg) 4 29, alias',
     start() {
       const { currentStep, enteredInstance, hoveredFaceId, globallyHovered } = scene;
 
@@ -147,7 +147,7 @@ export default (engine) => {
 
   on('keydown', (key) => {
     if (key === 'ctrl' && tools.selected === bucket) {
-      engine.emit('cursorchange', 'crosshair');
+      engine.emit('cursorchange', 'url(/assets/eyedropper.svg) 7 23, crosshair');
       engine.emit('contextactions', regenerateActions());
     }
   });
