@@ -1,14 +1,17 @@
 import Body from '../engine/cad/body.js';
 import SubInstance from '../engine/cad/subinstance.js';
 
+const { vec3 } = glMatrix;
+
 /** @type {RenderingPass} */
 export default (engine) => {
   const {
     driver: { ctx, makeProgram, vert, frag, buffer },
     camera,
-    editor: { selection },
+    editor: { selection, edited },
     entities,
     scene,
+    tools,
   } = engine;
 
   const program = makeProgram(
@@ -17,6 +20,7 @@ export default (engine) => {
 
       uniform mat4 u_trs;
       uniform mat4 u_viewProjection;
+      uniform vec3 u_baseColor;
       uniform float u_isSelected;
       uniform float u_isInShadow;
       uniform float u_isHovered;
@@ -25,7 +29,8 @@ export default (engine) => {
 
       void main() {
         gl_Position = u_viewProjection * u_trs * a_position;
-        v_color = vec4(0.0, 0.0, u_isSelected, 1.0);
+        v_color = vec4(u_baseColor, 1.0);
+        v_color.b += u_isSelected;
 
         // Darken non-selected instance
         v_color.rgb *= max(1.0 - u_isInShadow, 0.2);
@@ -67,6 +72,8 @@ export default (engine) => {
     3, 7, // BFR - TFR
   ]));
 
+  const baseColor = vec3.create();
+
   const boundingBoxVertexBuffer = ctx.createBuffer();
 
   return {
@@ -75,6 +82,8 @@ export default (engine) => {
       const { enteredInstance, hoveredInstance, hoveredLineId } = scene;
       const selectedLines = selection.getByType('line');
       const selectedInstances = selection.getByType('instance').map(({ instance }) => instance);
+
+      const drawnLine = tools.isActive('line') ? edited.getByType('line').pop() : undefined;
 
       const bodies = entities.values(Body);
       for (const { currentModel: model, instances } of bodies) {
@@ -87,6 +96,8 @@ export default (engine) => {
         ctx.vertexAttribPointer(program.aLoc.a_position, 3, ctx.FLOAT, false, 0, 0);
 
         ctx.uniformMatrix4fv(program.uLoc.u_viewProjection, false, camera.viewProjection);
+
+        ctx.uniform3fv(program.uLoc.u_baseColor, baseColor);
 
         for (const instance of instances) {
           const isSelected = selectedInstances.some(inst => SubInstance.belongsTo(instance, inst)) ? 1 : 0;
@@ -102,6 +113,12 @@ export default (engine) => {
             ctx.lineWidth(5);
             ctx.drawElements(ctx.LINES, 2, ctx.UNSIGNED_INT, (hoveredIndex - 1) * 8);
             ctx.uniform1f(program.uLoc.u_isHovered, 0);
+          }
+          if (drawnLine?.instance === instance && scene.axisAlignedNormal) {
+            ctx.uniform3fv(program.uLoc.u_baseColor, scene.axisAlignedNormal);
+            ctx.lineWidth(5);
+            ctx.drawElements(ctx.LINES, 2, ctx.UNSIGNED_INT, (drawnLine.id - 1) * 8);
+            ctx.uniform3fv(program.uLoc.u_baseColor, baseColor);
           }
 
           ctx.lineWidth(1 + isSelected);
