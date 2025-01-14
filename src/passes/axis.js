@@ -127,6 +127,11 @@ export default (engine) => {
         ctx.uniform1f(program.uLoc.u_hovered, 0);
       }
 
+      if (scene.axisAlignedNormal) {
+        const id = scene.axisAlignedNormal[0] + scene.axisAlignedNormal[1] * 2 + scene.axisAlignedNormal[2] * 3;
+        if (!selectedAxes.includes(id)) selectedAxes.push(id);
+      }
+
       for (const selectedAxis of selectedAxes) {
         if (selectedAxis > 0) {
           ctx.lineWidth(3);
