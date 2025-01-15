@@ -12,7 +12,13 @@ const cursors = [
   { name: 'bucket', fallback: 'alias', x: 4, y: 29 },
   { name: 'eyedropper', fallback: 'crosshair', x: 7, y: 23 },
   { name: 'pull', fallback: 'row-resize', x: 16, y: 4 },
+  { name: 'translate', fallback: 'move' },
   { name: 'rotate', fallback: 'move' },
+  { name: 'scale', fallback: 'nesw-resize' },
+  { name: 'draw', fallback: 'crosshair' },
+  { name: 'draw-rect', fallback: 'crosshair' },
+  { name: 'draw-line', fallback: 'crosshair' },
+  { name: 'orbit', fallback: 'default' },
 ];
 
 for (const cursor of cursors) {

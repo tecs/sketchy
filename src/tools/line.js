@@ -43,7 +43,7 @@ export default (engine) => {
     name: 'Line',
     shortcut: [['d'], ['l']],
     icon: '🖊',
-    cursor: 'crosshair',
+    cursor: 'draw-line',
     get active() {
       return !!historyAction;
     },
@@ -120,10 +120,12 @@ export default (engine) => {
         historyAction = undefined;
         active.clear();
         emit('toolinactive', lineTool);
+        emit('cursorchange', lineTool.cursor);
       });
       if (!historyAction) return;
 
       emit('toolactive', lineTool);
+      emit('cursorchange', 'draw');
 
       historyAction.append(
         (data) => {

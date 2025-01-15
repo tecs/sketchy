@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="31.999998"
+   height="31.999998"
+   viewBox="0 0 8.4666661 8.4666661"
+   version="1.1"
+   id="svg1"
+   xmlns:xlink="http://www.w3.org/1999/xlink"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs
+     id="defs1">
+    <pattern
+       xlink:href="#Strips1_1"
+       preserveAspectRatio="xMidYMid"
+       id="pattern6"
+       patternTransform="matrix(0.5,0,0,0.5,0.81801627,5.1312064)"
+       x="1.2"
+       y="0" />
+    <pattern
+       patternUnits="userSpaceOnUse"
+       width="2"
+       height="10"
+       patternTransform="translate(0,0) scale(2,2)"
+       preserveAspectRatio="xMidYMid"
+       id="Strips1_1"
+       style="fill:#000000">
+      <rect
+   style="stroke:none"
+   x="0"
+   y="-0.5"
+   width="1"
+   height="11"
+   id="rect134" />
+
+    </pattern>
+  </defs>
+  <rect
+     style="fill:#000000;stroke-width:0.247495"
+     id="rect1"
+     width="1.8520833"
+     height="0.52916664"
+     x="1.5875"
+     y="3.96875" />
+  <rect
+     style="fill:#000000;stroke-width:0.247495"
+     id="rect1-6"
+     width="1.8520833"
+     height="0.52916664"
+     x="5.0270834"
+     y="3.96875" />
+  <rect
+     style="fill:#000000;stroke-width:0.247495"
+     id="rect1-9"
+     width="1.8520833"
+     height="0.52916664"
+     x="1.5875"
+     y="-4.4979167"
+     transform="rotate(90)" />
+  <rect
+     style="fill:#000000;stroke-width:0.247495"
+     id="rect1-6-2"
+     width="1.8520833"
+     height="0.52916664"
+     x="5.0270834"
+     y="-4.4979167"
+     transform="rotate(90)" />
+  <rect
+     style="fill:#000000;stroke-width:0.264583"
+     id="rect2"
+     width="0.52916664"
+     height="0.52916664"
+     x="3.96875"
+     y="3.96875" />
+  <rect
+     style="fill:url(#pattern6);fill-opacity:1;stroke-width:0.264583"
+     id="rect3"
+     width="3.96875"
+     height="0.52916664"
+     x="1.1961323"
+     y="5.7298903"
+     transform="rotate(-45)" />
+</svg>

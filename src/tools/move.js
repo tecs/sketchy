@@ -67,7 +67,7 @@ export default (engine) => {
     name: 'Move',
     shortcut: 'm',
     icon: '🕀',
-    cursor: 'move',
+    cursor: 'translate',
     get active() {
       return !!historyAction;
     },

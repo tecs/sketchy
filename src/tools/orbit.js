@@ -13,6 +13,7 @@ export default (engine) => {
     name: 'Orbit',
     shortcut: 'o',
     icon: '🞋',
+    cursor: 'orbit',
     active: false,
     start() {
       driver.canvas.requestPointerLock();

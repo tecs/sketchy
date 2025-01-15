@@ -37,7 +37,7 @@ export default (engine) => {
     name: 'Scale',
     shortcut: 's',
     icon: '⤢',
-    cursor: 'nesw-resize',
+    cursor: 'scale',
     get active() {
       return !!historyAction;
     },

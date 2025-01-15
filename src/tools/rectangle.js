@@ -47,7 +47,7 @@ export default (engine) => {
     name: 'Rectangle',
     shortcut: [['d'], ['r']],
     icon: '⧄',
-    cursor: 'crosshair',
+    cursor: 'draw-rect',
     get active() {
       return !!historyAction;
     },
@@ -136,10 +136,12 @@ export default (engine) => {
         historyAction = undefined;
         active.clear();
         emit('toolinactive', rectangle);
+        emit('cursorchange', rectangle.cursor);
       });
       if (!historyAction) return;
 
       emit('toolactive', rectangle);
+      emit('cursorchange', 'draw');
 
       historyAction.append(
         ({
