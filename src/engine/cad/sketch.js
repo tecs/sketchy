@@ -337,7 +337,7 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
         const selectTool = engine.tools.get('select');
         previousTool = engine.tools.selected ?? selectTool;
         engine.tools.setTool(selectTool);
-        engine.emit('cursorchange', 'context-menu');
+        engine.emit('cursorchange', cs[constraintType].cursor);
 
         this.handle = { valid: true };
         const { handle } = this;

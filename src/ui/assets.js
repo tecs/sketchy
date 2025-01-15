@@ -19,6 +19,13 @@ const cursors = [
   { name: 'draw-rect', fallback: 'crosshair' },
   { name: 'draw-line', fallback: 'crosshair' },
   { name: 'orbit', fallback: 'default' },
+  { name: 'action-distance', fallback: 'context-menu', x: 4, y: 4 },
+  { name: 'action-width', fallback: 'context-menu', x: 4, y: 4 },
+  { name: 'action-height', fallback: 'context-menu', x: 4, y: 4 },
+  { name: 'action-equal', fallback: 'context-menu', x: 4, y: 4 },
+  { name: 'action-coincident', fallback: 'context-menu', x: 4, y: 4 },
+  { name: 'action-horizontal', fallback: 'context-menu', x: 4, y: 4 },
+  { name: 'action-vertical', fallback: 'context-menu', x: 4, y: 4 },
 ];
 
 for (const cursor of cursors) {
