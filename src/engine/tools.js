@@ -8,7 +8,7 @@ import Input from './input.js';
  * @property {string} name
  * @property {import("./input.js").KeyboardShortcutRepresentation} shortcut
  * @property {string} icon
- * @property {string} [cursor]
+ * @property {Parameters<typeof import("../ui/assets.js").getCursor>[0]} [cursor]
  * @property {boolean} [active]
  * @property {(count?: number) => void} start
  * @property {(delta: ReadonlyVec3) => void} update

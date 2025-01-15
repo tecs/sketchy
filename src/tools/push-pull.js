@@ -34,7 +34,7 @@ export default (engine) => {
     name: 'Push/Pull',
     shortcut: 'p',
     icon: '↥',
-    cursor: 'url(/assets/pull.svg) 16 4, row-resize',
+    cursor: 'pull',
     get active() {
       return !!historyAction;
     },

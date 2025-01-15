@@ -1,4 +1,5 @@
 import { Properties } from '../engine/general/properties.js';
+import { getCursor } from './assets.js';
 
 /**
  * @param {Engine} engine
@@ -32,5 +33,5 @@ export default (engine, container) => {
     requestAnimationFrame(() => input.select());
   });
 
-  engine.on('cursorchange', cursor => void(engine.driver.canvas.style.cursor = cursor ?? 'default'));
+  engine.on('cursorchange', cursor => void(engine.driver.canvas.style.cursor = getCursor(cursor ?? 'default')));
 };

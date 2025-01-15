@@ -38,7 +38,7 @@ export default (engine) => {
     name: 'Rotate',
     shortcut: 'r',
     icon: '🗘',
-    cursor: 'url(/assets/rotate.svg) 16 16, move',
+    cursor: 'rotate',
     get active() {
       return !!historyAction;
     },
