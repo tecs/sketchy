@@ -2,9 +2,10 @@
  * @typedef Cursor
  * @property {string} name
  * @property {string} fallback
- * @property {string} [data]
- * @property {number} [x]
- * @property {number} [y]
+ * @property {string} data
+ * @property {number} x
+ * @property {number} y
+ * @property {string} css
  */
 
 /** @type {Cursor[]} */
@@ -30,26 +31,31 @@ const cursors = [
   { name: 'action-translate', fallback: 'move', x: 4, y: 4 },
   { name: 'action-rotate', fallback: 'move', x: 4, y: 4 },
   { name: 'action-scale', fallback: 'move', x: 4, y: 4 },
-];
+].map(({ name, fallback, x = 16, y = 16 }) => {
+  const url = `/assets/${name}.svg`;
+  const cursor = { name, fallback, x, y, data: `url(${url})`, css: '' };
+  cursor.css = `${cursor.data} ${cursor.x} ${cursor.y}, ${cursor.fallback}`;
 
-for (const cursor of cursors) {
-  cursor.data = `/assets/${cursor.name}.svg`;
-  fetch(cursor.data)
+  fetch(url)
     .then(response => response.blob())
     .then(blob => {
       const reader = new FileReader();
-      reader.onload = () => void(cursor.data = reader.result?.toString());
+      reader.onload = () => {
+        const data = reader.result?.toString();
+        if (data === undefined) return;
+        cursor.data = `url(${data})`;
+        cursor.css = `${cursor.data} ${cursor.x} ${cursor.y}, ${cursor.fallback}`;
+      };
       reader.readAsDataURL(blob);
     });
-}
+
+  return cursor;
+});
 
 /**
  * @param {string | Cursor["name"]} cursorType
  * @returns {string}
  */
 export const getCursor = (cursorType) => {
-  const cursor = cursors.find(({ name }) => name === cursorType);
-  if (!cursor) return cursorType;
-
-  return `url(${cursor.data}) ${cursor.x ?? 16} ${cursor.y ?? 16}, ${cursor.fallback}`;
+  return cursors.find(({ name }) => name === cursorType)?.css ?? cursorType;
 };
