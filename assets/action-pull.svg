@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="31.999998"
+   height="31.999998"
+   viewBox="0 0 8.4666661 8.4666661"
+   version="1.1"
+   id="svg1"
+   xml:space="preserve"
+   xmlns:xlink="http://www.w3.org/1999/xlink"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg"><defs
+     id="defs1"><pattern
+       xlink:href="#Strips1_1"
+       preserveAspectRatio="xMidYMid"
+       id="pattern32"
+       patternTransform="scale(0.21)"
+       x="0"
+       y="0" /><pattern
+       patternUnits="userSpaceOnUse"
+       width="2"
+       height="10"
+       patternTransform="translate(0,0) scale(2,2)"
+       preserveAspectRatio="xMidYMid"
+       id="Strips1_1"
+       style="fill:#000000"><rect
+         style="stroke:none"
+         x="0"
+         y="-0.5"
+         width="1"
+         height="11"
+         id="rect134" /></pattern></defs><path
+     style="fill:#000000;fill-opacity:1;stroke-width:0.264583"
+     d="M 1.0583333,1.0583333 V 3.96875 L 1.7197917,3.3734375 2.1166667,4.4317708 2.6458333,4.2333333 2.2489583,3.175 H 3.175 Z"
+     id="path26" /><g
+     id="layer1"
+     transform="matrix(0.61649974,0,0,0.61649974,2.9553238,3.5780319)"><path
+       d="M 1.4345968,3.5596141 4.6316362,4.5576511 6.8187881,3.8970585 3.5763218,3.2581312 Z"
+       style="fill:url(#pattern32);fill-opacity:1;fill-rule:evenodd;stroke:none;stroke-width:0.975721;stroke-linejoin:round"
+       id="path13" /><path
+       id="path14"
+       style="fill:#000000;fill-opacity:1;fill-rule:evenodd;stroke:none;stroke-linejoin:round"
+       d="M 1.3410034,3.6256185 V 5.1159668 L 4.617806,6.8967366 6.8590128,5.6720052 V 3.9713338 L 4.617806,4.6488118 Z" /><rect
+       style="fill:#000000;fill-opacity:1;stroke-width:0.167174"
+       id="rect15"
+       width="0.52916664"
+       height="1.0583333"
+       x="3.96875"
+       y="1.8534602" /><path
+       style="fill:#000000;fill-opacity:1;stroke-width:0.264583"
+       id="path16"
+       d="M 1.0826039,2.8128347 H 0.36248429 -0.3576353 L 0.00242448,2.1891929 0.36248428,1.565551 0.72254406,2.1891929 Z"
+       transform="matrix(1.1022475,0,0,1.1022475,3.8337859,-1.196458)" /></g></svg>

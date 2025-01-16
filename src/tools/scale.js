@@ -37,7 +37,7 @@ export default (engine) => {
     name: 'Scale',
     shortcut: 's',
     icon: '⤢',
-    cursor: 'scale',
+    cursor: 'action-scale',
     get active() {
       return !!historyAction;
     },
@@ -94,6 +94,7 @@ export default (engine) => {
         selection.set(originalSelection);
         active.clear();
         emit('toolinactive', scale);
+        emit('cursorchange', scale.cursor);
       });
       if (!historyAction) return;
 
@@ -106,6 +107,7 @@ export default (engine) => {
       startingDistance = vec3.distance(origin, scene.hovered);
 
       emit('toolactive', scale);
+      emit('cursorchange', 'scale');
 
       historyAction.append(
         data => {

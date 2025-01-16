@@ -38,7 +38,7 @@ export default (engine) => {
     name: 'Rotate',
     shortcut: 'r',
     icon: '🗘',
-    cursor: 'rotate',
+    cursor: 'action-rotate',
     get active() {
       return !!historyAction;
     },
@@ -85,6 +85,7 @@ export default (engine) => {
         selection.set(originalSelection);
         active.clear();
         emit('toolinactive', rotate);
+        emit('cursorchange', rotate.cursor);
       });
       if (!historyAction) return;
 
@@ -94,6 +95,7 @@ export default (engine) => {
       vec3.copy(mouseOrigin, input.position);
 
       emit('toolactive', rotate);
+      emit('cursorchange', 'rotate');
 
       historyAction.append(
         data => {

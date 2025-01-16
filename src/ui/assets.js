@@ -26,6 +26,10 @@ const cursors = [
   { name: 'action-coincident', fallback: 'context-menu', x: 4, y: 4 },
   { name: 'action-horizontal', fallback: 'context-menu', x: 4, y: 4 },
   { name: 'action-vertical', fallback: 'context-menu', x: 4, y: 4 },
+  { name: 'action-pull', fallback: 'move', x: 4, y: 4 },
+  { name: 'action-translate', fallback: 'move', x: 4, y: 4 },
+  { name: 'action-rotate', fallback: 'move', x: 4, y: 4 },
+  { name: 'action-scale', fallback: 'move', x: 4, y: 4 },
 ];
 
 for (const cursor of cursors) {

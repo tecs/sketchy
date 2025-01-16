@@ -67,7 +67,7 @@ export default (engine) => {
     name: 'Move',
     shortcut: 'm',
     icon: '🕀',
-    cursor: 'translate',
+    cursor: 'action-translate',
     get active() {
       return !!historyAction;
     },
@@ -190,6 +190,7 @@ export default (engine) => {
         selection.set(originalSelection);
         active.clear();
         emit('toolinactive', move);
+        emit('cursorchange', move.cursor);
       });
       if (!historyAction) return;
 
@@ -203,6 +204,7 @@ export default (engine) => {
 
       vec3.copy(origin, scene.hovered);
       emit('toolactive', move);
+      emit('cursorchange', 'translate');
 
       historyAction.append(
         ({ elements, translation, lockedIndices }) => {

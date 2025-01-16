@@ -34,7 +34,7 @@ export default (engine) => {
     name: 'Push/Pull',
     shortcut: 'p',
     icon: '↥',
-    cursor: 'pull',
+    cursor: 'action-pull',
     get active() {
       return !!historyAction;
     },
@@ -75,10 +75,12 @@ export default (engine) => {
         selection.set(originalSelection);
         edited.clear();
         emit('toolinactive', pushPull);
+        emit('cursorchange', pushPull.cursor);
       });
       if (!historyAction) return;
 
       emit('toolactive', pushPull);
+      emit('cursorchange', 'pull');
 
       selection.clear();
       edited.set({ id: enteredInstance.Id.int, type: 'instance', instance: enteredInstance });
