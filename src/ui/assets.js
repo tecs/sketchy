@@ -8,6 +8,48 @@
  * @property {string} css
  */
 
+/** @type {Record<string, string | undefined>} */
+const assetCache = {};
+
+/** @type {{ url: string, onLoad: (data: string) => void }[]} */
+const pendingAssetHandlers = [];
+
+/**
+ * @param {string} url
+ * @param {(data: string) => void} onLoad
+ */
+const loadAsset = (url, onLoad) => {
+  const cachedData = assetCache[url];
+  if (cachedData !== undefined) {
+    onLoad(cachedData);
+    return;
+  }
+
+  pendingAssetHandlers.push({ url, onLoad });
+
+  if (url in assetCache) return;
+  assetCache[url] = undefined;
+
+  fetch(url)
+    .then(response => response.blob())
+    .then(blob => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const data = reader.result?.toString();
+        if (data === undefined) return;
+        assetCache[url] = data;
+        for (let i = pendingAssetHandlers.length - 1; i >= 0; --i) {
+          const handler = pendingAssetHandlers[i];
+          if (handler.url !== url) continue;
+          handler.onLoad(data);
+          pendingAssetHandlers.splice(i, 1);
+        }
+        onLoad(data);
+      };
+      reader.readAsDataURL(blob);
+    });
+};
+
 /** @type {Cursor[]} */
 const cursors = [
   { name: 'bucket', fallback: 'alias', x: 4, y: 29 },
@@ -34,20 +76,12 @@ const cursors = [
 ].map(({ name, fallback, x = 16, y = 16 }) => {
   const url = `/assets/${name}.svg`;
   const cursor = { name, fallback, x, y, data: `url(${url})`, css: '' };
-  cursor.css = `${cursor.data} ${cursor.x} ${cursor.y}, ${cursor.fallback}`;
+  cursor.css = `${cursor.data} ${x} ${y}, ${fallback}`;
 
-  fetch(url)
-    .then(response => response.blob())
-    .then(blob => {
-      const reader = new FileReader();
-      reader.onload = () => {
-        const data = reader.result?.toString();
-        if (data === undefined) return;
-        cursor.data = `url(${data})`;
-        cursor.css = `${cursor.data} ${cursor.x} ${cursor.y}, ${cursor.fallback}`;
-      };
-      reader.readAsDataURL(blob);
-    });
+  loadAsset(url, data => {
+    cursor.data = `url(${data})`;
+    cursor.css = `${cursor.data} ${cursor.x} ${cursor.y}, ${cursor.fallback}`;
+  });
 
   return cursor;
 });
