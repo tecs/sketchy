@@ -33,7 +33,7 @@ export default (engine) => {
     type: 'push-pull',
     name: 'Push/Pull',
     shortcut: 'p',
-    icon: '↥',
+    icon: 'pull',
     cursor: 'action-pull',
     get active() {
       return !!historyAction;

@@ -8,6 +8,13 @@
  * @property {string} css
  */
 
+/**
+ * @typedef Icon
+ * @property {string} name
+ * @property {string} text
+ * @property {import("./lib/element").WritableCSSDeclaration} [style]
+ */
+
 /** @type {Record<string, string | undefined>} */
 const assetCache = {};
 
@@ -86,10 +93,41 @@ const cursors = [
   return cursor;
 });
 
+/** @type {Icon[]} */
+const icons = [
+  'orbit',
+  'bucket',
+  'eyedropper',
+  'pull',
+  'translate',
+  'rotate',
+  'scale',
+].map(name => {
+  const url = `/assets/${name}.svg`;
+  const icon = { name, text: '', style: { backgroundImage: `url(${url})` }};
+
+  loadAsset(url, data => void(icon.style.backgroundImage = `url(${data})`));
+
+  return icon;
+});
+
 /**
  * @param {string | Cursor["name"]} cursorType
  * @returns {string}
  */
 export const getCursor = (cursorType) => {
   return cursors.find(({ name }) => name === cursorType)?.css ?? cursorType;
+};
+
+/**
+ * @param {string} iconType
+ * @returns {Icon}
+ */
+export const getIcon = (iconType) => {
+  const icon = icons.find(({ name }) => name === iconType);
+  if (icon) return icon;
+
+  const newIcon = { name: iconType, text: iconType };
+  icons.push(newIcon);
+  return newIcon;
 };

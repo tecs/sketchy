@@ -12,7 +12,7 @@ export default (engine) => {
     type: 'orbit',
     name: 'Orbit',
     shortcut: 'o',
-    icon: '🞋',
+    icon: 'orbit',
     cursor: 'orbit',
     active: false,
     start() {

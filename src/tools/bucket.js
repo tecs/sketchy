@@ -60,7 +60,7 @@ export default (engine) => {
     /** @type {PlainVec3} */
     const invertedColor = value[0] + value[1] + value[2] < 360 ? [255, 255, 255] : [0, 0, 0];
 
-    const icon = input.ctrl ? '🌢' : '🪣';
+    const icon = input.ctrl ? 'eyedropper' : 'bucket';
 
     return {
       name: i ? `Preset color ${i}` : 'Pick color',
@@ -85,7 +85,7 @@ export default (engine) => {
     type: 'bucket',
     name: 'Bucket',
     shortcut: 'b',
-    icon: '🪣',
+    icon: 'bucket',
     cursor: 'bucket',
     start() {
       const { currentStep, enteredInstance, hoveredFaceId, globallyHovered } = scene;

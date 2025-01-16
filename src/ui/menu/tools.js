@@ -1,3 +1,4 @@
+import { getIcon } from '../assets.js';
 import { UIMenu } from '../lib/index.js';
 
 /** @typedef {import("../lib").UIButton} UIButton */
@@ -12,7 +13,8 @@ export default (engine) => {
   /** @type {Record<string, UIButton>} */
   const toolMap = {};
   for (const tool of engine.tools.list()) {
-    toolMap[tool.type] = menu.addButton(tool.icon, () => engine.tools.setTool(tool), tool.name);
+    const icon = getIcon(tool.icon);
+    toolMap[tool.type] = menu.addButton(icon.text, () => engine.tools.setTool(tool), tool.name, icon.style);
   }
   if (engine.tools.selected) menu.select(toolMap[engine.tools.selected.type]);
   engine.on('toolchange', tool => {
@@ -39,7 +41,14 @@ export default (engine) => {
     contextMenu.show();
     contextMenu.clearChildren();
     for (const action of actions) {
-      contextActions.set(action, contextMenu.addButton(action.icon, action.call, action.name, action.style));
+      const icon = getIcon(action.icon);
+      contextActions.set(
+        action,
+        contextMenu.addButton(icon.text, action.call, action.name, {
+          ...icon.style,
+          ...action.style,
+        }),
+      );
     }
   });
 

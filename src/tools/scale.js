@@ -36,7 +36,7 @@ export default (engine) => {
     type: 'scale',
     name: 'Scale',
     shortcut: 's',
-    icon: '⤢',
+    icon: 'scale',
     cursor: 'action-scale',
     get active() {
       return !!historyAction;

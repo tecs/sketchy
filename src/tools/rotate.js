@@ -37,7 +37,7 @@ export default (engine) => {
     type: 'rotate',
     name: 'Rotate',
     shortcut: 'r',
-    icon: '🗘',
+    icon: 'rotate',
     cursor: 'action-rotate',
     get active() {
       return !!historyAction;
