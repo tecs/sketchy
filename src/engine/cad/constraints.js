@@ -52,7 +52,6 @@ const { glMatrix: { equals }, vec2 } = glMatrix;
  * @template {Constraints} C
  * @template S
  * @typedef ConstraintHandler
- * @property {string} cursor
  * @property {CheckFn<C>} check
  * @property {ApplyFn<C>} apply
  */
@@ -66,7 +65,6 @@ const tempVec2 = vec2.create();
  */
 export default {
   distance: {
-    cursor: 'action-distance',
     check({ elements: [p1, p2], value }) {
       const current = vec2.distance(p1.vec2, p2.vec2);
       return [current, equals(current, value)];
@@ -81,7 +79,6 @@ export default {
     },
   },
   width: {
-    cursor: 'action-width',
     check({ elements: [p1, p2], value }) {
       const current = Math.abs(p1.vec2[0] - p2.vec2[0]);
       return [current, equals(current, value)];
@@ -94,7 +91,6 @@ export default {
     },
   },
   height: {
-    cursor: 'action-height',
     check({ elements: [p1, p2], value }) {
       const current = Math.abs(p1.vec2[1] - p2.vec2[1]);
       return [current, equals(current, value)];
@@ -107,7 +103,6 @@ export default {
     },
   },
   coincident: {
-    cursor: 'action-coincident',
     check({ elements: [p1, p2] }) {
       return [null, vec2.equals(p1.vec2, p2.vec2)];
     },
@@ -120,7 +115,6 @@ export default {
     },
   },
   horizontal: {
-    cursor: 'action-horizontal',
     check({ elements: [p1, p2] }) {
       return [null, equals(p1.vec2[1], p2.vec2[1])];
     },
@@ -132,7 +126,6 @@ export default {
     },
   },
   vertical: {
-    cursor: 'action-vertical',
     check({ elements: [p1, p2] }) {
       return [null, equals(p1.vec2[0], p2.vec2[0])];
     },
@@ -144,7 +137,6 @@ export default {
     },
   },
   equal: {
-    cursor: 'action-equal',
     check({ elements: [p1, p2, p3, p4] }) {
       const distance1 = vec2.distance(p1.vec2, p2.vec2);
       const distance2 = vec2.distance(p3.vec2, p4.vec2);

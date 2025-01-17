@@ -337,7 +337,7 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
         const selectTool = engine.tools.get('select');
         previousTool = engine.tools.selected ?? selectTool;
         engine.tools.setTool(selectTool);
-        engine.emit('cursorchange', cs[constraintType].cursor);
+        engine.emit('cursorchange', `constraint-action-${constraintType}`);
 
         this.handle = { valid: true };
         const { handle } = this;
@@ -469,18 +469,17 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
     /**
      * @template {Constraints["type"]} C
      * @param {C} type
-     * @param {string} icon
      * @param {import("../input.js").KeyboardShortcutRepresentation} shortcut
      * @param {(collection: typeof selection, sketch: Sketch) => ExecArgs<C>[0]} extractFn
      * @param {(...args: ExecArgs<C>) => void} thenFn
      * @param {(...args: ExecArgs<C>) => void} undoFn
      * @returns {import("../tools.js").Action & { key: Readonly<import("../config.js").StringSetting>}}
      */
-    const makeAction = (type, icon, shortcut, extractFn, thenFn, undoFn) => {
+    const makeAction = (type, shortcut, extractFn, thenFn, undoFn) => {
       const name = type.charAt(0).toUpperCase().concat(type.substring(1));
       const contextAction = {
         name,
-        icon,
+        icon: `constraint-${type}`,
         call() {
           engine.emit('contextactionchange', contextAction);
           cancellableTask.exec(type, extractFn, thenFn, undoFn);
@@ -492,13 +491,13 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
     };
 
     const contextActions = [
-      makeAction('distance', '⤡', [['k'], ['d']], extractLinesOrPointPairs, cachedDistanceConstraint(), undoDistanceConstraint),
-      makeAction('width', '🡘', [['k'], ['l']], extractLinesOrPointPairs, cachedDistanceConstraint(0), undoDistanceConstraint),
-      makeAction('height', '🡙', [['k'], ['i']], extractLinesOrPointPairs, cachedDistanceConstraint(1), undoDistanceConstraint),
-      makeAction('equal', '=', [['k'], ['e']], extractLinePairs, doConstraint, undoConstraint),
-      makeAction('coincident', '⌖', [['k'], ['c']], extractPointPairs, doConstraint, undoConstraint),
-      makeAction('horizontal', '―', [['k'], ['h']], extractAllPoints, doConstraint, undoConstraint),
-      makeAction('vertical', '|', [['k'], ['v']], extractAllPoints, doConstraint, undoConstraint),
+      makeAction('distance', [['k'], ['d']], extractLinesOrPointPairs, cachedDistanceConstraint(), undoDistanceConstraint),
+      makeAction('width', [['k'], ['l']], extractLinesOrPointPairs, cachedDistanceConstraint(0), undoDistanceConstraint),
+      makeAction('height', [['k'], ['i']], extractLinesOrPointPairs, cachedDistanceConstraint(1), undoDistanceConstraint),
+      makeAction('equal', [['k'], ['e']], extractLinePairs, doConstraint, undoConstraint),
+      makeAction('coincident', [['k'], ['c']], extractPointPairs, doConstraint, undoConstraint),
+      makeAction('horizontal', [['k'], ['h']], extractAllPoints, doConstraint, undoConstraint),
+      makeAction('vertical', [['k'], ['v']], extractAllPoints, doConstraint, undoConstraint),
     ];
 
     engine.on('keydown', (_, keyCombo) => {
