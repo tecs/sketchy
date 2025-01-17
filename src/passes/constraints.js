@@ -371,6 +371,7 @@ export default (engine) => {
         font.renderText(label, coord, labelColor, distance);
       }
 
+      // TODO move to renderer
       ctx.disable(ctx.BLEND);
       ctx.depthMask(true);
       ctx.pixelStorei(ctx.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);

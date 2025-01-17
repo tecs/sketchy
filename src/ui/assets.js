@@ -102,6 +102,10 @@ const icons = [
   'translate',
   'rotate',
   'scale',
+  'pointer-simplified',
+  'magnifying-glass',
+  'line',
+  'rect',
 ].map(name => {
   const url = `/assets/${name}.svg`;
   const icon = { name, text: '', style: { backgroundImage: `url(${url})` }};

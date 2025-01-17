@@ -14,7 +14,7 @@ export default (engine) => {
     type: 'zoom',
     name: 'Zoom',
     shortcut: 'z',
-    icon: '🔍',
+    icon: 'magnifying-glass',
     cursor: 'zoom-in',
     start() {
       camera.zoom(input.ctrl ? 2 : -2, scene.hoveredView);

@@ -46,7 +46,7 @@ export default (engine) => {
     type: 'rectangle',
     name: 'Rectangle',
     shortcut: [['d'], ['r']],
-    icon: '⧄',
+    icon: 'rect',
     cursor: 'draw-rect',
     get active() {
       return !!historyAction;

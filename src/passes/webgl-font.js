@@ -310,5 +310,13 @@ export default class Font {
     ctx.texParameteri(ctx.TEXTURE_2D, ctx.TEXTURE_MIN_FILTER, ctx.LINEAR);
     ctx.texParameteri(ctx.TEXTURE_2D, ctx.TEXTURE_WRAP_S, ctx.CLAMP_TO_EDGE);
     ctx.texParameteri(ctx.TEXTURE_2D, ctx.TEXTURE_WRAP_T, ctx.CLAMP_TO_EDGE);
+
+    // XXX
+    // this.#ctx2d.canvas.convertToBlob().then(b => URL.createObjectURL(b)).then(d => {
+    //   const div = document.querySelector('#font') ?? document.body.appendChild(document.createElement('div'));
+    //   div.id = 'font';
+    //   div.setAttribute('style', 'position: absolute; top: 20px; right: 20px; background: black;');
+    //   div.innerHTML = `<img src="${d}" />`;
+    // });
   }
 }

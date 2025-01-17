@@ -23,7 +23,7 @@ export default (engine) => {
     type: 'select',
     name: 'Select',
     shortcut: 'space',
-    icon: '🮰',
+    icon: 'pointer-simplified',
     active: false,
     start() {
       if (!input.leftButton) return;

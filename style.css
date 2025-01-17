@@ -174,10 +174,13 @@ kbd {
   display: block;
   background: none;
   border: 1px transparent;
+  background-size: 80%;
+  background-position: center center;
+  background-repeat: no-repeat;
 }
 
 .menu > button.selected {
-  background: var(--lightenColor);
+  background-color: var(--lightenColor);
   border: 1px solid;
   border-top-color: var(--borderShadowColor);
   border-left-color: var(--borderHighlightColor);

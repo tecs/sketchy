@@ -42,7 +42,7 @@ export default (engine) => {
     type: 'line',
     name: 'Line',
     shortcut: [['d'], ['l']],
-    icon: '🖊',
+    icon: 'line',
     cursor: 'draw-line',
     get active() {
       return !!historyAction;
