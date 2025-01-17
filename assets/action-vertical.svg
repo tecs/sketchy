@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="31.999998"
+   height="31.999998"
+   viewBox="0 0 8.4666661 8.4666661"
+   version="1.1"
+   id="svg1"
+   sodipodi:docname="action-vertical.svg"
+   inkscape:export-filename="distance.svg"
+   inkscape:export-xdpi="96"
+   inkscape:export-ydpi="96"
+   inkscape:version="1.4 (e7c3feb100, 2024-10-09)"
+   xml:space="preserve"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg"><sodipodi:namedview
+     id="namedview1"
+     pagecolor="#505050"
+     bordercolor="#eeeeee"
+     borderopacity="1"
+     inkscape:showpageshadow="0"
+     inkscape:pageopacity="0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#505050"
+     inkscape:zoom="31.537398"
+     inkscape:cx="17.899384"
+     inkscape:cy="20.451909"
+     inkscape:window-width="1239"
+     inkscape:window-height="1217"
+     inkscape:window-x="1543"
+     inkscape:window-y="562"
+     inkscape:window-maximized="0"
+     inkscape:current-layer="svg1" /><defs
+     id="defs1" /><path
+     id="rect1"
+     style="fill:#000000;stroke-width:0.277886"
+     d="M 2.2489583 1.5875 L 2.2489583 6.8791666 L 4.4979166 6.8791666 L 4.4979166 6.4822916 L 2.6458333 6.4822916 L 2.6458333 1.984375 L 5.1412882 1.984375 L 5.8208333 2.6644368 L 5.8208333 5.159375 L 6.2177083 5.159375 L 6.2177083 2.4375773 L 5.3681477 1.5875 L 2.2489583 1.5875 z M 5.8208333 6.4822916 L 5.8208333 6.8791666 L 6.2177083 6.8791666 L 6.2177083 6.4822916 L 5.8208333 6.4822916 z " /><rect
+     style="fill:#000000;stroke-width:0.216031"
+     id="rect2"
+     width="2.1166666"
+     height="0.52916664"
+     x="4.1010418"
+     y="5.5562501" /><rect
+     style="fill:#000000;stroke-width:0.216031"
+     id="rect2-9"
+     width="2.1166666"
+     height="0.52916664"
+     x="4.7624998"
+     y="-5.4239583"
+     transform="rotate(90)" /></svg>

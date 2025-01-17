@@ -195,6 +195,7 @@ kbd {
 
 .top > button, .bottom > button {
   display: inline-block;
+  vertical-align: bottom;
 }
 
 .menu > label {

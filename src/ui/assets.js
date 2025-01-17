@@ -113,6 +113,12 @@ const icons = [
   'constraint-coincident',
   'constraint-horizontal',
   'constraint-vertical',
+  'file-new',
+  'file-open',
+  'file-save',
+  'undo',
+  'redo',
+  'settings',
 ].map(name => {
   const url = `/assets/${name}.svg`;
   const icon = { name, text: '', style: { backgroundImage: `url(${url})` }};

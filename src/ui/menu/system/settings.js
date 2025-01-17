@@ -1,4 +1,5 @@
 import Input from '../../../engine/input.js';
+import { getIcon } from '../../assets.js';
 import { $ } from '../../lib/element.js';
 
 /** @typedef {import("../../lib/element.js").Opts[2] & {}} Opts */
@@ -45,7 +46,9 @@ const renderKeyCombo = (el, keyCombo) => {
  * @param {import("../../lib/index.js").AnyUIContainer} container
  */
 export default (engine, container) => {
-  container.addButton('⚙', () => {
+  const icon = getIcon('settings');
+
+  container.addButton(icon.text, () => {
     const settingsWindow = container.addWindow('Settings');
     const settingsWindowContents = settingsWindow.addContainer();
 
@@ -243,5 +246,5 @@ export default (engine, container) => {
       settingsWindow.remove();
     }, { className: 'button' });
     buttons.addButton('close', () => settingsWindow.remove(), { className: 'button' });
-  }, 'Settings');
+  }, 'Settings').$element({ style: icon.style });
 };

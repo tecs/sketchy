@@ -1,3 +1,4 @@
+import { getIcon } from '../../assets.js';
 import { $ } from '../../lib/element.js';
 
 /**
@@ -5,13 +6,17 @@ import { $ } from '../../lib/element.js';
  * @param {import("../../lib/index.js").AnyUIContainer} container
  */
 export default (engine, container) => {
-  container.addButton('🗋', () => engine.scene.reset(), 'New file');
-  container.addButton('🖫', () => {
+  const newFileIcon = getIcon('file-new');
+  const saveFileIcon = getIcon('file-save');
+  const openFileIcon = getIcon('file-open');
+
+  container.addButton(newFileIcon.text, () => engine.scene.reset(), 'New file').$element({ style: newFileIcon.style });
+  container.addButton(saveFileIcon.text, () => {
     const json = engine.scene.export();
     const data = btoa(unescape(encodeURIComponent(json)));
     $('a', { href: `data:text/plain;charset=utf8,${encodeURIComponent(data)}`, download: 'Untitled.scene' }).click();
-  }, 'Save file');
-  container.addButton('🖿', () => {
+  }, 'Save file').$element({ style: saveFileIcon.style });
+  container.addButton(openFileIcon.text, () => {
     $('input', {
       type: 'file',
       accept: '.scene',
@@ -25,5 +30,5 @@ export default (engine, container) => {
         reader.readAsText(el.files[0]);
       },
     }).click();
-  }, 'Load file');
+  }, 'Load file').$element({ style: openFileIcon.style });
 };
