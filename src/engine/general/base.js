@@ -4,19 +4,13 @@
 
 /**
  * @template {Mapping} T
- * @template {keyof T} [Key=Exclude<{[K in keyof T]: [K, ConstructorParameters<T[K]>] }[keyof T], [keyof T, []]>[0]]
- * @typedef {{[K in Key]: ConstructorParameters<T[K]> }} Args
- */
-
-/**
- * @template {Mapping} T
  * @typedef {{ [K in keyof T]: InstanceType<T[K]> }} Type
  */
 
 /**
  * @template {Mapping} T
  * @template {Constructor} [B=DefaultConstructor]
- * @typedef {[traitArgs: Args<T>, ...baseArgs: ConstructorParameters<B>]} DerivedArgs
+ * @typedef {[traitArgs: import("./base-types").Args<T>, ...baseArgs: ConstructorParameters<B>]} DerivedArgs
  */
 
 /**
@@ -35,14 +29,14 @@
 export const implement = (traits, Base) => {
   /**
    * @param {Type<T>} obj
-   * @param {Args<T>} traitArgs
+   * @param {import("./base-types").Args<T>} traitArgs
    */
   const applyTraits = (obj, traitArgs) => {
     /** @typedef {keyof Type<T>} Key */
     const keys = /** @type {Key[]} */ (Object.keys(traits));
     for (const key of keys) {
       /** @type {ConstructorParameters<T[Key]> | []} */
-      const args = key in traitArgs ? traitArgs[/** @type {keyof Args<T>} */ (key)] : [];
+      const args = key in traitArgs ? traitArgs[/** @type {keyof typeof traitArgs} */ (key)] : [];
       obj[key] = /** @type {Type<T>[Key]} */ (new traits[key](...args));
     }
   };
@@ -59,7 +53,7 @@ export const implement = (traits, Base) => {
   // @ts-expect-error Unlike TS mixins, these traits support their own constructor parameters
   return class extends Base {
     /**
-     * @param {Args<T>} traitArgs
+     * @param {import("./base-types").Args<T>} traitArgs
      * @param {ConstructorParameters<B>} baseArgs
      */
     constructor(traitArgs, ...baseArgs) {

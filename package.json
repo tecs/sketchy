@@ -3,22 +3,27 @@
   "version": "1.0.0",
   "description": "",
   "main": "",
+  "type": "module",
   "scripts": {
-    "dev": "concurrently --kill-others 'tsc -w' 'esw -w .' 'http-server . -c-1 -s'",
+    "dev": "concurrently --kill-others 'tsc -w' 'chokidar \"**/*.js\" \"**/*.ts\" -i \"node_modules\" --silent --initial -c \"eslint .\"' 'http-server . -c-1 -s'",
     "lint": "eslint .",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Alexander Ivanov",
   "license": "MIT",
   "devDependencies": {
-    "@typescript-eslint/eslint-plugin": "^7.3.1",
-    "@typescript-eslint/parser": "^7.3.1",
+    "@eslint/compat": "^1.2.5",
+    "@eslint/eslintrc": "^3.2.0",
+    "@eslint/js": "^9.18.0",
+    "@typescript-eslint/eslint-plugin": "^8.21.0",
+    "@typescript-eslint/parser": "^8.21.0",
+    "chokidar-cli": "^3.0.0",
     "concurrently": "^8.0.1",
-    "eslint": "^8.54.0",
-    "eslint-plugin-import": "^2.29.0",
-    "eslint-plugin-jsdoc": "^48.7.0",
-    "eslint-watch": "^8.0.0",
+    "eslint": "^9.18.0",
+    "eslint-plugin-import": "^2.31.0",
+    "eslint-plugin-jsdoc": "^50.6.2",
+    "globals": "^15.14.0",
     "http-server": "^14.1.1",
-    "typescript": "^5.5.2"
+    "typescript": "^5.7.3"
   }
 }

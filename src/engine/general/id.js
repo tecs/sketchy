@@ -49,12 +49,12 @@ export default class Id {
    */
   static intToVec4(id) {
     return vec4.fromValues(
-      /* eslint-disable no-multi-spaces,space-in-parens */
+      /* eslint-disable no-multi-spaces */
       ( id        & 255) / 255,
       ((id >>  8) & 255) / 255,
       ((id >> 16) & 255) / 255,
       ((id >> 24) & 255) / 255,
-      /* eslint-enable no-multi-spaces,space-in-parens */
+      /* eslint-enable no-multi-spaces */
     );
   }
 }

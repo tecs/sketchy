@@ -62,12 +62,6 @@ const { vec2, vec3, mat4, quat } = glMatrix;
 
 /** @typedef {Omit<SketchState, "elements" | "constraints"> & Partial<SketchState>} ConstructableSketchState */
 
-/**
- * @template {Constraints["type"]} T
- * @template {Constraints} [C=Find<Constraints, "type", T>]
- * @typedef {[pairs: C["indices"][], data: (C["data"] | undefined)[], type: T, sketch: Sketch]} ExecArgs
- */
-
 /** @typedef {Exclude<import("./constraints.js").DistanceConstraints, EqualConstraint>["type"]} DistanceType */
 /** @typedef {Exclude<Constraints["type"], DistanceType>} ConstraintType */
 
@@ -324,9 +318,9 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
       /**
        * @template {Constraints["type"]} C
        * @param {C} constraintType
-       * @param {(collection: typeof selection, sketch: Sketch) => ExecArgs<C>[0]} extractFn
-       * @param {(...args: ExecArgs<C>) => void} thenFn
-       * @param {(...args: ExecArgs<C>) => void} undoFn
+       * @param {(collection: typeof selection, sketch: Sketch) => import("./sketch-types").ExecArgs<C>[0]} extractFn
+       * @param {(...args: import("./sketch-types").ExecArgs<C>) => void} thenFn
+       * @param {(...args: import("./sketch-types").ExecArgs<C>) => void} undoFn
        */
       async exec(constraintType, extractFn, thenFn, undoFn) {
         this.drop(false);
@@ -358,16 +352,22 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
         const constraintData = data.map(indices => sketch.getConstraintsForPoints(indices, constraintType).pop()?.data);
         const action = history.createAction(`Create a ${constraintType} constraint`, null);
         if (!action) {
-          thenFn(data, /** @type {ExecArgs<C>[1]} */ (constraintData), constraintType, sketch);
+          thenFn(data, /** @type {import("./sketch-types").ExecArgs<C>[1]} */ (constraintData), constraintType, sketch);
           return;
         }
         action.append(
-          () => {
-            thenFn(data, /** @type {ExecArgs<C>[1]} */ (constraintData), constraintType, sketch);
-          },
-          () => {
-            undoFn(data, /** @type {ExecArgs<C>[1]} */ (constraintData), constraintType, sketch);
-          },
+          () => thenFn(
+            data,
+            /** @type {import("./sketch-types").ExecArgs<C>[1]} */ (constraintData),
+            constraintType,
+            sketch,
+          ),
+          () => undoFn(
+            data,
+            /** @type {import("./sketch-types").ExecArgs<C>[1]} */ (constraintData),
+            constraintType,
+            sketch,
+          ),
         );
         action.commit();
       },
@@ -416,21 +416,23 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
 
     /**
      * @param {0 | 1} [component]
-     * @returns {(...args: ExecArgs<DistanceType>) => void}
+     * @returns {(...args: import("./sketch-types").ExecArgs<DistanceType>) => void}
      */
     const cachedDistanceConstraint = (component) => {
       const getUserValue = cacheUserValue();
-      const getValue = cache(/** @type {(...args: ExecArgs<DistanceType>) => number} */ ((pairs, _, type, sketch) => {
-        for (const indices of pairs) {
-          const constraint = sketch.getConstraintsForPoints(indices, type).pop();
-          if (constraint) return constraint.data;
+      const getValue = cache(/** @type {(...args: import("./sketch-types").ExecArgs<DistanceType>) => number} */ (
+        (pairs, _, type, sketch) => {
+          for (const indices of pairs) {
+            const constraint = sketch.getConstraintsForPoints(indices, type).pop();
+            if (constraint) return constraint.data;
+          }
+          const p1 = sketch.getPointInfo(pairs[0][0]);
+          const p2 = sketch.getPointInfo(pairs[0][1]);
+          if (!p1 || !p2) return 0;
+          if (component === undefined) return vec2.distance(p1.vec2, p2.vec2);
+          return Math.abs(p1.vec2[component] - p2.vec2[component]);
         }
-        const p1 = sketch.getPointInfo(pairs[0][0]);
-        const p2 = sketch.getPointInfo(pairs[0][1]);
-        if (!p1 || !p2) return 0;
-        if (component === undefined) return vec2.distance(p1.vec2, p2.vec2);
-        return Math.abs(p1.vec2[component] - p2.vec2[component]);
-      }));
+      ));
 
       return async (pairs, _, constraintType, sketch) => {
         const value = getValue(pairs, _, constraintType, sketch);
@@ -442,7 +444,7 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
       };
     };
 
-    /** @type {(...args: ExecArgs<DistanceType>) => void} */
+    /** @type {(...args: import("./sketch-types").ExecArgs<DistanceType>) => void} */
     const undoDistanceConstraint = (pairs, previousValues, constraintType, sketch) => pairs.forEach((indices, i) => {
       const constraint = sketch.getConstraintsForPoints(indices, constraintType).pop();
       if (!constraint) return;
@@ -453,12 +455,12 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
       }
     });
 
-    /** @type {(...args: ExecArgs<ConstraintType>) => void} */
+    /** @type {(...args: import("./sketch-types").ExecArgs<ConstraintType>) => void} */
     const doConstraint = (pairs, currentValues, constraintType, sketch) => pairs.forEach((indices, i) => {
       if (currentValues[i] === undefined) sketch[constraintType](/** @type {any} */ (indices));
     });
 
-    /** @type {(...args: ExecArgs<ConstraintType>) => void} */
+    /** @type {(...args: import("./sketch-types").ExecArgs<ConstraintType>) => void} */
     const undoConstraint = (pairs, previousValues, constraintType, sketch) => pairs.forEach((indices, i) => {
       if (previousValues[i] !== undefined) return;
 
@@ -470,9 +472,9 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
      * @template {Constraints["type"]} C
      * @param {C} type
      * @param {import("../input.js").KeyboardShortcutRepresentation} shortcut
-     * @param {(collection: typeof selection, sketch: Sketch) => ExecArgs<C>[0]} extractFn
-     * @param {(...args: ExecArgs<C>) => void} thenFn
-     * @param {(...args: ExecArgs<C>) => void} undoFn
+     * @param {(collection: typeof selection, sketch: Sketch) => import("./sketch-types").ExecArgs<C>[0]} extractFn
+     * @param {(...args: import("./sketch-types").ExecArgs<C>) => void} thenFn
+     * @param {(...args: import("./sketch-types").ExecArgs<C>) => void} undoFn
      * @returns {import("../tools.js").Action & { key: Readonly<import("../config.js").StringSetting>}}
      */
     const makeAction = (type, shortcut, extractFn, thenFn, undoFn) => {
