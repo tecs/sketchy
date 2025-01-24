@@ -51,9 +51,9 @@ window.addEventListener('load', () => {
 
   engine.tools.addTool(SelectTool);
   engine.tools.addTool(MoveTool);
-  engine.tools.addTool(PushPullTool);
   engine.tools.addTool(RotateTool);
   engine.tools.addTool(ScaleTool);
+  engine.tools.addTool(PushPullTool);
   engine.tools.addTool(LineTool);
   engine.tools.addTool(RectangleTool);
   engine.tools.addTool(BucketTool);
