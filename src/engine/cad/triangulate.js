@@ -187,7 +187,7 @@ export const flattenVertices = (vertices, normal) => {
  * @param {Readonly<number[]>[]} holesIndices (A-B-C-D-...)[]
  * @returns {number[]}
  */
-const triangulateFace = (vertices, indices, holesIndices = []) => {
+export const triangulateFace = (vertices, indices, holesIndices = []) => {
   const sortedIndices = [...indices].concat(holesIndices.flatMap(hole => [...hole]))
     .sort((a, b) => vertices[a * 2] - vertices[b * 2]);
 
