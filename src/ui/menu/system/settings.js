@@ -173,6 +173,7 @@ export default (engine, container) => {
                 dispatchEvent(input, 'change');
                 break;
               case 'tab':
+                e.preventDefault();
                 if (input.value.length > 0 && !isSequence) {
                   parsedInput.push([]);
                   input.value = Input.stringify(parsedInput);
