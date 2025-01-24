@@ -80,12 +80,14 @@ export class Properties {
       case '1':
       case 'y':
       case 'yes':
+      case 'on':
       case 't':
       case 'true':
         return true;
       case '0':
       case 'n':
       case 'no':
+      case 'off':
       case 'f':
       case 'false':
         return false;
