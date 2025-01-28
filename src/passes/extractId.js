@@ -239,7 +239,6 @@ export default (engine) => {
           let instance = entities.getFirstByTypeAndIntId(Instance, instanceId);
           if (!instance) continue;
 
-          // TODO make this a functionality of SubInstance::asDirectChildOf(instance, parent) and replace everywhere
           let parent = SubInstance.getParent(instance);
           while (parent && parent.instance !== enteredInstance) {
             instance = parent.instance;
