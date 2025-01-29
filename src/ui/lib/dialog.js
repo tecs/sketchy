@@ -9,12 +9,11 @@ export default class UIDialog extends UIContainer {
   constructor(message) {
     const p = $('p', { className: 'dialogBody', innerText: message });
 
-    super($('dialog', { className: 'error', innerHTML: '' }, [
+    super($('dialog', { innerHTML: '' }, [
       p,
       ['button', { className: 'dialogClose button', innerText: '⨯', onclick: () => this.element.close() }],
       ['div', { className: 'dialogButtonWrapper' }, [
         ['button', { className: 'dialogConfirm button', innerText: 'OK', onclick: () => this.element.close() }],
-        ['button', { className: 'dialogCancel button', onclick: () => this.element.close() }],
       ]],
     ]));
 

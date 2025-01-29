@@ -227,10 +227,6 @@ dialog::backdrop {
   text-align: right;
 }
 
-.error .dialogCancel {
-  display: none;
-}
-
 /* Windows */
 
 .windowTitle {

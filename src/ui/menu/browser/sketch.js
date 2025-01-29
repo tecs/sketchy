@@ -7,7 +7,7 @@ import Sketch from '../../../engine/cad/sketch.js';
 export default (engine, tabs) => {
   const { editor: { selection }, scene } = engine;
   const tab = tabs.addTab('Sketch');
-  tab.addContainer().addButton('close sketch', () => scene.setCurrentStep(null));
+  tab.addContainer().addButton('close sketch', () => scene.setCurrentStep(null)).$element({ style: { marginBottom: '1em' }});
   tab.hide();
 
   const table = tab.addTable(2);
