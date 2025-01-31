@@ -21,7 +21,7 @@ Double-clicking on it instead, creates a new instance to the scene and lets the 
 ## Scene
 ![Scene browser](images/scene-browser.png)
 
-Lists the instance hierarchy of scene, emphasizing the [entered instance](editor.md#scene) if any.
+Lists the instance hierarchy of scene, emphasizing the [entered instance](editor.md#scene) if any. All instances which are not [visible](editor.md#scene) are grayed-out.
 
 All selected instances are shown highlighted in the scene browser, and conversely, clicking on an entry from the list selects its corresponding instance in the viewport and opens a [details browser](#details) for it.
 
