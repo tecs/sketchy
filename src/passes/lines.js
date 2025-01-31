@@ -100,6 +100,8 @@ export default (engine) => {
         ctx.uniform3fv(program.uLoc.u_baseColor, baseColor);
 
         for (const instance of instances) {
+          if (!scene.isVisible(instance)) continue;
+
           const isSelected = selectedInstances.some(inst => SubInstance.belongsTo(instance, inst)) ? 1 : 0;
           const isInShadow = !isSelected && !SubInstance.belongsTo(instance, enteredInstance) ? 1 : 0;
           const hoveredIndex = enteredInstance === instance && hoveredInstance === instance ? hoveredLineId : null;
@@ -149,7 +151,7 @@ export default (engine) => {
 
           ctx.uniformMatrix4fv(program.uLoc.u_trs, false, trs);
           ctx.uniform1f(program.uLoc.u_isSelected, 1);
-          ctx.uniform1f(program.uLoc.u_isInShadow, 0);
+          ctx.uniform1f(program.uLoc.u_isInShadow, selectedInstance.State.visibility ? 0 : 1);
           ctx.uniform1f(program.uLoc.u_isHovered, 0);
 
           ctx.lineWidth(2);

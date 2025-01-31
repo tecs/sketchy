@@ -171,7 +171,7 @@ export default (engine) => {
         ctx.uniform1f(program.uLoc.u_isPoint, 0);
         for (const instance of instances) {
           // Prevent self-picking when editing
-          if (activeInstances.includes(instance)) continue;
+          if (activeInstances.includes(instance) || scene.isVisible(instance)) continue;
 
           ctx.uniformMatrix4fv(program.uLoc.u_trs, false, instance.Placement.trs);
           ctx.uniform1ui(program.uLoc.u_instanceId, instance.Id.int);

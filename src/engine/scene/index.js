@@ -434,6 +434,18 @@ export default class Scene extends Base {
   }
 
   /**
+   * @param {Instance} instance
+   * @returns {boolean}
+   */
+  isVisible(instance) {
+    if (instance === this.enteredInstance) return true;
+    if (!instance.State.visibility) return false;
+
+    const parent = SubInstance.getParent(instance)?.instance;
+    return parent ? this.isVisible(parent) : true;
+  }
+
+  /**
    * @returns {string}
    */
   export() {

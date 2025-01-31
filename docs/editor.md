@@ -30,6 +30,8 @@ The scene hierarchy can also be navigated through the viewport, while using the 
 
 Geometry not part of the entered instance (if any) will be shown grayed-out.
 
+Certain objects can be marked not "visible", which will exclude them and their descendents from being shown in the viewport. An object and its descendents will be shown nevertheless if it is currently being edited.
+
 ### Hovered plane
 Most actions performed in the viewport take place in 3D space, which makes it impossible to always correctly translate the 2D position of the mouse on the screen to the intended 3D coordinates inside the scene.
 

@@ -25,3 +25,9 @@ Position | [3D coordinate](editor.md#value-types) | The position of the SubInsta
 Axis     | [3D vector](editor.md#value-types)     | The rotation axis of the SubInstance
 Angle    | [angle](editor.md#value-types)         | The angle the SubInstance is rotated around the rotation axis
 Scale    | [3D vector](editor.md#value-types)     | The size of the SubInstance
+
+
+#### Appearance
+Name       | Type                             | Description
+-----------|----------------------------------|------------
+Visibility | [boolean](editor.md#value-types) | Whether or not the child instances should be [visible](editor.md#scene)
