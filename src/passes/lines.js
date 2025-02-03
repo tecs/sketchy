@@ -141,6 +141,7 @@ export default (engine) => {
       for (const selectedInstance of selectedInstances) {
         if (selectedInstance.body.currentModel) {
           const { body, Placement: { trs } } = selectedInstance;
+          const isVisible = scene.isVisible(selectedInstance);
 
           ctx.bindBuffer(ctx.ELEMENT_ARRAY_BUFFER, boundingBoxIndexBuffer);
 
@@ -151,7 +152,7 @@ export default (engine) => {
 
           ctx.uniformMatrix4fv(program.uLoc.u_trs, false, trs);
           ctx.uniform1f(program.uLoc.u_isSelected, 1);
-          ctx.uniform1f(program.uLoc.u_isInShadow, selectedInstance.State.visibility ? 0 : 1);
+          ctx.uniform1f(program.uLoc.u_isInShadow, isVisible ? 0 : 1);
           ctx.uniform1f(program.uLoc.u_isHovered, 0);
 
           ctx.lineWidth(2);

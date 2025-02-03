@@ -12,7 +12,7 @@ Previous: [Editor](editor.md)
 ## Bodies
 ![Bodies browser](images/bodies-browser.png)
 
-Lists all of the bodies in the scene, emphasizing the body of the [entered instance](editor.md#scene) if any.
+Lists all of the bodies in the scene, emphasizing the body of the [entered instance](editor.md#scene), if any. All bodies which are not [visible](editor.md#scene) are grayed-out.
 
 Clicking on an entry from the list highlights it and opens a [details browser](#details) for that body.
 

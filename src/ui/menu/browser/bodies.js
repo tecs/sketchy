@@ -20,7 +20,7 @@ export default (engine, tabs) => {
     for (const body of bodies) {
       tab.addContainer()
         .addLabel(body.name).$element({
-          className: body === scene.selectedBody ? 'selected' : '',
+          className: `${body === scene.selectedBody ? 'selected' : ''} ${body.State.visibility ? '' : 'disabled'}`,
           onclick: ({ detail }) => {
             switch (detail) {
               case 1: scene.setSelectedBody(body); return;
