@@ -50,7 +50,7 @@ export default (engine) => {
   // cached structures
   const mvp = mat4.create();
 
-  const setting = engine.config.createBoolean('display.grid', 'Show grid', 'toggle', true);
+  const setting = engine.config.createBoolean('display.gradations', 'Show axis gradations', 'toggle', true);
   engine.on('settingchange', (changed) => {
     if (changed === setting) engine.emit('scenechange');
   });
