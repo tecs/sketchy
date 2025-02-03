@@ -16,6 +16,7 @@ export default (engine) => {
     const icon = getIcon(tool.icon);
     const tooltip = engine.input.tooltip(tool.name, shortcut);
     toolMap[tool.type] = menu.addButton(icon.text, () => engine.tools.setTool(tool), tooltip, icon.style);
+    shortcut.onChange(() => toolMap[tool.type].$element({ title: engine.input.tooltip(tool.name, shortcut) }));
   }
   if (engine.tools.selected) menu.select(toolMap[engine.tools.selected.type]);
   engine.on('toolchange', tool => {
@@ -44,13 +45,9 @@ export default (engine) => {
     for (const action of actions) {
       const icon = getIcon(action.icon);
       const tooltip = engine.input.tooltip(action.name, action.key);
-      contextActions.set(
-        action,
-        contextMenu.addButton(icon.text, action.call, tooltip, {
-          ...icon.style,
-          ...action.style,
-        }),
-      );
+      const button = contextMenu.addButton(icon.text, action.call, tooltip, { ...icon.style, ...action.style });
+      action.key?.onChange(() => button.$element({ title: engine.input.tooltip(action.name, action.key) }));
+      contextActions.set(action, button);
     }
   });
 
