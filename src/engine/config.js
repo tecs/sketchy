@@ -118,6 +118,21 @@ export default class Config {
   }
 
   /**
+   * @template {Setting["type"]} T
+   * @param {string} id
+   * @param {T} [type]
+   * @returns {Readonly<IfEquals<T, undefined, Setting, Find<Setting, "type", T>>> | undefined}
+   */
+  get(id, type) {
+    const entry = this.#settings.find(setting => setting.id === id);
+    if (!entry) return;
+
+    if (type && type !== entry.type) return;
+
+    return /** @type {Readonly<IfEquals<T, undefined, Setting, Find<Setting, "type", T>>>} */ (entry);
+  }
+
+  /**
    * @returns {Setting[]}
    */
   list() {

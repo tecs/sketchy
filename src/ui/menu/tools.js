@@ -12,9 +12,10 @@ export default (engine) => {
 
   /** @type {Record<string, UIButton>} */
   const toolMap = {};
-  for (const tool of engine.tools.list()) {
+  for (const { tool, shortcut } of engine.tools.getConfig()) {
     const icon = getIcon(tool.icon);
-    toolMap[tool.type] = menu.addButton(icon.text, () => engine.tools.setTool(tool), tool.name, icon.style);
+    const tooltip = engine.input.tooltip(tool.name, shortcut);
+    toolMap[tool.type] = menu.addButton(icon.text, () => engine.tools.setTool(tool), tooltip, icon.style);
   }
   if (engine.tools.selected) menu.select(toolMap[engine.tools.selected.type]);
   engine.on('toolchange', tool => {
@@ -42,9 +43,10 @@ export default (engine) => {
     contextMenu.clearChildren();
     for (const action of actions) {
       const icon = getIcon(action.icon);
+      const tooltip = engine.input.tooltip(action.name, action.key);
       contextActions.set(
         action,
-        contextMenu.addButton(icon.text, action.call, action.name, {
+        contextMenu.addButton(icon.text, action.call, tooltip, {
           ...icon.style,
           ...action.style,
         }),

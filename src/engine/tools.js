@@ -17,6 +17,13 @@ import Input from './input.js';
  */
 
 /**
+ * @typedef ToolConfig
+ * @property {AnyTool} tool
+ * @property {import("./config").StringSetting} shortcut
+ * @property {boolean }enabled
+ */
+
+/**
  * @template {PropertyData["type"]} T
  * @typedef ToolValue
  * @property {Find<PropertyData, "type", T>["value"]} [value]
@@ -29,6 +36,7 @@ import Input from './input.js';
  * @property {string} name
  * @property {string} icon
  * @property {Record<string, string>} [style]
+ * @property {ToolConfig["shortcut"]} [key]
  * @property {() => void} call
  */
 
@@ -41,7 +49,7 @@ export default class Tools {
   /** @type {Engine} */
   #engine;
 
-  /** @type {{ tool: AnyTool, shortcut: import("./config").StringSetting, enabled: boolean }[]} */
+  /** @type {ToolConfig[]} */
   #tools = [];
 
   /** @type {AnyTool?} */
@@ -172,5 +180,12 @@ export default class Tools {
    */
   get(type) {
     return this.#tools.find(({ tool }) => tool.type === type)?.tool ?? null;
+  }
+
+  /**
+   * @returns {Readonly<Readonly<ToolConfig>[]>}
+   */
+  getConfig() {
+    return this.#tools;
   }
 }

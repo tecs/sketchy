@@ -475,7 +475,7 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
      * @param {(collection: typeof selection, sketch: Sketch) => import("./sketch-types").ExecArgs<C>[0]} extractFn
      * @param {(...args: import("./sketch-types").ExecArgs<C>) => void} thenFn
      * @param {(...args: import("./sketch-types").ExecArgs<C>) => void} undoFn
-     * @returns {import("../tools.js").Action & { key: Readonly<import("../config.js").StringSetting>}}
+     * @returns {import("../tools.js").Action}}
      */
     const makeAction = (type, shortcut, extractFn, thenFn, undoFn) => {
       const name = type.charAt(0).toUpperCase().concat(type.substring(1));

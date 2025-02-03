@@ -8,8 +8,11 @@ export default (engine, container) => {
   const undoIcon = getIcon('undo');
   const redoIcon = getIcon('redo');
 
-  const undoButton = container.addButton(undoIcon.text, () => engine.history.undo(), 'Undo');
-  const redoButton = container.addButton(redoIcon.text, () => engine.history.redo(), 'Redo');
+  const undoTooltip = engine.input.tooltip('Undo', engine.config.get('shortcuts.undo', 'key'));
+  const redoTooltip = engine.input.tooltip('Redo', engine.config.get('shortcuts.redo', 'key'));
+
+  const undoButton = container.addButton(undoIcon.text, () => engine.history.undo(), undoTooltip);
+  const redoButton = container.addButton(redoIcon.text, () => engine.history.redo(), redoTooltip);
   undoButton.toggleDisabled();
   redoButton.toggleDisabled();
 
