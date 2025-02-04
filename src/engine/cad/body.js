@@ -39,9 +39,12 @@ export default class Body extends Base.implement({
   instances = [];
 
   #step = -1;
+  #editedStep = -1;
 
   /** @type {Record<string, StepConstructor>} */
   static #actions = {};
+
+  static #initialized = false;
 
   get name() {
     return this.State.name;
@@ -59,7 +62,7 @@ export default class Body extends Base.implement({
 
   /** @type {Model?} */
   get currentModel() {
-    return this.#stack[this.#step]?.model ?? null;
+    return this.#stack[this.#editedStep > -1 ? this.#editedStep : this.#step]?.model ?? null;
   }
 
   /**
@@ -127,6 +130,8 @@ export default class Body extends Base.implement({
       stack: state?.stack ?? [],
       visibility: state?.visibility ?? true,
     });
+
+    Body.#initialize(engine);
   }
 
   /**
@@ -136,6 +141,28 @@ export default class Body extends Base.implement({
   static registerStep(Action, engine) {
     Action.register(engine);
     Body.#actions[Action.getType()] = Action;
+  }
+
+  /**
+   * @param {Engine} engine
+   */
+  static #initialize(engine) {
+    if (this.#initialized) return;
+    this.#initialized = true;
+
+    engine.on('stepchange', (current, previous, isSelectionChange) => {
+      if (isSelectionChange) return;
+
+      if (current?.body) {
+        current.body.#editedStep = current.body.#stack.indexOf(/** @type {AnyStep} */ (current));
+      }
+
+      if (previous?.body && previous.body !== current?.body) {
+        previous.body.#editedStep = -1;
+      }
+
+      engine.emit('scenechange');
+    });
   }
 
   /**
@@ -216,7 +243,11 @@ export default class Body extends Base.implement({
     const index = this.#stack.indexOf(step);
     if (index === -1) return;
 
-    this.#stack[index + 1]?.recompute();
+    const { currentStep } = this.#engine.scene;
+    const currentStepIndex = currentStep?.body === this ? this.#stack.indexOf(currentStep) : -1;
+    if (index < this.#step && (currentStepIndex < 0 || index < currentStepIndex)) {
+      this.#stack[index + 1]?.recompute();
+    }
 
     this.#engine.emit('stepedited', step);
     this.#engine.emit('scenechange');
