@@ -53,4 +53,11 @@ export default (engine, container) => {
       },
     }).click();
   })), 'Load file').$element({ style: openFileIcon.style });
+
+  window.addEventListener('beforeunload', e => {
+    if (lastAction !== engine.history.current) {
+      e.preventDefault();
+      return '';
+    }
+  });
 };
