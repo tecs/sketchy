@@ -6,7 +6,7 @@ type ToolActiveEvent = Event<'toolactive', [tool: Readonly<AnyTool>]>;
 type ToolInactiveEvent = Event<'toolinactive', [tool: Readonly<AnyTool> | null]>;
 type ToolEnabledEvent = Event<'toolenabled', [tool: Readonly<AnyTool>]>;
 type ToolDisabledEvent = Event<'tooldisabled', [tool: Readonly<AnyTool>]>;
-type ContextActionsChangeEvent = Event<'contextactions', [actions: Action[] | null]>;
+type ContextActionsChangeEvent = Event<'contextactions', [actions: (Action|null)[] | null]>;
 type ContextActionChangeEvent = Event<'contextactionchange', [action: Action | null]>;
 
 export type ToolEvent =

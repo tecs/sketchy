@@ -143,7 +143,7 @@ export default class Tools {
   }
 
   /**
-   * @param {Action[] | null} actions
+   * @param {(Action | null)[] | null} actions
    */
   setContextActions(actions) {
     this.#engine.emit('contextactions', actions);

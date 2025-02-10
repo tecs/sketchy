@@ -43,6 +43,10 @@ export default (engine) => {
     contextMenu.show();
     contextMenu.clearChildren();
     for (const action of actions) {
+      if (!action) {
+        contextMenu.addSeparator();
+        continue;
+      }
       const icon = getIcon(action.icon);
       const tooltip = engine.input.tooltip(action.name, action.key);
       const button = contextMenu.addButton(icon.text, action.call, tooltip, { ...icon.style, ...action.style });

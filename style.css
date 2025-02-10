@@ -113,7 +113,6 @@ kbd {
   user-select: none;
 }
 
-
 .menu.left, .menu.right {
   top: 50%;
   transform: translateY(-50%);
@@ -163,6 +162,15 @@ kbd {
   bottom: unset;
   top: 100%;
   margin-top: 5px;
+}
+
+.menu > hr {
+  margin: 0.25em;
+}
+
+.menu .top > hr, .menu .bottom > hr {
+  display: inline;
+  vertical-align: super;
 }
 
 .menu > button {
