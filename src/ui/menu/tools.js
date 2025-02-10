@@ -52,6 +52,7 @@ export default (engine) => {
       const button = contextMenu.addButton(icon.text, action.call, tooltip, { ...icon.style, ...action.style });
       action.key?.onChange(() => button.$element({ title: engine.input.tooltip(action.name, action.key) }));
       contextActions.set(action, button);
+      if (action.active) contextMenu.activate(button);
     }
   });
 
@@ -65,6 +66,20 @@ export default (engine) => {
     if (!button) return;
 
     contextMenu.select(button);
+  });
+
+  engine.on('contextactionactivate', action => {
+    const button = contextActions.get(action);
+    if (!button) return;
+
+    contextMenu.activate(button);
+  });
+
+  engine.on('contextactiondeactivate', action => {
+    const button = contextActions.get(action);
+    if (!button) return;
+
+    contextMenu.deactivate(button);
   });
 
   return menu;

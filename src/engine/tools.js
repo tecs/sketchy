@@ -37,6 +37,7 @@ import Input from './input.js';
  * @property {string} icon
  * @property {Record<string, string>} [style]
  * @property {ToolConfig["shortcut"]} [key]
+ * @property {boolean} [active]
  * @property {() => void} call
  */
 

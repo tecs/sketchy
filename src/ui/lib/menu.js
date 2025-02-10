@@ -72,4 +72,22 @@ export default class UIMenu extends UIContainer {
       previousItem?.element.classList.remove('selected');
     }
   }
+
+  /**
+   * @param {UIButton} button
+   */
+  activate(button) {
+    if (this.children.has(button) && !button.element.classList.contains('active')) {
+      button.element.classList.add('active');
+    }
+  }
+
+  /**
+   * @param {UIButton} button
+   */
+  deactivate(button) {
+    if (this.children.has(button) && button.element.classList.contains('active')) {
+      button.element.classList.remove('active');
+    }
+  }
 }
