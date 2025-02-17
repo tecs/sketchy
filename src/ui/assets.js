@@ -119,6 +119,7 @@ const icons = [
   'undo',
   'redo',
   'settings',
+  'support-geometry',
 ].map(name => {
   const url = `/assets/${name}.svg`;
   const icon = { name, text: '', style: { backgroundImage: `url(${url})` }};

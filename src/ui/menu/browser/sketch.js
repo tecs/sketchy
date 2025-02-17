@@ -38,7 +38,7 @@ export default (engine, tabs) => {
 
       table.addRow(`${i + 1}`, elements[i].type).$element({
         onclick: () => selection.set({ type: 'line', id, instance }),
-        style: { fontWeight: selected ? 'bold' : '' },
+        style: { fontWeight: selected ? 'bold' : '', color: elements[i].support ? '#080' : 'inherit' },
       });
     }
   };

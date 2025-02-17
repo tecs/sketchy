@@ -25,6 +25,7 @@ const { vec3 } = glMatrix;
  * @property {number[]} vertices
  * @property {Face[]} faces
  * @property {number[]} segments
+ * @property {number[]} supportSegments
  */
 
 /**
@@ -32,6 +33,7 @@ const { vec3 } = glMatrix;
  * @property {number[]} vertices
  * @property {PlainFace[]} faces
  * @property {number[]} segments
+ * @property {number[]} supportSegments
  */
 
 /**
@@ -45,6 +47,8 @@ const { vec3 } = glMatrix;
  * @property {Uint32Array} faceIds
  * @property {Uint32Array} lineIds
  * @property {Uint32Array} pointIds
+ * @property {Float32Array} lineSupports
+ * @property {Float32Array} startingVertex
  */
 
 /** @typedef {Record<keyof BufferData, GLBuffer>} ModelBuffers */
@@ -95,9 +99,11 @@ export default class Model extends Base.implement({ BoundingBox }) {
       faceIds: this.#ctx.createBuffer(),
       lineIds: this.#ctx.createBuffer(),
       pointIds: this.#ctx.createBuffer(),
+      lineSupports: this.#ctx.createBuffer(),
+      startingVertex: this.#ctx.createBuffer(),
     };
 
-    this.import(data ?? { faces: [], vertices: [], segments: [] });
+    this.import(data ?? { faces: [], vertices: [], segments: [], supportSegments: [] });
 
     this.bufferData = this.assertProperty('bufferData');
     this.data = this.assertProperty('data');
@@ -120,6 +126,7 @@ export default class Model extends Base.implement({ BoundingBox }) {
 
     const vertices = data.vertices.slice();
     const segments = data.segments.slice();
+    const supportSegments = data.supportSegments.slice();
     const faces = data.faces.map(face => ({
       normal: vec3.fromValues(...face.normal),
       color: vec3.fromValues(...face.color),
@@ -127,7 +134,7 @@ export default class Model extends Base.implement({ BoundingBox }) {
       holes: face.holes.map(hole => hole.slice()),
     }));
 
-    this.data = { vertices, faces, segments };
+    this.data = { vertices, faces, segments, supportSegments };
 
     const vertex  = /** @type {number[]} */ ([]);
     const lineVertex = /** @type {number[]} */ ([]);
@@ -137,6 +144,8 @@ export default class Model extends Base.implement({ BoundingBox }) {
     const faceIds = /** @type {number[]} */ ([]);
     const lineIds = /** @type {number[]} */ ([]);
     const pointIds = /** @type {number[]} */ ([]);
+    const lineSupports = /** @type {number[]} */ ([]);
+    const startingVertex = /** @type {number[]} */ ([]);
 
     const indexMap = /** @type {string[]} */ ([]);
 
@@ -177,8 +186,19 @@ export default class Model extends Base.implement({ BoundingBox }) {
       pointIds.push(++this.lastPointId);
       pointIds.push(++this.lastPointId);
 
-      lineVertex.push(...vertices.slice(segments[i - 1] * 3, segments[i - 1] * 3 + 3));
-      lineVertex.push(...vertices.slice(segments[i] * 3, segments[i] * 3 + 3));
+      const isSupport = supportSegments.some((vi, ii, ai) =>
+        (ii % 2 === 0)
+        && vi === segments[i - 1]
+        && ai[ii + 1] === segments[i],
+      );
+      lineSupports.push(isSupport ? 1 : 0);
+      lineSupports.push(isSupport ? 1 : 0);
+
+      const v1 = vertices.slice(segments[i - 1] * 3, segments[i - 1] * 3 + 3);
+      const v2 = vertices.slice(segments[i] * 3, segments[i] * 3 + 3);
+
+      lineVertex.push(...v1, ...v2);
+      startingVertex.push(...v1, ...(isSupport ? v1 : v2));
     }
 
     this.bufferData = {
@@ -191,6 +211,8 @@ export default class Model extends Base.implement({ BoundingBox }) {
       faceIds: new Uint32Array(faceIds),
       lineIds: new Uint32Array(lineIds),
       pointIds: new Uint32Array(pointIds),
+      lineSupports: new Float32Array(lineSupports),
+      startingVertex: new Float32Array(startingVertex),
     };
 
     for (const part of /** @type {(keyof BufferData)[]} */ (Object.keys(this.bufferData))) {
@@ -216,6 +238,7 @@ export default class Model extends Base.implement({ BoundingBox }) {
         loop: face.loop.slice(),
       })),
       segments: this.data.segments.slice(),
+      supportSegments: this.data.supportSegments.slice(),
     };
   }
 

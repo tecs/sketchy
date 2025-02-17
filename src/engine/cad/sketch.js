@@ -24,6 +24,7 @@ const { vec2, vec3, mat4, quat } = glMatrix;
  * @typedef ConstructionElement
  * @property {T} type
  * @property {Tuple<number, S>} data
+ * @property {boolean} support
  */
 
 /** @typedef {ConstructionElement<"line", 4>} LineConstructionElement */
@@ -261,6 +262,8 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
   /** @type {PointInfo[]} */
   pointInfo = [];
 
+  static #drawAsSupport = false;
+
   /** @param {PartialBaseParams} args  */
   constructor(...args) {
     if (!args[0].elements) {
@@ -299,7 +302,7 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
   static register(engine) {
     super.register(engine);
 
-    const { editor: { selection }, scene, history, config } = engine;
+    const { editor: { selection, edited }, scene, history, config } = engine;
 
     let previousTool = engine.tools.selected;
 
@@ -492,7 +495,59 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
       return contextAction;
     };
 
+    const supportContextAction = {
+      name: 'Toggle support geometry',
+      icon: 'support-geometry',
+      active: this.#drawAsSupport,
+      call() {
+        const sketch = scene.currentStep;
+        if (!(sketch instanceof Sketch)) return;
+
+        // toggle selected lines
+        const selected = selection.getByType('line').map(({ id }) => sketch.getLine(id)).filter(line => line !== null);
+        if (selected.length > 0) {
+          const mostAreSupport = selected.reduce((count, { support }) => count + (support ? 1 : -1), 0) > 0;
+          const toChange = selected.filter(({ support }) => support === mostAreSupport);
+
+          const action = history.createAction('Toggle support geometry', { geometry: toChange });
+          if (!action) return;
+
+          action.append(
+            ({ geometry }) => {
+              for (const element of geometry) element.support = !mostAreSupport;
+              sketch.update();
+            },
+            ({ geometry }) => {
+              for (const element of geometry) element.support = mostAreSupport;
+              sketch.update();
+            },
+          );
+
+          action.commit();
+          return;
+        }
+
+        // toggle currently drawn lines
+        const drawn = edited.getByType('line').map(({ id }) => sketch.getLine(id)).filter(line => line !== null);
+        if (drawn.length > 0) {
+          for (const line of drawn) line.support = !line.support;
+          sketch.update();
+          return;
+        }
+
+        supportContextAction.active = !supportContextAction.active;
+        Sketch.#drawAsSupport = supportContextAction.active;
+
+        if (supportContextAction.active) engine.emit('contextactionactivate', supportContextAction);
+        else engine.emit('contextactiondeactivate', supportContextAction);
+      },
+      key: config.createString(`shortcuts.sketch.support`, 'Support geometry', 'key', Input.stringify([['d'], ['s']])),
+    };
+    engine.input.registerShortcuts(supportContextAction.key);
+
     const contextActions = [
+      supportContextAction,
+      null,
       makeAction('distance', [['k'], ['d']], extractLinesOrPointPairs, cachedDistanceConstraint(), undoDistanceConstraint),
       makeAction('width', [['k'], ['l']], extractLinesOrPointPairs, cachedDistanceConstraint(0), undoDistanceConstraint),
       makeAction('height', [['k'], ['i']], extractLinesOrPointPairs, cachedDistanceConstraint(1), undoDistanceConstraint),
@@ -547,8 +602,8 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
     });
 
     engine.on('shortcut', setting => {
-      for (const { key, call } of contextActions) {
-        if (key === setting) return call();
+      for (const action of contextActions) {
+        if (action?.key === setting) return action.call();
       }
     });
 
@@ -652,7 +707,7 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
         throw new Error(`Unknown construction element type "${type}"`);
     }
 
-    const element = /** @type {T} */ ({ type, data: Array(size) });
+    const element = /** @type {T} */ ({ type, data: Array(size), support: this.#drawAsSupport });
     for (let i = 0; i < size; ++i) {
       element.data[i] = data?.[i] ?? 0;
     }
@@ -666,7 +721,11 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
    * @returns {T}
    */
   static cloneConstructionElement(element) {
-    const clone = /** @type {T} */ ({ type: element.type, data: Array(element.data.length) });
+    const clone = /** @type {T} */ ({
+      type: element.type,
+      data: Array(element.data.length),
+      support: element.support,
+    });
     for (let i = 0; i < element.data.length; ++i) {
       clone.data[i] = element.data[i];
     }
@@ -806,6 +865,7 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
 
     const lineVertices2D = /** @type {number[]} */ ([]);
     const lineIndices = /** @type {number[]} */ ([]);
+    const supportIndices = /** @type {number[]} */ ([]);
 
     const nextFaceId = this.lastFaceId + 1;
     const nextIndex = this.lastVerticesLength / 3;
@@ -815,11 +875,17 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
     newData.faces.splice(nextFaceId - 1);
     newData.vertices.splice(this.lastVerticesLength);
     newData.segments.splice(this.lastSegmentsLength);
+    for (let i = newData.supportSegments.length - 1; i >= 0; --i) {
+      if (!newData.segments.includes(newData.supportSegments[i])) {
+        newData.supportSegments.splice(i, 1);
+      }
+    }
 
     for (const { element, vec2: [dataX, dataY] } of this.pointInfo) {
       switch (element.type) {
         case 'line':
           lineIndices.push(nextIndex + lineVertices2D.length / 2);
+          if (element.support) supportIndices.push(nextIndex + lineVertices2D.length / 2);
           lineVertices2D.push(dataX, dataY);
           break;
       }
@@ -828,11 +894,16 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
     const mapping = /** @type {IndexMapping} */ ({ mapping: new Map() });
     appendFlatBuffer(lineVertices2D, newData.vertices, this.fromSketch, mapping);
     newData.segments.push(...remapIndices(lineIndices, mapping));
+    newData.supportSegments.push(...remapIndices(supportIndices, mapping));
 
     // don't triangulate while editing the sketch
     if (this.engine.scene.currentStep !== this) {
       const vertices2D = /** @type {PlainVec2[]} */ ([]);
-      const triangulations = triangulate(lineVertices2D, lineIndices.map(i => i - nextIndex), vertices2D);
+      const triangulations = triangulate(
+        lineVertices2D,
+        lineIndices.filter(i => !supportIndices.includes(i)).map(i => i - nextIndex),
+        vertices2D,
+      );
       const nextVertexIndex = mapping.nextIndex ?? 0;
       appendFlatBuffer(vertices2D.flat(), newData.vertices, this.fromSketch, mapping);
       for (const { loop, holes } of triangulations) {

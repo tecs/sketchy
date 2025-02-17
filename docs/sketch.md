@@ -18,6 +18,7 @@ Previous: [Steps](steps.md)
   - [Sketch elements](#sketch-elements)
   - [Constraint details](#constraint-details)
 - [Tools](#tools)
+  - [Support geometry](#support-geometry)
   - [Line](#line)
   - [Rectangle](#rectangle)
 
@@ -94,11 +95,12 @@ Makes the horizontal position between two or more points the same and/or the one
 
 ![Vertical constrained points](images/vertical.png)
 
+
 ## Browser
 ### Sketch elements
 ![Sketch elements browser](images/sketch-browser.png)
 
-Lists the sketch elements and their type, emphasizing the selected ones if any. Clicking on an entry from the list selects its corresponding element in the viewport.
+Lists the sketch elements and their type, emphasizing the selected ones if any. Clicking on an entry from the list selects its corresponding element in the viewport. Support geometry is listed in green color.
 
 ### Constraint details
 ![Sketch constraints browser](images/constraints-browser.png)
@@ -110,7 +112,23 @@ Selected constraints in the viewport are emphasized in the list. If there are no
 ## Tools
 The Sketch step makes the following additional tools available while a sketch is being edited.
 
-These tools are also available globally if no other step is currently being edited, in which case when used, a new Sketch step is created inside the currently entered instance's body.
+The move and rectangle tools are also available globally if no other step is currently being edited, in which case when used, a new Sketch step is created inside the currently entered instance's body.
+
+### Support geometry
+![Support geometry icon](images/support-geometry-icon.png)
+
+Shortcut: `d`, `s`
+
+Toggles the selected elements between normal and support mode. If no elements are selected, toggles whether new elements should be drawn as support geometry, rendered as a dashed green line.
+
+![Support line](images/support-geometry.png)
+
+Support geometry has all the same properties as regular geometry but is shown only inside sketches - it is not drawn outside editing a sketch and is not used when triangulating faces.
+
+What makes support elements extremely useful is that it can, just like regular elements, share constraints with other regular elements. This allows creating complex compound constraints (e.g a triangle with height equal to its base), without the resulting faces being needlessly split into multiple segments.
+
+![Support line](images/support-geometry-triangle.png)
+
 
 ### Move
 The global [move tool](tools.md#move) is enabled, allowing it to move the [selected or underlying](tools.md#operation) lines and endpoints.

@@ -39,16 +39,19 @@ export default (engine) => {
       in uint a_faceId;
       in uint a_lineId;
       in uint a_pointId;
+      in float a_isSupport;
 
       uniform mat4 u_trs;
       uniform mat4 u_viewProjection;
       uniform float u_offset;
       uniform float u_isLine;
       uniform float u_isPoint;
+      uniform float u_isEntered;
 
       out float v_faceId;
       out float v_lineId;
       out float v_pointId;
+      out float v_skipPicking;
 
       void main() {
         gl_Position = u_viewProjection * u_trs * a_position;
@@ -57,6 +60,8 @@ export default (engine) => {
         v_faceId = float(a_faceId) * (1.0 - u_isLine) * (1.0 - u_isPoint);
         v_lineId = float(a_lineId) * u_isLine;
         v_pointId = float(a_pointId) * u_isPoint;
+
+        v_skipPicking = (u_isLine + u_isPoint) * a_isSupport - u_isEntered;
       }
     `,
     frag`#version 300 es
@@ -65,12 +70,14 @@ export default (engine) => {
       in float v_faceId;
       in float v_lineId;
       in float v_pointId;
+      in float v_skipPicking;
 
       uniform uint u_instanceId;
 
       out uvec4 outIds;
 
       void main() {
+        if (v_skipPicking > 0.0) discard;
         outIds = uvec4(u_instanceId, v_faceId, v_lineId, v_pointId);
       }
     `,
@@ -129,7 +136,7 @@ export default (engine) => {
     render(extract) {
       if (!extract || tools.isActive('orbit')) return;
 
-      const { enteredInstance } = scene;
+      const { enteredInstance, currentStep } = scene;
 
       const { position: [x1, y1], lastClickedPosition: [x2, y2]} = input;
       const lasso = input.leftButton && tools.selected?.type === 'select' && x1 !== x2 && y1 !== y2;
@@ -142,6 +149,8 @@ export default (engine) => {
       populateChildren(activeInstances);
 
       ctx.uniformMatrix4fv(program.uLoc.u_viewProjection, false, lasso ? camera.viewProjection : camera.frustum);
+
+      const currentlySketching = currentStep instanceof Sketch;
 
       const bodies = entities.values(Body);
       for (const { currentModel: model, instances } of bodies) {
@@ -186,6 +195,10 @@ export default (engine) => {
         ctx.enableVertexAttribArray(program.aLoc.a_position);
         ctx.vertexAttribPointer(program.aLoc.a_position, 3, ctx.FLOAT, false, 0, 0);
 
+        ctx.bindBuffer(ctx.ARRAY_BUFFER, model.buffer.lineSupports);
+        ctx.enableVertexAttribArray(program.aLoc.a_isSupport);
+        ctx.vertexAttribPointer(program.aLoc.a_isSupport, 1, ctx.FLOAT, false, 0, 0);
+
         ctx.uniform1f(program.uLoc.u_offset, 1);
         ctx.uniform1f(program.uLoc.u_isLine, 1);
         ctx.uniform1f(program.uLoc.u_isPoint, 0);
@@ -197,6 +210,7 @@ export default (engine) => {
 
           ctx.uniformMatrix4fv(program.uLoc.u_trs, false, instance.Placement.trs);
           ctx.uniform1ui(program.uLoc.u_instanceId, instance.Id.int);
+          ctx.uniform1f(program.uLoc.u_isEntered, currentlySketching && enteredInstance === instance ? 1 : 0);
 
           ctx.drawElements(ctx.LINES, model.bufferData.lineIndex.length, ctx.UNSIGNED_INT, 0);
         }
@@ -212,6 +226,7 @@ export default (engine) => {
 
           ctx.uniformMatrix4fv(program.uLoc.u_trs, false, instance.Placement.trs);
           ctx.uniform1ui(program.uLoc.u_instanceId, instance.Id.int);
+          ctx.uniform1f(program.uLoc.u_isEntered, currentlySketching && enteredInstance === instance ? 1 : 0);
 
           ctx.drawElements(ctx.POINTS, model.bufferData.lineIndex.length, ctx.UNSIGNED_INT, 0);
         }
