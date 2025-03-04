@@ -50,8 +50,8 @@ export class Properties {
   /** @type {Readonly<Unit>[]} */
   static ANGLE_UNITS = [
     { suffix: 'rad', toBase: 1, fromBase: 1 },
-    { suffix:   '°', toBase: RAD_TO_DEG, fromBase: Math.PI / 180 },
-    { suffix: 'deg', toBase: RAD_TO_DEG, fromBase: Math.PI / 180 },
+    { suffix:   '°', toBase: Math.PI / 180, fromBase: RAD_TO_DEG },
+    { suffix: 'deg', toBase: Math.PI / 180, fromBase: RAD_TO_DEG },
   ];
 
   /**
