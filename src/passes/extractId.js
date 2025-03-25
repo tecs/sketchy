@@ -230,6 +230,8 @@ export default (engine) => {
 
           ctx.drawElements(ctx.POINTS, model.bufferData.lineIndex.length, ctx.UNSIGNED_INT, 0);
         }
+
+        ctx.disableVertexAttribArray(program.aLoc.a_isSupport);
       }
 
       if (lasso) {

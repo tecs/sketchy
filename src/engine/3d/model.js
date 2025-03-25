@@ -201,19 +201,25 @@ export default class Model extends Base.implement({ BoundingBox }) {
       startingVertex.push(...v1, ...(isSupport ? v1 : v2));
     }
 
+    const maxIds = Math.max(faceIds.length, lineIds.length, pointIds.length);
+
     this.bufferData = {
       vertex: new Float32Array(vertex),
       normal: new Float32Array(normals),
       color: new Uint8Array(colors),
       index: new Uint32Array(index),
-      lineIndex: new Uint32Array(segments.length * 2).map((_, i) => i),
+      lineIndex: new Uint32Array(segments.length).map((_, i) => i),
       lineVertex: new Float32Array(lineVertex),
-      faceIds: new Uint32Array(faceIds),
-      lineIds: new Uint32Array(lineIds),
-      pointIds: new Uint32Array(pointIds),
+      faceIds: new Uint32Array(maxIds),
+      lineIds: new Uint32Array(maxIds),
+      pointIds: new Uint32Array(maxIds),
       lineSupports: new Float32Array(lineSupports),
       startingVertex: new Float32Array(startingVertex),
     };
+
+    this.bufferData.faceIds.set(faceIds);
+    this.bufferData.lineIds.set(lineIds);
+    this.bufferData.pointIds.set(pointIds);
 
     for (const part of /** @type {(keyof BufferData)[]} */ (Object.keys(this.bufferData))) {
       const isIndex = part === 'lineIndex' || part === 'index';
