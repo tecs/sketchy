@@ -31,6 +31,7 @@ const { vec2, vec3 } = glMatrix;
 /** @typedef {[property: PropertyData, name: string, category: string]} PropertyMapping */
 
 const RAD_TO_DEG = 180 / Math.PI;
+const TAU = Math.PI * 2;
 
 export class Properties {
   /** @type {() => PropertyDefinitions} */
@@ -125,7 +126,10 @@ export class Properties {
    * @returns {number?}
    */
   static parseAngle(value) {
-    return Properties.parseUnit(value, Properties.ANGLE_UNITS);
+    let angle = Properties.parseUnit(value, Properties.ANGLE_UNITS);
+    if (angle === null) return null;
+    while (angle >= TAU || angle < 0) angle -= TAU * Math.sign(angle);
+    return angle;
   }
 
   /**
