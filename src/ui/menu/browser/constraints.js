@@ -39,19 +39,27 @@ export default (engine, tabs) => {
         || constraint.indices.some(index => selectedPointIndices.includes(index))
         || selectedLineConstraints.includes(constraint);
 
-      table.addRow(`${i + 1}`, constraint.type, constraint.data !== null ? Properties.stringifyDistance(constraint.data, 3) : '').$element({
+      table.addRow(
+        `${i + 1}`,
+        constraint.type,
+        constraint.data !== null ? Properties.stringify({
+          type: constraint.type === 'angle' ? 'angle' : 'distance',
+          value: constraint.data,
+        }, 3) : '',
+      ).$element({
         onclick: ({ detail }) => {
           if (detail === 1) {
             selection.set({ id: i, type: 'constraint', instance: scene.currentInstance });
             return;
           }
-          const isDistance = constraint.type === 'distance' || constraint.type === 'width' || constraint.type === 'height';
-          if (detail !== 2 || !isDistance) return;
-          engine.emit('propertyrequest', {
-            type: 'distance',
+          const isNumeric = ['distance', 'width', 'height', 'angle'].includes(constraint.type);
+          if (detail !== 2 || !isNumeric) return;
+          const propertyData = /** @type {{ type: "distance", value: number }} */ ({
+            type: constraint.type === 'angle' ? 'angle' : 'distance',
             value: constraint.data,
-          }, /** @param {number} value */ (value) => {
-            if (value <= 0) return;
+          });
+          engine.emit('propertyrequest', propertyData, /** @param {number} value */ (value) => {
+            if (value <= 0 && propertyData.type === 'distance') return;
             constraint.data = value;
             sketch.update();
           });

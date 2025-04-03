@@ -362,13 +362,9 @@ export default (engine) => {
           if (sub[3] === 4) scene.hoverAxis(0);
           else switch (sub[2]) {
             case 1:
-              scene.hoverAxis(1);
-              break;
             case 2:
-              scene.hoverAxis(2);
-              break;
             case 3:
-              scene.hoverAxis(3);
+              scene.hoverAxis(sub[2]);
               break;
           }
           return;

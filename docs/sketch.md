@@ -13,7 +13,8 @@ Previous: [Steps](steps.md)
   - [Equal](#equal)
   - [Coincident](#coincident)
   - [Horizontal](#horizontal)
-  - [Vertical](#vertical)
+  - [Vertical](#vertical
+  - [Angle](#angle))
 - [Browser]
   - [Sketch elements](#sketch-elements)
   - [Constraint details](#constraint-details)
@@ -94,6 +95,13 @@ Makes the vertical position between two or more points the same and/or the one o
 Makes the horizontal position between two or more points the same and/or the one or more lines vertical.
 
 ![Vertical constrained points](images/vertical.png)
+
+### Angle
+![Angle constraint icon](images/angle-constraint.png)
+
+Fixes the angle between two lines.
+
+![Angle constrained lines](images/angle.png)
 
 
 ## Browser

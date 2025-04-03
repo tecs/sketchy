@@ -17,9 +17,10 @@ const { glMatrix: { equals }, vec2 } = glMatrix;
 /** @typedef {Constraint<"horizontal", 2>} HorizontalConstraint */
 /** @typedef {Constraint<"vertical", 2>} VerticalConstraint */
 /** @typedef {Constraint<"equal", 4, null>} EqualConstraint */
+/** @typedef {Constraint<"angle", 4, number>} AngleConstraint */
 
 /** @typedef {DistanceConstraint|WidthConstraint|HeightConstraint|EqualConstraint} DistanceConstraints */
-/** @typedef {HorizontalConstraint|VerticalConstraint} OrientationConstraints */
+/** @typedef {HorizontalConstraint|VerticalConstraint|AngleConstraint} OrientationConstraints */
 /** @typedef {DistanceConstraints|CoincidentConstraint|OrientationConstraints} Constraints */
 
 /** @typedef {{ [K in Constraints["type"]]: Find<Constraints, "type", K>["data"] }} OriginalCurrentData */
@@ -160,6 +161,41 @@ export default {
         if (!p3.locked) vec2.add(p3.vec2, p3.vec2, tempVec2);
         if (!p4.locked) vec2.subtract(p4.vec2, p4.vec2, tempVec2);
       }
+    },
+  },
+  angle: {
+    check({ elements: [p1, p2, p3, p4], value }) {
+      vec2.subtract(tempVec2, p2.vec2, p1.vec2);
+      const angle1 = Math.atan2(tempVec2[1], tempVec2[0]);
+
+      vec2.subtract(tempVec2, p4.vec2, p3.vec2);
+      const angle2 = Math.atan2(tempVec2[1], tempVec2[0]);
+
+      let angle = angle2 - angle1;
+      if (angle < 0) angle += Math.PI * 2;
+
+      return [angle, equals(value, angle)];
+    },
+    apply({ elements: [p1, p2, p3, p4], incrementScale, value }, angle) {
+      const diff = (angle - value) * incrementScale;
+
+      if (!p1.locked && !p2.locked) {
+        vec2.add(tempVec2, p1.vec2, p2.vec2);
+        vec2.scale(tempVec2, tempVec2, 0.5);
+        vec2.rotate(p1.vec2, p1.vec2, tempVec2, diff);
+        vec2.rotate(p2.vec2, p2.vec2, tempVec2, diff);
+      }
+      else if (!p1.locked) vec2.rotate(p1.vec2, p1.vec2, p2.vec2, diff);
+      else if (!p2.locked) vec2.rotate(p2.vec2, p2.vec2, p1.vec2, diff);
+
+      if (!p3.locked && !p4.locked) {
+        vec2.add(tempVec2, p3.vec2, p4.vec2);
+        vec2.scale(tempVec2, tempVec2, 0.5);
+        vec2.rotate(p3.vec2, p3.vec2, tempVec2, -diff);
+        vec2.rotate(p4.vec2, p4.vec2, tempVec2, -diff);
+      }
+      else if (!p3.locked) vec2.rotate(p3.vec2, p3.vec2, p4.vec2, -diff);
+      else if (!p4.locked) vec2.rotate(p4.vec2, p4.vec2, p3.vec2, -diff);
     },
   },
 };

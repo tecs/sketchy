@@ -1,6 +1,6 @@
 import Sketch from '../engine/cad/sketch.js';
 import Id from '../engine/general/id.js';
-import { Properties } from '../engine/general/properties.js';
+import { DEG_TO_RAD, Properties, RAD_TO_DEG, TAU } from '../engine/general/properties.js';
 import WebGLFont from './webgl-font.js';
 
 const { vec2, vec3, vec4, mat4 } = glMatrix;
@@ -181,10 +181,10 @@ export default (engine) => {
 
   font.setChar(COINCIDENT_CHAR, (ctx2d, { halfChar, threeQuartersChar, quarterChar }) => {
     const dot = new Path2D();
-    dot.arc(0, 0, 2, 0, Math.PI * 2, false);
+    dot.arc(0, 0, 2, 0, TAU, false);
 
     const halfCircle = new Path2D();
-    halfCircle.arc(0, 0, quarterChar, 0, Math.PI * 2, false);
+    halfCircle.arc(0, 0, quarterChar, 0, TAU, false);
 
     const quarterLine = new Path2D('M0 0');
     quarterLine.lineTo(quarterChar, 0);
@@ -229,6 +229,12 @@ export default (engine) => {
 
   const indexBuffer = buffer(new Uint32Array([0, 1, 1, 2, 1, 3, 1, 4, 5, 6, 6, 7, 6, 8, 6, 9]));
   const vertex = new Float32Array(20);
+  const unitArc = new Float32Array(2 * 2 * 360);
+  for (let i = 0; i < 2 * 360; ++i) {
+    unitArc[i * 2] = Math.cos(i * DEG_TO_RAD);
+    unitArc[i * 2 + 1] = Math.sin(i * DEG_TO_RAD);
+  }
+  const arcVertex = new Float32Array(4 * 360 + 8);
   const vertexBuffer = ctx.createBuffer();
 
   const readData = new Uint8Array(4);
@@ -353,6 +359,95 @@ export default (engine) => {
             vec2.copy(temp1Vec2, points[0].vec2);
             temp1Vec2[1] += 2 * charHeight;
             labels.push([`${COINCIDENT_CHAR}${i + 1}`, vec2.clone(temp1Vec2), labelColor, id]);
+            break;
+          case 'angle':
+            const label = Properties.stringifyAngle(constraint.data);
+            const diffX1 = points[0].vec2[0] - points[1].vec2[0];
+            const diffY1 = points[0].vec2[1] - points[1].vec2[1];
+            const diffX2 = points[2].vec2[0] - points[3].vec2[0];
+            const diffY2 = points[2].vec2[1] - points[3].vec2[1];
+            const den = diffX1 * diffY2 - diffY1 * diffX2;
+
+            const isPerpendicular = Math.abs(den) < 0.001;
+
+            const axisPoint = (points[0].id < 0 ? 0 : null) ?? (points[2].id < 0 ? 2 : null);
+            if (!isPerpendicular) {
+              const cross1 = (points[0].vec2[0] * points[1].vec2[1] - points[0].vec2[1] * points[1].vec2[0]);
+              const cross2 = (points[2].vec2[0] * points[3].vec2[1] - points[2].vec2[1] * points[3].vec2[0]);
+              vec2.set(temp2Vec2, (cross1 * diffX2 - cross2 * diffX1) / den, (cross1 * diffY2 - cross2 * diffY1) / den);
+            } else if (axisPoint !== null) {
+              midpoint(temp2Vec2, points[2 - axisPoint].vec2, points[3 - axisPoint].vec2);
+              temp2Vec2[points[axisPoint].vec2[0] === 0 ? 0 : 1] *= 0.5;
+            } else {
+              midpoint(temp2Vec2, points[0].vec2, points[1].vec2, points[2].vec2, points[3].vec2);
+            }
+
+            const radius = (Math.hypot(diffX1, diffY1) + Math.hypot(diffX2, diffY2)) * 0.5;
+            const degrees = Math.floor(constraint.data * RAD_TO_DEG);
+
+            let angleStart = Math.atan2(-diffY1, -diffX1);
+            if (angleStart < 0) angleStart += TAU;
+
+            const labelVec = vec2.clone(temp2Vec2);
+            labelVec[0] += label.length * charWidth * 0.5;
+            labelVec[1] -= charHeight * 0.5;
+            labelVec[0] += Math.cos(angleStart + constraint.data * 0.5) * (radius + label.length * charWidth * 2);
+            labelVec[1] += Math.sin(angleStart + constraint.data * 0.5) * (radius - charHeight * 2);
+            labels.push([label, labelVec, labelColor, id]);
+
+            temp1Vec2[0] = Math.cos(angleStart) * radius + temp2Vec2[0];
+            temp1Vec2[1] = Math.sin(angleStart) * radius + temp2Vec2[1];
+            arcVertex.set(temp1Vec2, 2);
+            const d1 = Math.abs(diffX1) > Math.abs(diffY1)
+              ? -(temp1Vec2[0] - points[0].vec2[0]) / diffX1
+              : -(temp1Vec2[1] - points[0].vec2[1]) / diffY1;
+
+            if (isPerpendicular) {
+              temp1Vec2[0] = Math.cos(angleStart) * radius * 0.9 + temp2Vec2[0];
+              temp1Vec2[1] = Math.sin(angleStart) * radius * 0.9 + temp2Vec2[1];
+            }
+            else if (axisPoint !== 0 && d1 < 0) vec2.copy(temp1Vec2, points[0].vec2);
+            else if (axisPoint !== 0 && d1 > 1) vec2.copy(temp1Vec2, points[1].vec2);
+
+            arcVertex.set(temp1Vec2);
+            vec2.set(temp1Vec2, arcVertex[2], arcVertex[3]);
+
+            arcVertex.set(temp1Vec2, 4);
+            angleStart = Math.ceil(angleStart * RAD_TO_DEG);
+            const idx1 = 2 * angleStart;
+            temp1Vec2[0] = unitArc[idx1] * radius + temp2Vec2[0];
+            temp1Vec2[1] = unitArc[idx1 + 1] * radius + temp2Vec2[1];
+            arcVertex.set(temp1Vec2, 6);
+
+            for (let k = 1; k < degrees - 1; ++k) {
+              arcVertex.set(temp1Vec2, k * 4 + 4);
+
+              const idx2 = 2 * (k + angleStart);
+              temp1Vec2[0] = unitArc[idx2] * radius + temp2Vec2[0];
+              temp1Vec2[1] = unitArc[idx2 + 1] * radius + temp2Vec2[1];
+              arcVertex.set(temp1Vec2, k * 4 + 6);
+            }
+
+            arcVertex.set(temp1Vec2, degrees * 4);
+            const angleEnd = Math.atan2(-diffY2, -diffX2);
+            temp1Vec2[0] = Math.cos(angleEnd) * radius + temp2Vec2[0];
+            temp1Vec2[1] = Math.sin(angleEnd) * radius + temp2Vec2[1];
+            arcVertex.set(temp1Vec2, degrees * 4 + 2);
+
+            arcVertex.set(temp1Vec2, degrees * 4 + 4);
+            const d2 = Math.abs(diffX2) > Math.abs(diffY2)
+              ? -(temp1Vec2[0] - points[2].vec2[0]) / diffX2
+              : -(temp1Vec2[1] - points[2].vec2[1]) / diffY2;
+            if (isPerpendicular) {
+              temp1Vec2[0] = Math.cos(angleEnd) * radius * 0.9 + temp2Vec2[0];
+              temp1Vec2[1] = Math.sin(angleEnd) * radius * 0.9 + temp2Vec2[1];
+            }
+            else if (axisPoint !== 2 && d2 < 0) vec2.copy(temp1Vec2, points[2].vec2);
+            else if (axisPoint !== 2 && d2 > 1) vec2.copy(temp1Vec2, points[3].vec2);
+            arcVertex.set(temp1Vec2, degrees * 4 + 6);
+
+            ctx.bufferData(ctx.ARRAY_BUFFER, arcVertex, ctx.DYNAMIC_DRAW);
+            ctx.drawArrays(ctx.LINES, 0, degrees * 2 + 4);
             break;
         }
       }
