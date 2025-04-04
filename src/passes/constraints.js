@@ -19,6 +19,7 @@ const trs = mat4.create();
 const COINCIDENT_CHAR = '\x00';
 const HORIZONTAL_CHAR = '\x01';
 const VERTICAL_CHAR = '\x02';
+const PARALLEL_CHAR = '\x03';
 
 /**
  * @param {vec2} out
@@ -225,6 +226,16 @@ export default (engine) => {
     ctx2d.stroke(bar);
   });
 
+  font.setChar(PARALLEL_CHAR, (ctx2d, { threeQuartersChar, halfChar, charSize }) => {
+    const line = new Path2D('M0 0');
+    line.lineTo(charSize * Math.cos(-Math.PI * 0.08), charSize * Math.sin(-Math.PI * 0.08));
+
+    ctx2d.setTransform(1, 0, 0, 1, 0, halfChar);
+    ctx2d.stroke(line);
+    ctx2d.setTransform(1, 0, 0, 1, 0, threeQuartersChar);
+    ctx2d.stroke(line);
+  });
+
   const fb = framebuffer(ctx.UNSIGNED_BYTE);
 
   const indexBuffer = buffer(new Uint32Array([0, 1, 1, 2, 1, 3, 1, 4, 5, 6, 6, 7, 6, 8, 6, 9]));
@@ -330,17 +341,16 @@ export default (engine) => {
             const label = `=${i + 1}`;
             perpendicular(temp1Vec2, points[0].vec2, points[1].vec2, 2);
             vec2.scale(temp1Vec2, temp1Vec2, 2 * charWidth);
-            midpoint(temp2Vec2, points[0].vec2, points[1].vec2);
-            vec2.add(temp1Vec2, temp1Vec2, temp2Vec2);
-            temp1Vec2[0] += label.length * charWidth;
-            labels.push([label, vec2.clone(temp1Vec2), labelColor, id]);
 
-            perpendicular(temp1Vec2, points[0].vec2, points[1].vec2, 2);
-            vec2.scale(temp1Vec2, temp1Vec2, 2 * charWidth);
+            midpoint(temp2Vec2, points[0].vec2, points[1].vec2);
+            vec2.add(temp2Vec2, temp1Vec2, temp2Vec2);
+            temp2Vec2[0] += label.length * charWidth;
+            labels.push([label, vec2.clone(temp2Vec2), labelColor, id]);
+
             midpoint(temp2Vec2, points[2].vec2, points[3].vec2);
-            vec2.add(temp1Vec2, temp1Vec2, temp2Vec2);
-            temp1Vec2[0] += label.length * charWidth;
-            labels.push([label, vec2.clone(temp1Vec2), labelColor, id]);
+            vec2.add(temp2Vec2, temp1Vec2, temp2Vec2);
+            temp2Vec2[0] += label.length * charWidth;
+            labels.push([label, vec2.clone(temp2Vec2), labelColor, id]);
             break;
           }
           case 'horizontal':
@@ -360,7 +370,7 @@ export default (engine) => {
             temp1Vec2[1] += 2 * charHeight;
             labels.push([`${COINCIDENT_CHAR}${i + 1}`, vec2.clone(temp1Vec2), labelColor, id]);
             break;
-          case 'angle':
+          case 'angle': {
             const label = Properties.stringifyAngle(constraint.data);
             const diffX1 = points[0].vec2[0] - points[1].vec2[0];
             const diffY1 = points[0].vec2[1] - points[1].vec2[1];
@@ -449,6 +459,27 @@ export default (engine) => {
             ctx.bufferData(ctx.ARRAY_BUFFER, arcVertex, ctx.DYNAMIC_DRAW);
             ctx.drawArrays(ctx.LINES, 0, degrees * 2 + 4);
             break;
+          }
+          case 'parallel': {
+            const label = `${PARALLEL_CHAR}${i + 1}`;
+            perpendicular(temp1Vec2, points[0].vec2, points[1].vec2, 2);
+            vec2.scale(temp1Vec2, temp1Vec2, 2 * charWidth);
+
+            if (points[0].id >= 0) {
+              midpoint(temp2Vec2, points[0].vec2, points[1].vec2);
+              vec2.add(temp2Vec2, temp1Vec2, temp2Vec2);
+              temp2Vec2[0] += label.length * charWidth;
+              labels.push([label, vec2.clone(temp2Vec2), labelColor, id]);
+            }
+
+            if (points[2].id >= 1) {
+              midpoint(temp2Vec2, points[2].vec2, points[3].vec2);
+              vec2.add(temp2Vec2, temp1Vec2, temp2Vec2);
+              temp2Vec2[0] += label.length * charWidth;
+              labels.push([label, vec2.clone(temp2Vec2), labelColor, id]);
+            }
+            break;
+          }
         }
       }
 

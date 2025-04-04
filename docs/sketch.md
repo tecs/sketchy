@@ -103,6 +103,13 @@ Fixes the angle between two lines.
 
 ![Angle constrained lines](images/angle.png)
 
+### Parallel
+![Parallel constraint icon](images/parallel-constraint.png)
+
+Makes the selected lines parallel to each other.
+
+![Parallel constrained lines](images/parallel.png)
+
 
 ## Browser
 ### Sketch elements

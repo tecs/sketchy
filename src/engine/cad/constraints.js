@@ -16,15 +16,16 @@ const { glMatrix: { equals }, vec2 } = glMatrix;
 /** @typedef {Constraint<"coincident", 2>} CoincidentConstraint */
 /** @typedef {Constraint<"horizontal", 2>} HorizontalConstraint */
 /** @typedef {Constraint<"vertical", 2>} VerticalConstraint */
-/** @typedef {Constraint<"equal", 4, null>} EqualConstraint */
+/** @typedef {Constraint<"equal", 4>} EqualConstraint */
 /** @typedef {Constraint<"angle", 4, number>} AngleConstraint */
+/** @typedef {Constraint<"parallel", 4>} ParallelConstraint */
 
 /** @typedef {DistanceConstraint|WidthConstraint|HeightConstraint|EqualConstraint} DistanceConstraints */
-/** @typedef {HorizontalConstraint|VerticalConstraint|AngleConstraint} OrientationConstraints */
+/** @typedef {HorizontalConstraint|VerticalConstraint|AngleConstraint|ParallelConstraint} OrientationConstraints */
 /** @typedef {DistanceConstraints|CoincidentConstraint|OrientationConstraints} Constraints */
 
 /** @typedef {{ [K in Constraints["type"]]: Find<Constraints, "type", K>["data"] }} OriginalCurrentData */
-/** @typedef {{ equal: [number, number ]}} CustomCurrentData */
+/** @typedef {{ equal: [number, number], parallel: [number, number] }} CustomCurrentData */
 
 /**
  * @template {keyof OriginalCurrentData} K
@@ -64,7 +65,7 @@ const tempVec2 = vec2.create();
  * @template {{ [K in Constraints["type"]]: any }} T
  * @type {{ [K in Constraints["type"]]: ConstraintHandler<Find<Constraints, "type", K>, T[K]> }}
  */
-export default {
+const constraints = {
   distance: {
     check({ elements: [p1, p2], value }) {
       const current = vec2.distance(p1.vec2, p2.vec2);
@@ -198,4 +199,24 @@ export default {
       else if (!p4.locked) vec2.rotate(p4.vec2, p4.vec2, p3.vec2, -diff);
     },
   },
+  parallel: {
+    check({ elements: [p1, p2, p3, p4] }) {
+      vec2.subtract(tempVec2, p2.vec2, p1.vec2);
+      const angle1 = Math.atan2(tempVec2[1], tempVec2[0]);
+
+      vec2.subtract(tempVec2, p4.vec2, p3.vec2);
+      const angle2 = Math.atan2(tempVec2[1], tempVec2[0]);
+
+      let angle = angle2 - angle1;
+      if (angle < 0) angle += Math.PI * 2;
+      const value = angle < Math.PI * 0.5 || angle > Math.PI * 1.5 ? 0 : Math.PI;
+
+      return [[value, angle], equals(value, angle)];
+    },
+    apply({ elements: [p1, p2, p3, p4], incrementScale }, [value, angle]) {
+      constraints.angle.apply({ elements: [p1, p2, p3, p4], incrementScale, value }, angle);
+    },
+  },
 };
+
+export default constraints;

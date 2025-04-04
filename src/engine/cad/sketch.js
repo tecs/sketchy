@@ -17,6 +17,7 @@ const { vec2, vec3, mat4, quat } = glMatrix;
 /** @typedef {import("./constraints.js").HorizontalConstraint} HorizontalConstraint */
 /** @typedef {import("./constraints.js").VerticalConstraint} VerticalConstraint */
 /** @typedef {import("./constraints.js").AngleConstraint} AngleConstraint */
+/** @typedef {import("./constraints.js").ParallelConstraint} ParallelConstraint */
 /** @typedef {import("./constraints.js").Constraints} Constraints */
 
 /**
@@ -228,6 +229,27 @@ const extractLinePairWithAxes = (selection, sketch) => {
   }
 
   return lines.length > 1 ? [[...lines[0], ...lines[1]]] : [];
+};
+
+/**
+ * @param {Collection} selection
+ * @param {Sketch} sketch
+ * @returns {[number, number, number, number][]}
+ */
+const extractLinePairsWithAxes = (selection, sketch) => {
+  /** @type {Readonly<[number, number]>[]} */
+  const lines = selection.getByType('line')
+    .map(({ id }) => sketch.getLine(id))
+    .map(line => line ? sketch.getLineIds(line) : null)
+    .filter(ids => ids !== null);
+
+  const axes = selection.getByType('axis')
+    .map(({ id }) => getAxisIds(id))
+    .filter(ids => ids !== null);
+
+  if (axes.length > 0) return lines.map(lineIds => [...lineIds, ...axes[0]]);
+
+  return pair(lines).map(([ids1, ids2]) => [...ids1, ...ids2]);
 };
 
 /**
@@ -638,6 +660,7 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
       makeAction('horizontal', [['k'], ['h']], extractAllPoints, doConstraint, undoConstraint),
       makeAction('vertical', [['k'], ['v']], extractAllPoints, doConstraint, undoConstraint),
       makeAction('angle', [['k'], ['a']], extractLinePairWithAxes, cachedAngleConstraint(), undoAngleConstraint),
+      makeAction('parallel', [['k'], ['p']], extractLinePairsWithAxes, doConstraint, undoConstraint),
     ];
 
     engine.on('keydown', (_, keyCombo) => {
@@ -1157,6 +1180,32 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
     if (pointIds.some((v, i, a) => a.indexOf(v) !== i)) return null;
 
     return /** @type {AngleConstraint} */ (this.#createConstraint('angle', pointIds, value));
+  }
+
+  /**
+   * @param {[LineConstructionElement, LineConstructionElement] | [number, number, number, number]} ids
+   * @returns {Readonly<ParallelConstraint>?}
+   */
+  parallel(ids) {
+    if (ids.length === 2) {
+      if (ids[0] === ids[1] || ids.some(line => !this.data.elements.includes(line))) return null;
+
+      const i1 = this.getLineIds(ids[0]);
+      const i2 = this.getLineIds(ids[1]);
+      if (!i1 || !i2) return null;
+
+      ids = [...i1, ...i2];
+    } else {
+      if (ids.some((v, i, a) => a.indexOf(v) !== i)) return null;
+
+      const lines = ids.map(index => this.getLineForPoint(index)?.[0]);
+      if (lines.some(v => v === null)) return null;
+      if (lines[0] !== lines[1] || lines[1] === lines[2] || lines[2] !== lines[3]) return null;
+    }
+
+    if (ids.length !== 4) return null;
+
+    return /** @type {ParallelConstraint} */ (this.#createConstraint('parallel', ids, null));
   }
 
   /**
