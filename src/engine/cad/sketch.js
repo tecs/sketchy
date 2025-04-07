@@ -18,6 +18,7 @@ const { vec2, vec3, mat4, quat } = glMatrix;
 /** @typedef {import("./constraints.js").VerticalConstraint} VerticalConstraint */
 /** @typedef {import("./constraints.js").AngleConstraint} AngleConstraint */
 /** @typedef {import("./constraints.js").ParallelConstraint} ParallelConstraint */
+/** @typedef {import("./constraints.js").PerpendicularConstraint} PerpendicularConstraint */
 /** @typedef {import("./constraints.js").Constraints} Constraints */
 
 /**
@@ -661,6 +662,7 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
       makeAction('vertical', [['k'], ['v']], extractAllPoints, doConstraint, undoConstraint),
       makeAction('angle', [['k'], ['a']], extractLinePairWithAxes, cachedAngleConstraint(), undoAngleConstraint),
       makeAction('parallel', [['k'], ['p']], extractLinePairsWithAxes, doConstraint, undoConstraint),
+      makeAction('perpendicular', [['k'], ['n']], extractLinePairsWithAxes, doConstraint, undoConstraint),
     ];
 
     engine.on('keydown', (_, keyCombo) => {
@@ -1102,25 +1104,9 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
    * @returns {Readonly<EqualConstraint>?}
    */
   equal(ids) {
-    if (ids.length === 2) {
-      if (ids[0] === ids[1] || ids.some(line => !this.data.elements.includes(line))) return null;
-
-      const i1 = this.getLineIds(ids[0]);
-      const i2 = this.getLineIds(ids[1]);
-      if (!i1 || !i2) return null;
-
-      ids = [...i1, ...i2];
-    } else {
-      if (ids.some((v, i, a) => a.indexOf(v) !== i)) return null;
-
-      const lines = ids.map(index => this.getLineForPoint(index)?.[0]);
-      if (lines.some(v => v === null)) return null;
-      if (lines[0] !== lines[1] || lines[1] === lines[2] || lines[2] !== lines[3]) return null;
-    }
-
-    if (ids.length !== 4) return null;
-
-    return /** @type {EqualConstraint} */ (this.#createConstraint('equal', ids, null));
+    const linePairIds = this.getLinePairIds(ids);
+    if (linePairIds === null) return null;
+    return /** @type {EqualConstraint} */ (this.#createConstraint('equal', linePairIds, null));
   }
 
   /**
@@ -1187,25 +1173,19 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
    * @returns {Readonly<ParallelConstraint>?}
    */
   parallel(ids) {
-    if (ids.length === 2) {
-      if (ids[0] === ids[1] || ids.some(line => !this.data.elements.includes(line))) return null;
+    const linePairIds = this.getLinePairIds(ids);
+    if (linePairIds === null) return null;
+    return /** @type {ParallelConstraint} */ (this.#createConstraint('parallel', linePairIds, null));
+  }
 
-      const i1 = this.getLineIds(ids[0]);
-      const i2 = this.getLineIds(ids[1]);
-      if (!i1 || !i2) return null;
-
-      ids = [...i1, ...i2];
-    } else {
-      if (ids.some((v, i, a) => a.indexOf(v) !== i)) return null;
-
-      const lines = ids.map(index => this.getLineForPoint(index)?.[0]);
-      if (lines.some(v => v === null)) return null;
-      if (lines[0] !== lines[1] || lines[1] === lines[2] || lines[2] !== lines[3]) return null;
-    }
-
-    if (ids.length !== 4) return null;
-
-    return /** @type {ParallelConstraint} */ (this.#createConstraint('parallel', ids, null));
+  /**
+   * @param {[LineConstructionElement, LineConstructionElement] | [number, number, number, number]} ids
+   * @returns {Readonly<PerpendicularConstraint>?}
+   */
+  perpendicular(ids) {
+    const linePairIds = this.getLinePairIds(ids);
+    if (linePairIds === null) return null;
+    return /** @type {PerpendicularConstraint} */ (this.#createConstraint('perpendicular', linePairIds, null));
   }
 
   /**
@@ -1239,6 +1219,30 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
     if (ids.length !== 2) return null;
 
     return /** @type {[number, number]} */ (ids);
+  }
+
+  /**
+   * @param {[LineConstructionElement, LineConstructionElement] | [number, number, number, number]} ids
+   * @returns {[number, number, number, number]?}
+   */
+  getLinePairIds(ids) {
+    if (ids.length === 2) {
+      if (ids[0] === ids[1] || ids.some(line => !this.data.elements.includes(line))) return null;
+
+      const i1 = this.getLineIds(ids[0]);
+      const i2 = this.getLineIds(ids[1]);
+      if (!i1 || !i2) return null;
+
+      ids = [...i1, ...i2];
+    } else {
+      if (ids.some((v, i, a) => a.indexOf(v) !== i)) return null;
+
+      const lines = ids.map(index => this.getLineForPoint(index)?.[0]);
+      if (lines.some(v => v === null)) return null;
+      if (lines[0] !== lines[1] || lines[1] === lines[2] || lines[2] !== lines[3]) return null;
+    }
+
+    return ids.length === 4 ? ids : null;
   }
 
   /**

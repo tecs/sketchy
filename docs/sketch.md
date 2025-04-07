@@ -13,8 +13,10 @@ Previous: [Steps](steps.md)
   - [Equal](#equal)
   - [Coincident](#coincident)
   - [Horizontal](#horizontal)
-  - [Vertical](#vertical
-  - [Angle](#angle))
+  - [Vertical](#vertical)
+  - [Angle](#angle)
+  - [Parallel](#parallel)
+  - [Perpendicular](#perpendicular)
 - [Browser]
   - [Sketch elements](#sketch-elements)
   - [Constraint details](#constraint-details)
@@ -109,6 +111,13 @@ Fixes the angle between two lines.
 Makes the selected lines parallel to each other.
 
 ![Parallel constrained lines](images/parallel.png)
+
+### Perpendicular
+![Perpendicular constraint icon](images/perpendicular-constraint.png)
+
+Makes the selected lines perpendicular to each other.
+
+![Perpendicular constrained lines](images/perpendicular.png)
 
 
 ## Browser
