@@ -373,12 +373,14 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
       handle: { valid: false },
 
       drop(revertTool = true) {
-        if (this.handle.valid && revertTool) {
+        const taskDropped = this.handle.valid;
+        if (taskDropped && revertTool) {
           engine.emit('cursorchange', previousTool?.cursor);
           engine.emit('contextactionchange', null);
           engine.tools.setTool(previousTool);
         }
         this.handle.valid = false;
+        return taskDropped;
       },
 
       /**
@@ -666,7 +668,12 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
     ];
 
     engine.on('keydown', (_, keyCombo) => {
-      if (keyCombo === 'esc') cancellableTask.drop();
+      let shouldExitSketch = false;
+      if (keyCombo === 'esc') shouldExitSketch = !cancellableTask.drop();
+      if (shouldExitSketch && scene.currentStep instanceof Sketch) {
+        scene.setCurrentStep(null);
+        return;
+      }
 
       const sketch = scene.currentStep ?? scene.enteredInstance?.body.step;
       if (!(sketch instanceof Sketch) || keyCombo !== 'delete') return;
