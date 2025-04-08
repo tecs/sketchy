@@ -6,7 +6,7 @@ import { getCursor } from './assets.js';
  * @param {import("./lib").AnyUIContainer} container
  */
 export default (engine, container) => {
-  engine.on('usererror', (message) => container.addDialog(message));
+  engine.on('usererror', (message) => void(container.addDialog(message)));
   // eslint-disable-next-line no-console
   engine.on('error', console.error);
 

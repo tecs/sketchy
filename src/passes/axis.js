@@ -84,7 +84,7 @@ export default (engine) => {
   engine.on('settingchange', (changed) => {
     if (changed === setting) engine.emit('scenechange');
   });
-  engine.on('viewportresize', (current) => vec3.scale(halfRes, current, 0.5));
+  engine.on('viewportresize', (current) => void(vec3.scale(halfRes, current, 0.5)));
 
   return {
     program,

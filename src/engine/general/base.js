@@ -107,6 +107,8 @@ export default class Base {
   /** @type {EventHandlerData[]} */
   #handlers = [];
 
+  CANCEL_HANDLERS = Symbol('CANCEL_HANDLERS');
+
   /**
    * @template {Mapping} T
    * @param {T} traits
@@ -177,10 +179,11 @@ export default class Base {
     /** @type {EventHandlerData[]} */
     const handlersToRemove = [];
 
+    let cancel = false;
     for (const handler of this.#handlers) {
       if (handler.event !== event) continue;
       try {
-        handler.handler(.../** @type {Parameters<Event[T]["callback"]>} */ (args));
+        cancel = handler.handler(.../** @type {Parameters<Event[T]["callback"]>} */ (args)) === this.CANCEL_HANDLERS;
       } catch (e) {
         // avoid infinite recursion
         if (event === 'error') {
@@ -196,6 +199,7 @@ export default class Base {
         this.emit('error', `Caught inside handler for "${event}":`, e);
       }
       if (handler.once) handlersToRemove.push(handler);
+      if (cancel) break;
     }
 
     if (handlersToRemove.length) this.#removeHandlers(handlersToRemove);

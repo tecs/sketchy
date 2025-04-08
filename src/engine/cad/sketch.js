@@ -745,7 +745,7 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
       else if (wasSketch && !isSketch) engine.tools.setContextActions(null);
     });
 
-    engine.on('toolchange', () => cancellableTask.drop(false));
+    engine.on('toolchange', () => void(cancellableTask.drop(false)));
 
     engine.on('copy', entities => {
       const sketch = scene.currentStep;
