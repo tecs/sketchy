@@ -26,7 +26,7 @@ The viewport is the central area of the application and is where the user can vi
 The viewport's camera, and thus what the user sees, can be moved around the scene by [moving up/down/left/right and orbiting](tools.md#orbit) and [moving forward/back and zooming](tools.md#zoom).
 
 ### Scene
-The scene hierarchy can also be navigated through the viewport, while using the [select tool](tools.md#select), by double-clicking on an object, which enters its corresponding instance, allowing for editing of that instance's body. In some cases where the double-clicked geometry directly belongs to a [step](steps.md), that step could be entered for editing instead. Pressing the `esc` key while no action is being performed exits the entered step.
+The scene hierarchy can also be navigated through the viewport, while using the [select tool](tools.md#select), by double-clicking on an object, which enters its corresponding instance, allowing for editing of that instance's body. In some cases where the double-clicked geometry directly belongs to a [step](steps.md), that step could be entered for editing instead. On the other hand, double-clicking outside the entered instance or pressing the `esc` key while no action is being performed exits the entered step.
 
 Geometry not part of the entered instance (if any) will be shown grayed-out.
 

@@ -76,6 +76,8 @@ export default (engine) => {
           toggleOrSet({ type: 'constraint', id: hoveredConstraintIndex, instance: enteredInstance }, toggle);
         } else if (hoveredAxisId !== null) {
           toggleOrSet({ type: 'axis', id: hoveredAxisId, instance: enteredInstance }, toggle);
+        } else if (count > 1) {
+          scene.currentStep?.exitStep();
         } else if (!toggle) selection.clear();
         return;
       }
