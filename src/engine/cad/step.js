@@ -152,6 +152,13 @@ export default class Step extends Base.implement({ Properties }) {
     this.body.stepUpdated(this);
   }
 
+  exitStep() {
+    const { scene } = this.engine;
+    if (scene.currentStep === this) {
+      scene.setCurrentStep(null);
+    }
+  }
+
   /**
    * @abstract
    */

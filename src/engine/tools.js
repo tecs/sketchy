@@ -75,7 +75,10 @@ export default class Tools {
     });
 
     engine.on('keyup', (_, keyCombo) => {
-      if (keyCombo === 'esc' && this.selected?.active !== false) this.selected?.abort();
+      if (keyCombo === 'esc' && this.selected?.active !== false) {
+        this.selected?.abort();
+        return engine.CANCEL_HANDLERS;
+      }
     });
 
     engine.on('shortcut', setting => {

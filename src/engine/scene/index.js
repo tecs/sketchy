@@ -100,6 +100,8 @@ export default class Scene extends Base {
       if (keyCombo === 'delete') {
         const selectedInstances = selection.getByType('instance').map(({ instance }) => instance);
         this.deleteInstances(selectedInstances);
+      } else if (keyCombo === 'esc' && !engine.tools.selected?.active) {
+        this.currentStep?.exitStep();
       }
     });
     engine.on('entityadded', (entity) => {

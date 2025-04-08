@@ -327,6 +327,19 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
 
   static #drawAsSupport = false;
 
+  static #cancellableTask = {
+    handle: { valid: false },
+    drop: (_revertTool = true) => false,
+    /**
+     * @template {Constraints["type"]} C
+     * @param {C} _constraintType
+     * @param {(collection: Collection, sketch: Sketch) => import("./sketch-types").ExecArgs<C>[0]} _extractFn
+     * @param {(...args: import("./sketch-types").ExecArgs<C>) => void} _thenFn
+     * @param {(...args: import("./sketch-types").ExecArgs<C>) => void} _undoFn
+     */
+    exec(_constraintType, _extractFn, _thenFn, _undoFn) {},
+  };
+
   /** @param {PartialBaseParams} args  */
   constructor(...args) {
     if (!args[0].elements) {
@@ -369,7 +382,7 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
 
     let previousTool = engine.tools.selected;
 
-    const cancellableTask = {
+    Sketch.#cancellableTask = {
       handle: { valid: false },
 
       drop(revertTool = true) {
@@ -383,13 +396,6 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
         return taskDropped;
       },
 
-      /**
-       * @template {Constraints["type"]} C
-       * @param {C} constraintType
-       * @param {(collection: typeof selection, sketch: Sketch) => import("./sketch-types").ExecArgs<C>[0]} extractFn
-       * @param {(...args: import("./sketch-types").ExecArgs<C>) => void} thenFn
-       * @param {(...args: import("./sketch-types").ExecArgs<C>) => void} undoFn
-       */
       async exec(constraintType, extractFn, thenFn, undoFn) {
         this.drop(false);
 
@@ -420,22 +426,12 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
         const constraintData = data.map(indices => sketch.getConstraintsForPoints(indices, constraintType).pop()?.data);
         const action = history.createAction(`Create a ${constraintType} constraint`, null);
         if (!action) {
-          thenFn(data, /** @type {import("./sketch-types").ExecArgs<C>[1]} */ (constraintData), constraintType, sketch);
+          thenFn(data, constraintData, constraintType, sketch);
           return;
         }
         action.append(
-          () => thenFn(
-            data,
-            /** @type {import("./sketch-types").ExecArgs<C>[1]} */ (constraintData),
-            constraintType,
-            sketch,
-          ),
-          () => undoFn(
-            data,
-            /** @type {import("./sketch-types").ExecArgs<C>[1]} */ (constraintData),
-            constraintType,
-            sketch,
-          ),
+          () => thenFn(data, constraintData, constraintType, sketch),
+          () => undoFn(data, constraintData, constraintType, sketch),
         );
         action.commit();
       },
@@ -594,7 +590,7 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
         icon: `constraint-${type}`,
         call() {
           engine.emit('contextactionchange', contextAction);
-          cancellableTask.exec(type, extractFn, thenFn, undoFn);
+          Sketch.#cancellableTask.exec(type, extractFn, thenFn, undoFn);
         },
         key: config.createString(`shortcuts.sketch.${type}`, `Sketch constraint: ${type}`, 'key', Input.stringify(shortcut)),
       };
@@ -668,13 +664,6 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
     ];
 
     engine.on('keydown', (_, keyCombo) => {
-      let shouldExitSketch = false;
-      if (keyCombo === 'esc') shouldExitSketch = !cancellableTask.drop();
-      if (shouldExitSketch && scene.currentStep instanceof Sketch) {
-        scene.setCurrentStep(null);
-        return;
-      }
-
       const sketch = scene.currentStep ?? scene.enteredInstance?.body.step;
       if (!(sketch instanceof Sketch) || keyCombo !== 'delete') return;
 
@@ -736,7 +725,7 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
     engine.on('stepchange', (current, previous, isSelectionChange) => {
       if (isSelectionChange) return;
 
-      cancellableTask.drop();
+      Sketch.#cancellableTask.drop();
       const isSketch = current instanceof Sketch;
       const wasSketch = previous instanceof Sketch;
       if (isSketch) current.update();
@@ -745,7 +734,7 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
       else if (wasSketch && !isSketch) engine.tools.setContextActions(null);
     });
 
-    engine.on('toolchange', () => void(cancellableTask.drop(false)));
+    engine.on('toolchange', () => void(Sketch.#cancellableTask.drop(false)));
 
     engine.on('copy', entities => {
       const sketch = scene.currentStep;
@@ -1404,5 +1393,13 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
    */
   hasPoint(pointId) {
     return pointId > this.lastPointId && pointId <= this.model.lastPointId;
+  }
+
+  exitStep() {
+    const { scene } = this.engine;
+
+    if (scene.currentStep === this && !Sketch.#cancellableTask.drop()) {
+      super.exitStep();
+    }
   }
 }
