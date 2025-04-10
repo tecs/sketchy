@@ -107,7 +107,7 @@ export default (engine) => {
       ctx.vertexAttribPointer(program.aLoc.a_color, 3, ctx.FLOAT, false, 0, 0);
 
       mat4.copy(trs, scene.currentInstance.Placement.trs);
-      if (isSketch) mat4.multiply(trs, trs, scene.currentStep.toSketch);
+      if (isSketch) mat4.multiply(trs, trs, scene.currentStep.fromSketch);
 
       mat4.getScaling(origin, trs);
       vec3.inverse(origin, origin);

@@ -320,7 +320,7 @@ export default (engine) => {
       }
 
       if (scene.currentStep instanceof Sketch) {
-        mat4.multiply(trs, scene.currentInstance.Placement.trs, scene.currentStep.toSketch);
+        mat4.multiply(trs, scene.currentInstance.Placement.trs, scene.currentStep.fromSketch);
 
         mat4.getScaling(origin, trs);
         vec3.inverse(origin, origin);

@@ -76,7 +76,7 @@ export default (engine) => {
       ctx.vertexAttribPointer(program.aLoc.a_position, 3, ctx.FLOAT, false, 0, 0);
 
       mat4.copy(trs, scene.currentInstance.Placement.trs);
-      if (isSketch) mat4.multiply(trs, trs, scene.currentStep.toSketch);
+      if (isSketch) mat4.multiply(trs, trs, scene.currentStep.fromSketch);
 
       mat4.multiply(mvp, camera.viewProjection, trs);
       ctx.uniformMatrix4fv(program.uLoc.u_matrix, false, mvp);
