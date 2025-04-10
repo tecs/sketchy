@@ -143,7 +143,7 @@ export default (engine) => {
       }
 
       ctx.lineWidth(1);
-      ctx.drawArrays(ctx.LINES, 0, 12);
+      ctx.drawArrays(ctx.LINES, 0, isSketch ? 8 : 12);
 
       if (isSketch) {
         if (scene.hoveredAxisId === 0) {

@@ -33,21 +33,25 @@ export default (engine) => {
     `,
   );
 
-  const grid = [...Array(99)].flatMap((_, i) => [0, 1, 2].flatMap(c => [1, -1].map(s => [i + 1, c, (c || 2) - 1, s])));
+  const axisGradationsElements = 99;
+  const gradationLevels = [0.02, 0.08, 0.4, 2].map((gradation, p) => [gradation, Math.pow(10, p - 1)]);
+  const grid = [...Array(axisGradationsElements)]
+    .flatMap((_, i) => [0, 1, 2].flatMap(c => [1, -1].map(s => [i + 1, c, (c || 2) - 1, s])))
+    .sort(([, a], [, b]) => a - b);
+
   const positions = new Float32Array(
-    [0.02, 0.08, 0.4, 2].flatMap((gradation, p, gs) => {
-      const spacing = Math.pow(10, p - 1);
-      return grid.flatMap(([n, c1, c2, sign]) => [0, 0, 0, 0, 0, 0]
-        .with(c1, spacing * n * sign)
-        .with(c1 + 3, spacing * n * sign)
-        .with(c2 + 3, n % 10 ? gradation : gs[p + 1] ?? gradation),
-      );
-    }),
+    grid.flatMap(([n, c1, c2, sign]) => gradationLevels.flatMap(([gradation, spacing], p, gs) => [0, 0, 0, 0, 0, 0]
+      .with(c1, spacing * n * sign)
+      .with(c1 + 3, spacing * n * sign)
+      .with(c2 + 3, n % 10 ? gradation : gs[p + 1]?.[0] ?? gradation),
+    )),
   );
-  const indices = new Uint32Array(positions.length / 3).map((_, i) => i);
+  const indices = new Uint32Array(grid.length * gradationLevels.length * 2).map((_, i) => i);
 
   const positionBuffer = buffer(positions);
   const indicesBuffer = buffer(indices);
+
+  const xyLength = axisGradationsElements * 2 * 2 * 2 * gradationLevels.length;
 
   // cached structures
   const mvp = mat4.create();
@@ -78,7 +82,7 @@ export default (engine) => {
       ctx.uniformMatrix4fv(program.uLoc.u_matrix, false, mvp);
 
       ctx.lineWidth(1);
-      ctx.drawElements(ctx.LINES, indices.length, ctx.UNSIGNED_INT, 0);
+      ctx.drawElements(ctx.LINES, isSketch ? xyLength : indices.length, ctx.UNSIGNED_INT, 0);
     },
   };
 };
