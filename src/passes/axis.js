@@ -55,20 +55,20 @@ export default (engine) => {
 
   const positionBuffer = buffer(new Float32Array([
     -1, 0, 0, 0, 0, 0,
-    0, -1, 0, 0, 0, 0,
-    0, 0, -1, 0, 0, 0,
     0, 0, 0, 1, 0, 0,
+    0, -1, 0, 0, 0, 0,
     0, 0, 0, 0, 1, 0,
+    0, 0, -1, 0, 0, 0,
     0, 0, 0, 0, 0, 1,
     0, 0, 0, 0, 0, 0,
   ]));
 
   const colorBuffer = buffer(new Float32Array([
     1, 0, 0, 1, 0, 0,
-    0, 1, 0, 0, 1, 0,
-    0, 0, 1, 0, 0, 1,
     1, 0, 0, 1, 0, 0,
     0, 1, 0, 0, 1, 0,
+    0, 1, 0, 0, 1, 0,
+    0, 0, 1, 0, 0, 1,
     0, 0, 1, 0, 0, 1,
     0, 0, 0, 1, 0, 1,
   ]));
@@ -122,8 +122,7 @@ export default (engine) => {
       if (scene.hoveredAxisId) {
         ctx.uniform1f(program.uLoc.u_hovered, 1);
         ctx.lineWidth(5);
-        ctx.drawArrays(ctx.LINES, scene.hoveredAxisId * 2 - 2, 2);
-        ctx.drawArrays(ctx.LINES, scene.hoveredAxisId * 2 + 4, 2);
+        ctx.drawArrays(ctx.LINES, scene.hoveredAxisId * 4 - 4, 4);
         ctx.uniform1f(program.uLoc.u_hovered, 0);
       }
 
@@ -135,8 +134,7 @@ export default (engine) => {
       for (const selectedAxis of selectedAxes) {
         if (selectedAxis > 0) {
           ctx.lineWidth(3);
-          ctx.drawArrays(ctx.LINES, selectedAxis * 2 - 2, 2);
-          ctx.drawArrays(ctx.LINES, selectedAxis * 2 + 4, 2);
+          ctx.drawArrays(ctx.LINES, selectedAxis * 4 - 4, 4);
         }
       }
 
