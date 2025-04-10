@@ -75,6 +75,7 @@ export default (engine) => {
 
   // cached structures
   const mvp = mat4.create();
+  const trs = mat4.create();
   const origin = vec3.create();
   const vec3zero = vec3.create();
   const halfRes = vec3.create();
@@ -91,6 +92,8 @@ export default (engine) => {
     render() {
       if (!setting.value) return;
 
+      const isSketch = scene.currentStep instanceof Sketch;
+
       const selectedAxes = editor.selection.getByType('axis').map(({ id }) => id);
 
       ctx.enable(ctx.BLEND);
@@ -103,7 +106,8 @@ export default (engine) => {
       ctx.enableVertexAttribArray(program.aLoc.a_color);
       ctx.vertexAttribPointer(program.aLoc.a_color, 3, ctx.FLOAT, false, 0, 0);
 
-      const { trs } = scene.currentInstance.Placement;
+      mat4.copy(trs, scene.currentInstance.Placement.trs);
+      if (isSketch) mat4.multiply(trs, trs, scene.currentStep.toSketch);
 
       mat4.getScaling(origin, trs);
       vec3.inverse(origin, origin);
@@ -141,7 +145,7 @@ export default (engine) => {
       ctx.lineWidth(1);
       ctx.drawArrays(ctx.LINES, 0, 12);
 
-      if (scene.currentStep instanceof Sketch) {
+      if (isSketch) {
         if (scene.hoveredAxisId === 0) {
           ctx.uniform1f(program.uLoc.u_hovered, 1);
           ctx.drawArrays(ctx.POINTS, 12, 1);

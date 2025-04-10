@@ -1,3 +1,5 @@
+import Sketch from '../engine/cad/sketch.js';
+
 const { mat4 } = glMatrix;
 
 /** @type {RenderingPass} */
@@ -49,6 +51,7 @@ export default (engine) => {
 
   // cached structures
   const mvp = mat4.create();
+  const trs = mat4.create();
 
   const setting = engine.config.createBoolean('display.gradations', 'Show axis gradations', 'toggle', true);
   engine.on('settingchange', (changed) => {
@@ -60,13 +63,16 @@ export default (engine) => {
     render() {
       if (!setting.value) return;
 
+      const isSketch = scene.currentStep instanceof Sketch;
+
       ctx.bindBuffer(ctx.ELEMENT_ARRAY_BUFFER, indicesBuffer);
 
       ctx.bindBuffer(ctx.ARRAY_BUFFER, positionBuffer);
       ctx.enableVertexAttribArray(program.aLoc.a_position);
       ctx.vertexAttribPointer(program.aLoc.a_position, 3, ctx.FLOAT, false, 0, 0);
 
-      const { trs } = scene.currentInstance.Placement;
+      mat4.copy(trs, scene.currentInstance.Placement.trs);
+      if (isSketch) mat4.multiply(trs, trs, scene.currentStep.toSketch);
 
       mat4.multiply(mvp, camera.viewProjection, trs);
       ctx.uniformMatrix4fv(program.uLoc.u_matrix, false, mvp);

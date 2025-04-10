@@ -95,6 +95,7 @@ export default (engine) => {
   // cached structures
   const maxId =  Math.pow(2, 32) - 1;
   const mvp = mat4.create();
+  const trs = mat4.create();
   const origin = vec3.create();
   const farPlaneV3 = vec3.fromValues(camera.farPlane, camera.farPlane, camera.farPlane);
 
@@ -319,7 +320,7 @@ export default (engine) => {
       }
 
       if (scene.currentStep instanceof Sketch) {
-        const { trs } = scene.currentInstance.Placement;
+        mat4.multiply(trs, scene.currentInstance.Placement.trs, scene.currentStep.toSketch);
 
         mat4.getScaling(origin, trs);
         vec3.inverse(origin, origin);
