@@ -756,14 +756,21 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
 
       const instance = scene.currentInstance;
 
-      const lines = action.data.elements.map(({ id }) => sketch.getLine(id)).filter(line => line !== null);
-      const linePoints = lines.map(line => sketch.getLineIds(line)).filter(points => points !== null);
+      const selectedLines = action.data.elements.filter(({ type }) => type === 'line');
+      if (selectedLines.length === 0) return;
+
+      const parentSketch = selectedLines[0].instance.body.listSteps(Sketch)
+        .findLast(testSketch => testSketch.hasLine(selectedLines[0].id));
+      if (!parentSketch) return;
+
+      const lines = action.data.elements.map(({ id }) => parentSketch.getLine(id)).filter(line => line !== null);
+      const linePoints = lines.map(line => parentSketch.getLineIds(line)).filter(points => points !== null);
       const pointMap = new Map(linePoints.flat().map((id, i) => [id, sketch.model.lastPointId + i + 1]));
       const linesToAdd = lines.map(line => Sketch.cloneConstructionElement(line));
 
       const constraints = [
-        ...pair(linePoints.flat()).flatMap(pointPair => sketch.getConstraintsForPoints(pointPair)),
-        ...pair(linePoints).flatMap(pointPair => sketch.getConstraintsForPoints(pointPair.flat())),
+        ...pair(linePoints.flat()).flatMap(pointPair => parentSketch.getConstraintsForPoints(pointPair)),
+        ...pair(linePoints).flatMap(pointPair => parentSketch.getConstraintsForPoints(pointPair.flat())),
       ].filter((v, i, a) => a.indexOf(v) === i);
 
       const constraintsToAdd = constraints.map(constraint => {
