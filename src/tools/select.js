@@ -153,6 +153,7 @@ export default (engine) => {
   };
 
   engine.on('toolchange', tool => void(cursorListener = tool === select));
+  engine.on('contextactionchange', action => void(cursorListener = engine.tools.selected === select && action === null));
 
   engine.on('keydown', setCursor);
   engine.on('keyup', setCursor);
