@@ -15,6 +15,7 @@ export default (engine) => {
   const toggleOrSet = (elements, shouldToggle = false) => {
     if (shouldToggle) selection.toggle(elements);
     else selection.set(elements);
+    setCursor();
   };
 
   /**
@@ -57,6 +58,7 @@ export default (engine) => {
     name: 'Select',
     shortcut: 'space',
     icon: 'pointer-simplified',
+    cursor: 'select',
     active: false,
     start() {
       if (!input.leftButton) return;
@@ -137,6 +139,24 @@ export default (engine) => {
       }
     },
   };
+
+  let cursorListener = false;
+
+  const setCursor = () => {
+    if (!cursorListener) return;
+    if (!input.ctrl) return engine.emit('cursorchange', select.cursor);
+
+    const hovered = getHovered();
+    if (lasso || !hovered) return engine.emit('cursorchange', 'add-remove-selection');
+    if (selection.getElement(hovered)) return engine.emit('cursorchange', 'remove-selection');
+    engine.emit('cursorchange', 'add-selection');
+  };
+
+  engine.on('toolchange', tool => void(cursorListener = tool === select));
+
+  engine.on('keydown', setCursor);
+  engine.on('keyup', setCursor);
+  engine.on('mousemove', setCursor);
 
   return select;
 };

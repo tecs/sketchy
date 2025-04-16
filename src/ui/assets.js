@@ -59,6 +59,10 @@ const loadAsset = (url, onLoad) => {
 
 /** @type {Cursor[]} */
 const cursors = [
+  { name: 'select', fallback: 'default', x: 4, y: 4 },
+  { name: 'add-selection', fallback: 'default', x: 4, y: 4 },
+  { name: 'remove-selection', fallback: 'default', x: 4, y: 4 },
+  { name: 'add-remove-selection', fallback: 'default', x: 4, y: 4 },
   { name: 'bucket', fallback: 'alias', x: 4, y: 29 },
   { name: 'eyedropper', fallback: 'crosshair', x: 7, y: 23 },
   { name: 'pull', fallback: 'row-resize', x: 16, y: 4 },
