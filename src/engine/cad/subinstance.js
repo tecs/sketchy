@@ -151,6 +151,20 @@ export default class SubInstance extends /** @type {typeof Step<SubInstanceState
   }
 
   /**
+   * @param {Instance?} child
+   * @param {Instance?} parent
+   * @returns {Instance?}
+   */
+  static asDirectChildOf(child, parent) {
+    while (child) {
+      const childParent = this.getParent(child)?.instance ?? null;
+      if (childParent === parent) return child;
+      child = childParent;
+    }
+    return null;
+  }
+
+  /**
    * @param {Engine} engine
    */
   static register(engine) {

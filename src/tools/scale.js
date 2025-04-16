@@ -73,15 +73,9 @@ export default (engine) => {
       }
 
       for (let i = instances.length - 1; i >= 0; --i) {
-        let parent = SubInstance.getParent(instances[i]);
-        while (parent && parent.instance !== enteredInstance) {
-          instances[i] = parent.instance;
-          parent = SubInstance.getParent(instances[i]);
-        }
-
-        if (instances[i] === currentInstance || !SubInstance.belongsTo(instances[i], enteredInstance)) {
-          instances.splice(i, 1);
-        }
+        const instance = SubInstance.asDirectChildOf(instances[i], enteredInstance);
+        if (!instance || instance === currentInstance) instances.splice(i, 1);
+        else instances[i] = instance;
       }
 
       if (!instances.length) return;

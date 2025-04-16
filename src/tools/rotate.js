@@ -66,15 +66,8 @@ export default (engine) => {
       let instance = selection.getByType('instance').map(el => el.instance).pop() ?? hoveredInstance;
       if (!instance) return;
 
-      let parent = SubInstance.getParent(instance);
-      while (parent && parent.instance !== enteredInstance) {
-        instance = parent.instance;
-        parent = SubInstance.getParent(instance);
-      }
-
-      if (instance === currentInstance || !SubInstance.belongsTo(instance, enteredInstance)) {
-        return;
-      }
+      instance = SubInstance.asDirectChildOf(instance, enteredInstance);
+      if (!instance || instance === currentInstance) return;
 
       const originalSelection = selection.elements.slice();
 

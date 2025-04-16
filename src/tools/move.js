@@ -157,16 +157,9 @@ export default (engine) => {
           selectedInstances.push(hoveredInstance);
         }
 
-        for (let i = 0; i < selectedInstances.length; ++i) {
-          let parent = SubInstance.getParent(selectedInstances[i]);
-          while (parent && parent.instance !== enteredInstance) {
-            selectedInstances[i] = parent.instance;
-            parent = SubInstance.getParent(selectedInstances[i]);
-          }
-
-          if (SubInstance.belongsTo(selectedInstances[i], enteredInstance)) {
-            movementSelection.push({ type: 'instance', instance: selectedInstances[i] });
-          }
+        for (const selectedInstance of selectedInstances) {
+          const instance = SubInstance.asDirectChildOf(selectedInstance, enteredInstance);
+          if (instance) movementSelection.push({ type: 'instance', instance });
         }
       }
 

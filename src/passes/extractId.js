@@ -257,13 +257,10 @@ export default (engine) => {
           let instance = entities.getFirstByTypeAndIntId(Instance, instanceId);
           if (!instance) continue;
 
-          let parent = SubInstance.getParent(instance);
-          while (parent && parent.instance !== enteredInstance) {
-            instance = parent.instance;
-            parent = SubInstance.getParent(instance);
-          }
+          const directChild = SubInstance.asDirectChildOf(instance, enteredInstance);
+          if (directChild) instance = directChild;
 
-          if ((parent?.instance ?? null) === enteredInstance && !selectedInstanceIds.has(instance.Id.int)) {
+          if (directChild && !selectedInstanceIds.has(instance.Id.int)) {
             selectedInstanceIds.add(instanceId);
             selectedInstanceIds.add(instance.Id.int);
             selection.push({ type: 'instance', id: instance.Id.int, instance });
