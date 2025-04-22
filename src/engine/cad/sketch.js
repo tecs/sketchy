@@ -849,7 +849,16 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
    * @returns {T}
    */
   static cloneConstraint(constraint) {
-    return /** @type {T} */ ({ type: constraint.type, data: constraint.data, indices: [...constraint.indices] });
+    const newConstraint = /** @type {T} */ ({ ...constraint });
+    newConstraint.indices = [...newConstraint.indices];
+    switch (newConstraint.type) {
+      case 'distance':
+      case 'width':
+      case 'height':
+      case 'angle':
+        newConstraint.labelOffset = [...newConstraint.labelOffset];
+    }
+    return newConstraint;
   }
 
   #recompute() {
@@ -899,6 +908,13 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
     }
 
     const constraint = /** @type {T} */ ({ type, indices, data });
+    switch (constraint.type) {
+      case 'distance':
+      case 'width':
+      case 'height':
+      case 'angle':
+        constraint.labelOffset = [0, 0];
+    }
     this.addConstraint(constraint);
     return constraint;
   }
@@ -1386,6 +1402,13 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
     return /** @type {R[]} */ (type ? this.data.constraints.filter(c => c.type === type) : this.data.constraints);
   }
 
+  /**
+   * @param {number} constraintIndex
+   * @returns {Constraints?}
+   */
+  getConstraint(constraintIndex) {
+    return this.data.constraints[constraintIndex] ?? null;
+  }
   /**
    * @param {number} lineId
    * @returns {boolean}

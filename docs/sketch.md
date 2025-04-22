@@ -155,7 +155,7 @@ What makes support elements extremely useful is that it can, just like regular e
 
 
 ### Move
-The global [move tool](tools.md#move) is enabled, allowing it to move the [selected or underlying](tools.md#operation) lines and endpoints.
+The global [move tool](tools.md#move) is enabled, allowing it to move the [selected or underlying](tools.md#operation) lines, endpoints and constraint labels.
 
 ### Line
 ![Line tool icon](images/line-tool.png)

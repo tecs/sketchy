@@ -10,14 +10,20 @@ const { glMatrix: { equals }, vec2 } = glMatrix;
  * @property {D} data
  */
 
-/** @typedef {Constraint<"distance", 2, number>} DistanceConstraint */
-/** @typedef {Constraint<"width", 2, number>} WidthConstraint */
-/** @typedef {Constraint<"height", 2, number>} HeightConstraint */
+/**
+ * @template {string} T
+ * @template {number} I
+ * @typedef {Constraint<T, I, number> & { labelOffset: PlainVec2 }} MovableConstraint
+ */
+
+/** @typedef {MovableConstraint<"distance", 2>} DistanceConstraint */
+/** @typedef {MovableConstraint<"width", 2>} WidthConstraint */
+/** @typedef {MovableConstraint<"height", 2>} HeightConstraint */
 /** @typedef {Constraint<"coincident", 2>} CoincidentConstraint */
 /** @typedef {Constraint<"horizontal", 2>} HorizontalConstraint */
 /** @typedef {Constraint<"vertical", 2>} VerticalConstraint */
 /** @typedef {Constraint<"equal", 4>} EqualConstraint */
-/** @typedef {Constraint<"angle", 4, number>} AngleConstraint */
+/** @typedef {MovableConstraint<"angle", 4>} AngleConstraint */
 /** @typedef {Constraint<"parallel", 4>} ParallelConstraint */
 /** @typedef {Constraint<"perpendicular", 4>} PerpendicularConstraint */
 

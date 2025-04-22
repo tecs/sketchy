@@ -3,7 +3,7 @@ import Id from '../engine/general/id.js';
 import { DEG_TO_RAD, Properties, RAD_TO_DEG, TAU } from '../engine/general/properties.js';
 import WebGLFont from './webgl-font.js';
 
-const { vec2, vec3, vec4, mat4 } = glMatrix;
+const { vec2, vec3, vec4, mat4, glMatrix: { equals } } = glMatrix;
 
 /**
  * @typedef Label
@@ -95,64 +95,85 @@ const calculateMarkerArrow = (out, offset, length, arrowSize) => {
 
 /**
  * @param {Float32Array} out Float32Array(20)
+ * @param {ReadonlyVec2} coord
  * @param {number} charWidth
  * @param {number} textLength
  */
-const calculateMarkerArrows = (out, charWidth, textLength) => {
-  const gap = textLength * charWidth;
-
+const calculateMarkerArrows = (out, coord, charWidth, textLength) => {
   const left = /** @type {ReadonlyVec2} */ (out.subarray(2, 4));
   const right = /** @type {ReadonlyVec2} */ (out.subarray(12, 14));
 
-  const distance = (vec2.distance(left, right) - gap) * 0.5;
+  const idx = equals(coord[0], left[0]) ? 1 : 0;
+  const pos = (coord[idx] - left[idx]) / (right[idx] - left[idx]);
 
-  calculateMarkerArrow(out, 0, distance, charWidth);
-  calculateMarkerArrow(out, 10, distance, charWidth);
+  if (pos <= 0 || pos >= 1) charWidth *= -1;
+  const gap = textLength * charWidth * 0.5;
+
+  const distance = vec2.distance(left, right);
+  const distanceLeft = pos <= 1 ? distance * pos - gap : charWidth * 2;
+  const distanceRight = pos >= 0 ? distance * (1 - pos) - gap : charWidth * 2;
+
+  calculateMarkerArrow(out, 0, distanceLeft, charWidth);
+  calculateMarkerArrow(out, 10, distanceRight, charWidth);
 };
 
 /**
  * @param {Float32Array} out Float32Array(20)
+ * @param {Readonly<PlainVec2>} offset
  * @param {ReadonlyVec2} p1
  * @param {ReadonlyVec2} p2
- * @param {number} charWidth
  * @param {0 | 1 | 2} direction 0 = horizontal, 1 = vertical, 2 = perpendicular
  * @returns {ReadonlyVec2}
  */
-const calculateMarkerBounds = (out, p1, p2, charWidth, direction) => {
-  const offset = 2 * charWidth;
-
+const calculateMarkerBounds = (out, offset, p1, p2, direction) => {
   out.set(p1);
   out.set(p2, 10);
 
+  midpoint(temp1Vec2, p1, p2);
+  temp1Vec2[0] += offset[0];
+  temp1Vec2[1] += offset[1];
+
   switch (direction) {
     case 0:
-      temp1Vec2[0] = p1[0];
-      temp1Vec2[1] = Math.min(p1[1], p2[1]) - offset;
-      out.set(temp1Vec2, 2);
-      temp1Vec2[0] = p2[0];
-      out.set(temp1Vec2, 12);
+      temp1Vec2[1] -= Math.abs(p1[1] - p2[1]) * 0.5;
+      out[2] = p1[0];
+      out[3] = temp1Vec2[1];
+      out[12] = p2[0];
+      out[13] = temp1Vec2[1];
       break;
     case 1:
-      temp1Vec2[1] = p1[1];
-      temp1Vec2[0] = Math.max(p1[0], p2[0]) + offset;
-      out.set(temp1Vec2, 2);
-      temp1Vec2[1] = p2[1];
-      out.set(temp1Vec2, 12);
+      temp1Vec2[0] += Math.abs(p1[0] - p2[0]) * 0.5;
+      out[2] = temp1Vec2[0];
+      out[3] = p1[1];
+      out[12] = temp1Vec2[0];
+      out[13] = p2[1];
       break;
     case 2:
-      perpendicular(temp2Vec2, p1, p2, 2);
-      vec2.scale(temp2Vec2, temp2Vec2, offset);
+      const p3 = temp1Vec2;
+      const ab = vec2.fromValues(p3[0] - p1[0], p3[1] - p1[1]);
+      const ac = vec2.fromValues(p3[0] - p2[0], p3[1] - p2[1]);
+      const bc3 = vec3.fromValues(p2[0] - p1[0], p2[1] - p1[1], 0);
 
-      vec2.add(temp1Vec2, temp2Vec2, p1);
-      out.set(temp1Vec2, 2);
-      vec2.add(temp1Vec2, temp2Vec2, p2);
-      out.set(temp1Vec2, 12);
+      vec2.cross(tempVec3, ab, ac);
+      vec3.cross(tempVec3, tempVec3, bc3);
+      temp2Vec2[0] = tempVec3[0];
+      temp2Vec2[1] = tempVec3[1];
+
+      const doubleArea = Math.abs(bc3[1] * p3[0] - bc3[0] * p3[1] + p2[0] * p1[1] - p2[1] * p1[0]);
+      const altitude = doubleArea / Math.hypot(bc3[0], bc3[1]);
+
+      vec2.normalize(temp2Vec2, temp2Vec2);
+      vec2.scale(temp2Vec2, temp2Vec2, altitude);
+
+      out[2] = p1[0] + temp2Vec2[0];
+      out[3] = p1[1] + temp2Vec2[1];
+      out[12] = p2[0] + temp2Vec2[0];
+      out[13] = p2[1] + temp2Vec2[1];
+
       break;
   }
 
-  const left = /** @type {ReadonlyVec2} */ (out.subarray(2, 4));
-  const right = /** @type {ReadonlyVec2} */ (out.subarray(12, 14));
-  return vec2.clone(midpoint(temp1Vec2, left, right));
+  return vec2.clone(temp1Vec2);
 };
 
 /**
@@ -350,9 +371,9 @@ export default (engine) => {
         switch (constraint.type) {
           case 'width': {
             const text = Properties.stringifyDistance(constraint.data);
-            const coord = calculateMarkerBounds(vertex, points[0].vec2, points[1].vec2, charWidth, 0);
+            const coord = calculateMarkerBounds(vertex, constraint.labelOffset, points[0].vec2, points[1].vec2, 0);
             const [scale, arrowScaling] = distanceToSketchElement(coord);
-            calculateMarkerArrows(vertex, arrowScaling * charWidth, text.length);
+            calculateMarkerArrows(vertex, coord, arrowScaling * charWidth, text.length);
             labels.push({ text, coord, labelColor, id, scale });
 
             ctx.bufferData(ctx.ARRAY_BUFFER, vertex, ctx.DYNAMIC_DRAW);
@@ -361,9 +382,9 @@ export default (engine) => {
           }
           case 'height': {
             const text = Properties.stringifyDistance(constraint.data);
-            const coord = calculateMarkerBounds(vertex, points[0].vec2, points[1].vec2, charWidth, 1);
+            const coord = calculateMarkerBounds(vertex, constraint.labelOffset, points[0].vec2, points[1].vec2, 1);
             const [scale, arrowScaling] = distanceToSketchElement(coord);
-            calculateMarkerArrows(vertex, arrowScaling * charWidth, 1);
+            calculateMarkerArrows(vertex, coord, arrowScaling * charWidth, 1);
             labels.push({ text, coord, labelColor, id, scale });
 
             ctx.bufferData(ctx.ARRAY_BUFFER, vertex, ctx.DYNAMIC_DRAW);
@@ -372,9 +393,9 @@ export default (engine) => {
           }
           case 'distance': {
             const text = Properties.stringifyDistance(constraint.data);
-            const coord = calculateMarkerBounds(vertex, points[0].vec2, points[1].vec2, charWidth, 2);
+            const coord = calculateMarkerBounds(vertex, constraint.labelOffset, points[0].vec2, points[1].vec2, 2);
             const [scale, arrowScaling] = distanceToSketchElement(coord);
-            calculateMarkerArrows(vertex, arrowScaling * charWidth, text.length);
+            calculateMarkerArrows(vertex, coord, arrowScaling * charWidth, text.length);
             labels.push({ text, coord, labelColor, id, scale });
 
             ctx.bufferData(ctx.ARRAY_BUFFER, vertex, ctx.DYNAMIC_DRAW);
@@ -438,17 +459,30 @@ export default (engine) => {
               midpoint(temp2Vec2, points[0].vec2, points[1].vec2, points[2].vec2, points[3].vec2);
             }
 
-            const radius = (Math.hypot(diffX1, diffY1) + Math.hypot(diffX2, diffY2)) * 0.5;
+            let radius = (Math.hypot(diffX1, diffY1) + Math.hypot(diffX2, diffY2)) * 0.5;
             const degrees = Math.floor(constraint.data * RAD_TO_DEG);
 
             let angleStart = Math.atan2(-diffY1, -diffX1);
             if (angleStart < 0) angleStart += TAU;
 
+            const angleLabel = angleStart + constraint.data * 0.5;
+            const cosLabel = Math.cos(angleLabel);
+            const sinLabel = Math.sin(angleLabel);
+
+            if (constraint.labelOffset[0] !== 0 || constraint.labelOffset[1] !== 0) {
+              const angleOffset = Math.atan2(constraint.labelOffset[1], constraint.labelOffset[0]);
+              const radiusOffset = Math.hypot(...constraint.labelOffset);
+              const x = cosLabel * radius + Math.cos(angleOffset) * radiusOffset;
+              const y = sinLabel * radius + Math.sin(angleOffset) * radiusOffset;
+              radius = Math.hypot(x, y);
+            }
+
             const coord = vec2.clone(temp2Vec2);
             coord[0] += text.length * charWidth * 0.5;
             coord[1] -= charHeight * 0.5;
-            coord[0] += Math.cos(angleStart + constraint.data * 0.5) * (radius + text.length * charWidth * 2);
-            coord[1] += Math.sin(angleStart + constraint.data * 0.5) * (radius - charHeight * 2);
+            coord[0] += cosLabel * (radius + text.length * charWidth * 2);
+            coord[1] += sinLabel * (radius - charHeight * 2);
+
             labels.push({ text, coord, labelColor, id });
 
             temp1Vec2[0] = Math.cos(angleStart) * radius + temp2Vec2[0];
