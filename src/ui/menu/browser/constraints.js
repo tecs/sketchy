@@ -6,7 +6,7 @@ import { Properties } from '../../../engine/general/properties.js';
  * @param {import("../../lib/index.js").UITabs} tabs
  */
 export default (engine, tabs) => {
-  const { editor: { selection }, scene } = engine;
+  const { editor: { selection }, history, scene } = engine;
   const tab = tabs.addTab('Constraints');
   const table = tab.addTable(3);
   tab.hide();
@@ -60,8 +60,22 @@ export default (engine, tabs) => {
           });
           engine.emit('propertyrequest', propertyData, /** @param {number} value */ (value) => {
             if (value <= 0 && propertyData.type === 'distance') return;
-            constraint.data = value;
-            sketch.update();
+            if (value === constraint.data) return;
+
+            const action = history.createAction(`Change value of ${constraint.type} constraint `, constraint.data);
+            if (!action) return;
+
+            action.append(
+              () => {
+                constraint.data = value;
+                sketch.update();
+              },
+              oldValue => {
+                constraint.data = oldValue;
+                sketch.update();
+              },
+            );
+            action.commit();
           });
         },
         style: { fontWeight: selected ? 'bold' : '' },
