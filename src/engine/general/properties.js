@@ -325,6 +325,31 @@ export class Properties {
   }
 
   /**
+   * @template {PropertyData} P
+   * @param {P} property
+   * @returns {P}
+   */
+  static clone(property) {
+    const newProperty = /** @type {P} */ ({ ...property });
+
+    switch (newProperty.type) {
+      case 'vec2':
+      case 'coord2d':
+        newProperty.value = vec2.clone(newProperty.value);
+        break;
+      case 'vec3':
+      case 'coord':
+        newProperty.value = vec3.clone(newProperty.value);
+        break;
+      case 'color':
+        newProperty.value = [...newProperty.value];
+        break;
+    }
+
+    return newProperty;
+  }
+
+  /**
    * @param {PropertyDefinitions} [overrides]
    * @returns {PropertyDefinitions}
    */

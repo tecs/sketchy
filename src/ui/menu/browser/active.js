@@ -21,7 +21,7 @@ export default (engine, tabs) => {
     tab.show();
     tab.clearChildren();
 
-    renderProperties(instance.Properties.get(), tab);
+    renderProperties(instance.Properties.get(), tab, engine.history);
   };
 
   /**

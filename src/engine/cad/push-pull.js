@@ -45,8 +45,8 @@ export default class Pull extends /** @type {typeof Step<PullState>} */ (Step) {
           value: this.State.data.distance,
           type: 'distance',
           onEdit: (distance) => {
-            this.State.data.reverse = distance < 0;
-            this.State.data.distance = Math.abs(distance);
+            if (distance < 0) return;
+            this.State.data.distance = distance;
             this.recompute();
           },
         },

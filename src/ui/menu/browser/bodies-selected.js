@@ -18,7 +18,7 @@ export default (engine, tabs) => {
     tab.clearChildren();
     tab.rename(`Selected body (${body.name})`);
 
-    renderProperties(body.Properties.get(), tab);
+    renderProperties(body.Properties.get(), tab, engine.history);
   };
 
   render();

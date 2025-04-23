@@ -18,7 +18,7 @@ export default (engine, tabs) => {
     tab.clearChildren();
     tab.rename(`Selected step (${step.name})`);
 
-    renderProperties(step.Properties.get(), tab);
+    renderProperties(step.Properties.get(), tab, engine.history);
   };
 
   render();

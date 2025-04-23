@@ -44,7 +44,7 @@ export default class Placement extends implement({
         },
       ],
       Properties: [
-        (axis = vec3.create(), angle = quat.getAxisAngle(axis, this.rotation)) => ({
+        (axis = vec3.create()) => ({
           Placement: {
             Position: {
               value: this.translation,
@@ -58,14 +58,17 @@ export default class Placement extends implement({
               value: axis,
               type: 'vec3',
               onEdit: (normal) => {
+                const angle = quat.getAxisAngle(axis, this.rotation);
                 const component = (normal[1] !== axis[1] ? 1 : 0) + (normal[2] !== axis[2] ? 2 : 0);
-                const value = Math.min(Math.max(normal[component], -1), 1);
-                normal[component] = 0;
+                if (component < 3) {
+                  const value = Math.min(Math.max(normal[component], -1), 1);
+                  normal[component] = 0;
 
-                const length = vec3.length(normal);
-                if (length > 0) vec3.scale(normal, normal, Math.sqrt(1 - value * value) / length);
+                  const length = vec3.length(normal);
+                  if (length > 0) vec3.scale(normal, normal, Math.sqrt(1 - value * value) / length);
 
-                normal[component] = value;
+                  normal[component] = value;
+                }
                 vec3.normalize(normal, normal);
 
                 if (vec3.length(normal) === 0) return;
@@ -75,10 +78,10 @@ export default class Placement extends implement({
               },
             },
             Angle: {
-              value: angle,
+              value: quat.getAxisAngle(axis, this.rotation),
               type: 'angle',
               onEdit: (value) => {
-                this.rotate(value - angle, axis);
+                this.rotate(value - quat.getAxisAngle(axis, this.rotation), axis);
               },
             },
             Scale: {
