@@ -9,6 +9,7 @@ const { vec3 } = glMatrix;
  * @property {PushPull?} step
  * @property {ReadonlyVec3} origin
  * @property {vec3} target
+ * @property {boolean} reverse
  */
 
 // cached structures
@@ -45,7 +46,8 @@ export default (engine) => {
     setValue(distance) {
       if (!historyAction?.data.step) return;
       const { step } = historyAction.data;
-      step.data.reverse = distance < 0;
+      historyAction.data.reverse = distance < 0;
+      step.data.reverse = historyAction.data.reverse;
       step.data.distance = Math.abs(distance);
       step.recompute();
 
@@ -70,6 +72,7 @@ export default (engine) => {
         step: null,
         origin: vec3.clone(scene.hovered),
         target: vec3.clone(scene.hovered),
+        reverse: false,
       }, () => {
         historyAction = undefined;
         selection.set(originalSelection);
@@ -88,7 +91,7 @@ export default (engine) => {
       historyAction.append(
         (data) => {
           const distance = vec3.distance(data.origin, data.target);
-          data.step = body.createStep(PushPull, { distance, faceId, reverse: false });
+          data.step = body.createStep(PushPull, { distance, faceId, reverse: data.reverse });
         },
         (data) => {
           if (data.step) {
@@ -107,7 +110,8 @@ export default (engine) => {
       vec3.copy(target, scene.hovered);
       vec3.subtract(tempVec3, target, origin);
       vec3.multiply(tempVec3, tempVec3, step.normal);
-      step.data.reverse = vec3.dot(tempVec3, step.normal) < 0;
+      historyAction.data.reverse = vec3.dot(tempVec3, step.normal) < 0;
+      step.data.reverse = historyAction.data.reverse;
       step.data.distance = vec3.length(tempVec3);
       step.recompute();
     },
