@@ -9,6 +9,7 @@ const { vec3 } = glMatrix;
  * @property {PushPull?} step
  * @property {ReadonlyVec3} origin
  * @property {vec3} target
+ * @property {vec3} normalMask
  * @property {boolean} reverse
  */
 
@@ -72,6 +73,7 @@ export default (engine) => {
         step: null,
         origin: vec3.clone(scene.hovered),
         target: vec3.clone(scene.hovered),
+        normalMask: vec3.create(),
         reverse: false,
       }, () => {
         historyAction = undefined;
@@ -92,6 +94,8 @@ export default (engine) => {
         (data) => {
           const distance = vec3.distance(data.origin, data.target);
           data.step = body.createStep(PushPull, { distance, faceId, reverse: data.reverse });
+          const { normal } = data.step;
+          vec3.set(data.normalMask, Math.abs(normal[0]), Math.abs(normal[1]), Math.abs(normal[2]));
         },
         (data) => {
           if (data.step) {
@@ -104,12 +108,12 @@ export default (engine) => {
     update() {
       if (!historyAction) return;
 
-      const { data: { target, origin, step } } = historyAction;
+      const { data: { target, origin, normalMask, step } } = historyAction;
       if (!step) return;
 
       vec3.copy(target, scene.hovered);
       vec3.subtract(tempVec3, target, origin);
-      vec3.multiply(tempVec3, tempVec3, step.normal);
+      vec3.multiply(tempVec3, tempVec3, normalMask);
       historyAction.data.reverse = vec3.dot(tempVec3, step.normal) < 0;
       step.data.reverse = historyAction.data.reverse;
       step.data.distance = vec3.length(tempVec3);
