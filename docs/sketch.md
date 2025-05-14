@@ -129,7 +129,7 @@ Lists the sketch elements and their type, emphasizing the selected ones if any. 
 ### Constraint details
 ![Sketch constraints browser](images/constraints-browser.png)
 
-Lists the sketch constraints, their type, and their value if any.
+Lists the sketch constraints, their type, and their value if any. Values followed by a <sup>*`(fn)`*</sup> superscript are derived from a [formula](formulas.md).
 
 Selected constraints in the viewport are emphasized in the list. If there are no selected constraints, but there are selected elements instead, the related constraints of these selected elements are emphasized. Clicking on an entry from the list selects its corresponding constraint in the viewport.
 

@@ -7,7 +7,7 @@
   "scripts": {
     "dev": "concurrently --kill-others 'tsc -w' 'chokidar \"**/*.js\" \"**/*.ts\" -i \"node_modules\" --silent --initial -c \"eslint .\"' 'http-server . -c-1 -s'",
     "lint": "eslint .",
-    "test": "node --test --experimental-test-coverage"
+    "test": "node --test --experimental-test-coverage --test-coverage-exclude='libs/**/*'"
   },
   "author": "Alexander Ivanov",
   "license": "MIT",

@@ -255,6 +255,10 @@ dialog::backdrop {
   margin: 0 -1em -1em;
 }
 
+.windowBody .error {
+  color: #F00;
+}
+
 /* Settings */
 
 .settings {

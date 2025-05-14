@@ -7,22 +7,21 @@ const { vec2, vec3 } = glMatrix;
  */
 
 /**
- * @typedef Unit
- * @property {string} suffix
- * @property {number} toBase
- * @property {number} fromBase
+ * @template T
+ * @template {string} S
+ * @typedef {TypedPropertyData<T, S> & { formula?: string }} ParametricPropertyData
  */
 
-/** @typedef {TypedPropertyData<string, "plain">} PlainPropertyData */
-/** @typedef {TypedPropertyData<number, "number">} NumberPropertyData */
-/** @typedef {TypedPropertyData<boolean, "boolean">} BooleanPropertyData */
+/** @typedef {ParametricPropertyData<string, "plain">} PlainPropertyData */
+/** @typedef {ParametricPropertyData<number, "number">} NumberPropertyData */
+/** @typedef {ParametricPropertyData<boolean, "boolean">} BooleanPropertyData */
 /** @typedef {TypedPropertyData<PlainVec3, "color">} ColorPropertyData */
 /** @typedef {TypedPropertyData<vec2, "vec2">} Vec2PropertyData */
 /** @typedef {TypedPropertyData<vec3, "vec3">} Vec3PropertyData */
 /** @typedef {TypedPropertyData<vec2, "coord2d">} Coord2dPropertyData */
 /** @typedef {TypedPropertyData<vec3, "coord">} CoordPropertyData */
-/** @typedef {TypedPropertyData<number, "angle">} AnglePropertyData */
-/** @typedef {TypedPropertyData<number, "distance">} DistancePropertyData */
+/** @typedef {ParametricPropertyData<number, "angle">} AnglePropertyData */
+/** @typedef {ParametricPropertyData<number, "distance">} DistancePropertyData */
 /** @typedef {PlainPropertyData | BooleanPropertyData | NumberPropertyData} PrimitivePropertiesData */
 /** @typedef {PrimitivePropertiesData | Vec2PropertyData | Vec3PropertyData | ColorPropertyData} PlainPropertiesData */
 /** @typedef {DistancePropertyData | Coord2dPropertyData | CoordPropertyData} DistancePropertiesData */
@@ -30,31 +29,42 @@ const { vec2, vec3 } = glMatrix;
 /** @typedef {Record<string, Record<string, PropertyData>>} PropertyDefinitions */
 /** @typedef {[property: PropertyData, name: string, category: string]} PropertyMapping */
 
+/**
+ * @typedef Unit
+ * @property {string} suffix
+ * @property {number} toBase
+ * @property {number} fromBase
+ * @property {Exclude<Find<PropertyData, "value", number>["type"], "number">} type
+ */
+
 export const RAD_TO_DEG = 180 / Math.PI;
 export const DEG_TO_RAD = Math.PI / 180;
 export const TAU = Math.PI * 2;
 
+/** @type {Readonly<Unit>[]} */
+const DISTANCE_UNITS = [
+  { suffix: 'pm', toBase: 1e-9, fromBase: 1e+9, type: 'distance' },
+  { suffix: 'nm', toBase: 1e-6, fromBase: 1e+6, type: 'distance' },
+  { suffix: 'um', toBase: 1e-3, fromBase: 1e+3, type: 'distance' },
+  { suffix: 'mm', toBase: 1e+0, fromBase: 1e+0, type: 'distance' },
+  { suffix: 'cm', toBase: 1e+1, fromBase: 1e-1, type: 'distance' },
+  { suffix:  'm', toBase: 1e+3, fromBase: 1e-3, type: 'distance' },
+  { suffix: 'km', toBase: 1e+6, fromBase: 1e-6, type: 'distance' },
+];
+
+/** @type {Readonly<Unit>[]} */
+const ANGLE_UNITS = [
+  { suffix: 'rad', toBase: 1, fromBase: 1, type: 'angle' },
+  { suffix:   '°', toBase: DEG_TO_RAD, fromBase: RAD_TO_DEG, type: 'angle' },
+  { suffix: 'deg', toBase: DEG_TO_RAD, fromBase: RAD_TO_DEG, type: 'angle' },
+];
+
+/** @type {Readonly<Unit>[]} */
+const ALL_UNITS = DISTANCE_UNITS.concat(ANGLE_UNITS);
+
 export class Properties {
   /** @type {() => PropertyDefinitions} */
   #getFn;
-
-  /** @type {Readonly<Unit>[]} */
-  static DISTANCE_UNITS = [
-    { suffix: 'pm', toBase: 1e-9, fromBase: 1e+9 },
-    { suffix: 'nm', toBase: 1e-6, fromBase: 1e+6 },
-    { suffix: 'um', toBase: 1e-3, fromBase: 1e+3 },
-    { suffix: 'mm', toBase: 1e+0, fromBase: 1e+0 },
-    { suffix: 'cm', toBase: 1e+1, fromBase: 1e-1 },
-    { suffix:  'm', toBase: 1e+3, fromBase: 1e-3 },
-    { suffix: 'km', toBase: 1e+6, fromBase: 1e-6 },
-  ];
-
-  /** @type {Readonly<Unit>[]} */
-  static ANGLE_UNITS = [
-    { suffix: 'rad', toBase: 1, fromBase: 1 },
-    { suffix:   '°', toBase: DEG_TO_RAD, fromBase: RAD_TO_DEG },
-    { suffix: 'deg', toBase: DEG_TO_RAD, fromBase: RAD_TO_DEG },
-  ];
 
   /**
    * @param {() => PropertyDefinitions} getFn
@@ -98,6 +108,14 @@ export class Properties {
   }
 
   /**
+   * @param {string} unit
+   * @returns {Unit["type"]?}
+   */
+  static findType(unit) {
+    return ALL_UNITS.find(({ suffix }) => suffix === unit)?.type ?? null;
+  }
+
+  /**
    * @param {string} value
    * @param {Readonly<Unit>[]} units
    * @returns {number?}
@@ -127,7 +145,7 @@ export class Properties {
    * @returns {number?}
    */
   static parseAngle(value) {
-    let angle = Properties.parseUnit(value, Properties.ANGLE_UNITS);
+    let angle = Properties.parseUnit(value, ANGLE_UNITS);
     if (angle === null) return null;
     while (angle >= TAU || angle < 0) angle -= TAU * Math.sign(angle);
     return angle;
@@ -138,7 +156,7 @@ export class Properties {
    * @returns {number?}
    */
   static parseDistance(value) {
-    return Properties.parseUnit(value, Properties.DISTANCE_UNITS);
+    return Properties.parseUnit(value, DISTANCE_UNITS);
   }
 
   /**
@@ -245,7 +263,7 @@ export class Properties {
    */
   static stringifyDistance(value, precision) {
     const searchValue = Math.abs(value === 0 ? 1 : value * 0.1);
-    const unit = Properties.DISTANCE_UNITS.find(u => searchValue <= u.toBase) ?? Properties.DISTANCE_UNITS[0];
+    const unit = DISTANCE_UNITS.find(u => searchValue <= u.toBase) ?? DISTANCE_UNITS[0];
     return `${Properties.stringifyNumber(value * unit.fromBase, precision)}${unit.suffix}`;
   }
 

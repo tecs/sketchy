@@ -64,7 +64,7 @@ export default (engine) => {
       line.data[3] = coord[1];
 
       historyAction.data.length = distance;
-      historyAction.append((data) => data.sketch.distance(data.length, data.line), () => {});
+      historyAction.append((data) => data.sketch.distance(data.length, data.line, String(distance)), () => {});
 
       sketch.update();
 

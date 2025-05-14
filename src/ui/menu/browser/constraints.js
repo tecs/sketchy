@@ -1,6 +1,8 @@
 import Sketch from '../../../engine/cad/sketch.js';
 import { Properties } from '../../../engine/general/properties.js';
 
+/** @typedef {(value: number, formula: string) => void} PropHandler */
+
 /**
  * @param {Engine} engine
  * @param {import("../../lib/index.js").UITabs} tabs
@@ -39,47 +41,64 @@ export default (engine, tabs) => {
         || constraint.indices.some(index => selectedPointIndices.includes(index))
         || selectedLineConstraints.includes(constraint);
 
-      table.addRow(
-        `${i + 1}`,
-        constraint.type,
-        constraint.data !== null ? Properties.stringify({
+      let displayValue = '';
+      let isFormula = false;
+
+      if (typeof constraint.data === 'number') {
+        const prop = /** @type {const} */ ({
           type: constraint.type === 'angle' ? 'angle' : 'distance',
           value: constraint.data,
-        }, 3) : '',
-      ).$element({
+        });
+
+        displayValue = Properties.stringify(prop, 3);
+
+        const formula = constraint.formula.trim();
+        isFormula = formula !== String(constraint.data) && formula !== Properties.stringify(prop);
+      }
+
+      const row = table.addRow(`${i + 1}`, constraint.type, displayValue).$element({
         onclick: ({ detail }) => {
           if (detail === 1) {
             selection.set({ id: i, type: 'constraint', instance: scene.currentInstance });
             return;
           }
-          const isNumeric = ['distance', 'width', 'height', 'angle'].includes(constraint.type);
-          if (detail !== 2 || !isNumeric) return;
+          if (detail !== 2 || typeof constraint.data !== 'number') return;
           const propertyData = /** @type {{ type: "distance", value: number }} */ ({
             type: constraint.type === 'angle' ? 'angle' : 'distance',
             value: constraint.data,
+            formula: constraint.formula,
           });
-          engine.emit('propertyrequest', propertyData, /** @param {number} value */ (value) => {
+          engine.emit('propertyrequest', propertyData, /** @type {PropHandler} */ ((value, formula) => {
             if (value <= 0 && propertyData.type === 'distance') return;
-            if (value === constraint.data) return;
+            if (value === constraint.data && formula === constraint.formula) return;
 
-            const action = history.createAction(`Change value of ${constraint.type} constraint `, constraint.data);
+            const action = history.createAction(`Change value of ${constraint.type} constraint `, {
+              oldValue: constraint.data,
+              oldFormula: constraint.formula,
+            });
             if (!action) return;
 
             action.append(
               () => {
                 constraint.data = value;
+                constraint.formula = formula;
                 sketch.update();
               },
-              oldValue => {
+              ({ oldValue, oldFormula }) => {
                 constraint.data = oldValue;
+                constraint.formula = oldFormula;
                 sketch.update();
               },
             );
             action.commit();
-          });
+          }));
         },
         style: { fontWeight: selected ? 'bold' : '' },
       });
+
+      if (isFormula) {
+        row.children[2].innerHTML += '<sup><em>(fn)</em></sup>';
+      }
     }
   };
 

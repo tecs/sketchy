@@ -3,17 +3,21 @@ const { glMatrix: { equals }, vec2 } = glMatrix;
 /**
  * @template {string} T
  * @template {number} I
- * @template {import("../general/state.js").Value} [D=null]
  * @typedef Constraint
  * @property {T} type
  * @property {Tuple<number, I>} indices
- * @property {D} data
+ * @property {null} data
  */
 
 /**
  * @template {string} T
  * @template {number} I
- * @typedef {Constraint<T, I, number> & { labelOffset: PlainVec2 }} MovableConstraint
+ * @typedef MovableConstraint
+ * @property {T} type
+ * @property {Tuple<number, I>} indices
+ * @property {number} data
+ * @property {string} formula
+ * @property {PlainVec2} labelOffset
  */
 
 /** @typedef {MovableConstraint<"distance", 2>} DistanceConstraint */

@@ -56,7 +56,7 @@ export default [
     rules: {
       '@typescript-eslint/no-shadow': 'error',
       '@typescript-eslint/no-this-alias': 'off',
-      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_'}],
+      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_', caughtErrorsIgnorePattern: '^_' }],
       'arrow-spacing': 'error',
       'block-spacing': 'error',
       'class-methods-use-this': 'error',
@@ -72,7 +72,7 @@ export default [
       'jsdoc/require-returns-description': 'off',
       'max-len': ['error', { code: 120, ignoreStrings: true }],
       'no-console': 'warn',
-      'no-empty': 'error',
+      'no-empty': ['error', { allowEmptyCatch: true }],
       'no-irregular-whitespace': 'error',
       'no-multi-spaces': ['error', { exceptions: { VariableDeclarator: true }}],
       'no-multiple-empty-lines': ['error', { max: 1, maxEOF: 0, maxBOF: 0 }],

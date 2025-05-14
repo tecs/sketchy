@@ -1,6 +1,6 @@
 # [User Manual](README.md) > Editor
 
-Next: [Browser](browser.md),
+Next: [Formulas](formulas.md),
 Previous: [Tools](tools.md)
 
 ## Table of contents
@@ -102,6 +102,8 @@ Situated at the bottom of the viewport, the info bar provides extra information 
 ![Property dialog](images/property-dialog.png)
 
 Some actions requiring a value are not always triggered by a user interaction or an interaction that can represent such a value. In these cases a property dialog is presented, prompting for user input to be entered manually using the appropriate [type](#value-types) and [units](#units).
+
+Some properties also support using [formulas](formulas.md) when inputting a value.
 
 ## Value types
 All property values have a type, and are identified by and represented as a case-insensitive formatted text string, which includes one or more values (with or without units), and optionally a prefix, infix and a suffix.

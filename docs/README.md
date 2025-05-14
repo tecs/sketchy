@@ -5,6 +5,7 @@
 - [Concepts](concepts.md)
 - [Tools](tools.md)
 - [Editor](editor.md)
+- [Formulas](formulas.md)
 - [Browser](browser.md)
 - [Steps](steps.md)
 - [Settings](settings.md)

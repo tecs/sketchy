@@ -21,6 +21,8 @@ const { vec2, vec3, mat4, quat } = glMatrix;
 /** @typedef {import("./constraints.js").PerpendicularConstraint} PerpendicularConstraint */
 /** @typedef {import("./constraints.js").Constraints} Constraints */
 
+/** @typedef {(value: number, formula: string) => void} PropHandler */
+
 /**
  * @template {string} T
  * @template {number} S
@@ -438,74 +440,45 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
     };
 
     /**
-     * @template T
-     * @template {unknown[]} A
-     * @param {(...args: A) => T} fn
-     * @returns {(...args: A) => T}
-     */
-    const cache = (fn) => {
-      /** @type {T?} */
-      let result = null;
-      let hydrated = false;
-
-      return (...args) => {
-        if (!hydrated) {
-          result = fn(...args);
-          hydrated = true;
-        }
-        return /** @type {T} */ (result);
-      };
-    };
-
-    /**
      * @param {"distance" | "angle"} type
-     * @param {number} defaultValue
-     * @returns {(value: number) => Promise<number>}
+     * @param {number} value
+     * @param {string} [formula]
+     * @returns {Promise<[number, string]>}
      */
-    const cacheUserValue = (type, defaultValue = 0) => {
-      let hydrated = false;
-
-      return (value) => {
-        const propertyData = /** @type {{ type: "distance", value: number }} */ ({ type, value });
-        if (!hydrated) {
-          hydrated = true;
-          return new Promise(resolve => {
-            engine.emit('propertyrequest', propertyData, /** @param {number} newValue */ (newValue) => {
-              defaultValue = newValue;
-              resolve(newValue);
-            });
-          });
-        }
-        return Promise.resolve(defaultValue);
-      };
+    const getUserValue = (type, value, formula = String(value)) => {
+      type = /** @type {"distance"} */ (type);
+      const propertyData =  ({ type, value, formula });
+      return new Promise(resolve => {
+        engine.emit('propertyrequest', propertyData, /** @type {PropHandler} */ ((newValue, newFormula) => {
+          resolve([newValue, newFormula]);
+        }));
+      });
     };
 
     /**
      * @param {0 | 1} [component]
      * @returns {(...args: import("./sketch-types").ExecArgs<DistanceType>) => void}
      */
-    const cachedDistanceConstraint = (component) => {
-      const getUserValue = cacheUserValue('distance');
-      const getValue = cache(/** @type {(...args: import("./sketch-types").ExecArgs<DistanceType>) => number} */ (
-        (pairs, _, type, sketch) => {
-          for (const indices of pairs) {
-            const constraint = sketch.getConstraintsForPoints(indices, type).pop();
-            if (constraint) return constraint.data;
-          }
-          const p1 = sketch.getPointInfo(pairs[0][0]);
-          const p2 = sketch.getPointInfo(pairs[0][1]);
-          if (!p1 || !p2) return 0;
-          if (component === undefined) return vec2.distance(p1.vec2, p2.vec2);
-          return Math.abs(p1.vec2[component] - p2.vec2[component]);
+    const doDistanceConstraint = (component) => {
+      /** @type {(...args: import("./sketch-types").ExecArgs<DistanceType>) => [number, string?]} */
+      const getValue = (pairs, _, type, sketch) => {
+        for (const indices of pairs) {
+          const constraint = sketch.getConstraintsForPoints(indices, type).pop();
+          if (constraint) return [constraint.data, constraint.formula];
         }
-      ));
+        const p1 = sketch.getPointInfo(pairs[0][0]);
+        const p2 = sketch.getPointInfo(pairs[0][1]);
+        if (!p1 || !p2) return [0];
+        if (component === undefined) return [vec2.distance(p1.vec2, p2.vec2)];
+        return [Math.abs(p1.vec2[component] - p2.vec2[component])];
+      };
 
       return async (pairs, _, constraintType, sketch) => {
-        const value = getValue(pairs, _, constraintType, sketch);
-        const userValue = await getUserValue(value);
+        const [value, formula] = getValue(pairs, _, constraintType, sketch);
+        const [userValue, userFormula] = await getUserValue('distance', value, formula);
         if (userValue <= 0) return;
         for (const indices of pairs) {
-          sketch[constraintType](userValue, indices);
+          sketch[constraintType](userValue, indices, userFormula);
         }
       };
     };
@@ -524,28 +497,26 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
     /**
      * @returns {(...args: import("./sketch-types").ExecArgs<AngleType>) => void}
      */
-    const cachedAngleConstraint = () => {
-      const getUserValue = cacheUserValue('angle');
-      const getValue = cache(/** @type {(...args: import("./sketch-types").ExecArgs<AngleType>) => number} */ (
-        (pairs, _, type, sketch) => {
-          for (const indices of pairs) {
-            const constraint = sketch.getConstraintsForPoints(indices, type).pop();
-            if (constraint) return constraint.data;
-          }
-          const p1 = sketch.getPointInfo(pairs[0][0]);
-          const p2 = sketch.getPointInfo(pairs[0][1]);
-          const p3 = sketch.getPointInfo(pairs[0][2]);
-          const p4 = sketch.getPointInfo(pairs[0][3]);
-          if (!p1 || !p2 || !p3 || !p4) return 0;
-          return cs[type].check({ elements: [p1, p2, p3, p4], incrementScale: 0, value: 0 })[0];
+    const doAngleConstraint = () => {
+      /** @type {(...args: import("./sketch-types").ExecArgs<AngleType>) => [number, string?]} */
+      const getValue = (pairs, _, type, sketch) => {
+        for (const indices of pairs) {
+          const constraint = sketch.getConstraintsForPoints(indices, type).pop();
+          if (constraint) return [constraint.data, constraint.formula];
         }
-      ));
+        const p1 = sketch.getPointInfo(pairs[0][0]);
+        const p2 = sketch.getPointInfo(pairs[0][1]);
+        const p3 = sketch.getPointInfo(pairs[0][2]);
+        const p4 = sketch.getPointInfo(pairs[0][3]);
+        if (!p1 || !p2 || !p3 || !p4) return [0];
+        return [cs[type].check({ elements: [p1, p2, p3, p4], incrementScale: 0, value: 0 })[0]];
+      };
 
       return async (pairs, _, constraintType, sketch) => {
-        const value = getValue(pairs, _, constraintType, sketch);
-        const userValue = await getUserValue(value);
+        const [value, formula] = getValue(pairs, _, constraintType, sketch);
+        const [userValue, userFormula] = await getUserValue('angle', value, formula);
         for (const indices of pairs) {
-          sketch[constraintType](userValue, indices);
+          sketch[constraintType](userValue, indices, userFormula);
         }
       };
     };
@@ -651,14 +622,14 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
     const contextActions = [
       supportContextAction,
       null,
-      makeAction('distance', [['k'], ['d']], extractLinesOrPointPairs, cachedDistanceConstraint(), undoDistanceConstraint),
-      makeAction('width', [['k'], ['l']], extractLinesOrPointPairs, cachedDistanceConstraint(0), undoDistanceConstraint),
-      makeAction('height', [['k'], ['i']], extractLinesOrPointPairs, cachedDistanceConstraint(1), undoDistanceConstraint),
+      makeAction('distance', [['k'], ['d']], extractLinesOrPointPairs, doDistanceConstraint(), undoDistanceConstraint),
+      makeAction('width', [['k'], ['l']], extractLinesOrPointPairs, doDistanceConstraint(0), undoDistanceConstraint),
+      makeAction('height', [['k'], ['i']], extractLinesOrPointPairs, doDistanceConstraint(1), undoDistanceConstraint),
       makeAction('equal', [['k'], ['e']], extractLinePairs, doConstraint, undoConstraint),
       makeAction('coincident', [['k'], ['c']], extractPointPairs, doConstraint, undoConstraint),
       makeAction('horizontal', [['k'], ['h']], extractAllPoints, doConstraint, undoConstraint),
       makeAction('vertical', [['k'], ['v']], extractAllPoints, doConstraint, undoConstraint),
-      makeAction('angle', [['k'], ['a']], extractLinePairWithAxes, cachedAngleConstraint(), undoAngleConstraint),
+      makeAction('angle', [['k'], ['a']], extractLinePairWithAxes, doAngleConstraint(), undoAngleConstraint),
       makeAction('parallel', [['k'], ['p']], extractLinePairsWithAxes, doConstraint, undoConstraint),
       makeAction('perpendicular', [['k'], ['n']], extractLinePairsWithAxes, doConstraint, undoConstraint),
     ];
@@ -897,12 +868,16 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
    * @param {T["type"]} type
    * @param {T["indices"]} indices
    * @param {T["data"]} data
+   * @param {string} [formula]
    * @returns {T}
    */
-  #createConstraint(type, indices, data) {
+  #createConstraint(type, indices, data, formula) {
     const existingConstraint = this.getConstraintsForPoints(indices, type).pop();
     if (existingConstraint) {
       existingConstraint.data = data;
+      if (formula !== undefined && 'formula' in existingConstraint) {
+        existingConstraint.formula = formula;
+      }
       this.update();
       return /** @type {T} */ (/** @type {Constraints} */ (existingConstraint));
     }
@@ -914,6 +889,7 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
       case 'height':
       case 'angle':
         constraint.labelOffset = [0, 0];
+        constraint.formula = formula ?? String(data);
     }
     this.addConstraint(constraint);
     return constraint;
@@ -1073,9 +1049,10 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
   /**
    * @param {number} length
    * @param {LineConstructionElement | [number, number]} lineOrPointIds
+   * @param {string} formula
    * @returns {Readonly<DistanceConstraint>?}
    */
-  distance(length, lineOrPointIds) {
+  distance(length, lineOrPointIds, formula) {
     if (!Array.isArray(lineOrPointIds)) {
       const ids = this.getLineIds(lineOrPointIds);
       if (!ids) return null;
@@ -1083,15 +1060,16 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
       lineOrPointIds = ids;
     } else if (lineOrPointIds.some(idx => idx > -1 && !this.hasPoint(idx))) return null;
 
-    return /** @type {DistanceConstraint} */ (this.#createConstraint('distance', lineOrPointIds, length));
+    return /** @type {DistanceConstraint} */ (this.#createConstraint('distance', lineOrPointIds, length, formula));
   }
 
   /**
    * @param {number} length
    * @param {LineConstructionElement | [number, number]} lineOrPointIds
+   * @param {string} formula
    * @returns {Readonly<WidthConstraint>?}
    */
-  width(length, lineOrPointIds) {
+  width(length, lineOrPointIds, formula) {
     if (!Array.isArray(lineOrPointIds)) {
       const ids = this.getLineIds(lineOrPointIds);
       if (!ids) return null;
@@ -1099,15 +1077,16 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
       lineOrPointIds = ids;
     } else if (lineOrPointIds.some(idx => idx > -1 && !this.hasPoint(idx))) return null;
 
-    return /** @type {WidthConstraint} */ (this.#createConstraint('width', lineOrPointIds, length));
+    return /** @type {WidthConstraint} */ (this.#createConstraint('width', lineOrPointIds, length, formula));
   }
 
   /**
    * @param {number} length
    * @param {LineConstructionElement | [number, number]} lineOrPointIds
+   * @param {string} formula
    * @returns {Readonly<HeightConstraint>?}
    */
-  height(length, lineOrPointIds) {
+  height(length, lineOrPointIds, formula) {
     if (!Array.isArray(lineOrPointIds)) {
       const ids = this.getLineIds(lineOrPointIds);
       if (!ids) return null;
@@ -1115,7 +1094,7 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
       lineOrPointIds = ids;
     } else if (lineOrPointIds.some(idx => idx > -1 && !this.hasPoint(idx))) return null;
 
-    return /** @type {HeightConstraint} */ (this.#createConstraint('height', lineOrPointIds, length));
+    return /** @type {HeightConstraint} */ (this.#createConstraint('height', lineOrPointIds, length, formula));
   }
 
   /**
@@ -1179,12 +1158,13 @@ export default class Sketch extends /** @type {typeof Step<SketchState>} */ (Ste
   /**
    * @param {number} value
    * @param {[number, number, number, number]} pointIds
+   * @param {string} formula
    * @returns {Readonly<AngleConstraint>?}
    */
-  angle(value, pointIds) {
+  angle(value, pointIds, formula) {
     if (pointIds.some((v, i, a) => a.indexOf(v) !== i)) return null;
 
-    return /** @type {AngleConstraint} */ (this.#createConstraint('angle', pointIds, value));
+    return /** @type {AngleConstraint} */ (this.#createConstraint('angle', pointIds, value, formula));
   }
 
   /**

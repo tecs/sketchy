@@ -25,3 +25,8 @@ type KeyFor<T, V> = { [K in keyof T]: T[K] extends V ? K : never}[keyof T];
 type Find<U, K extends keyof U, V extends keyof M, M = {
   [T in U as T[K] extends string | number ? T[K] : never]: T
 }> = M[V];
+type Values<T> = T[keyof T];
+type Remap<A extends (keyof M)[], K extends keyof U, U, M = {
+  [T in U as T[K] extends string | number ? T[K] : never]: T
+}> = { [KK in keyof A]: M[A[KK]] };
+type Expand<A extends unknown[]> = { [K in keyof A]: A[K][] };
