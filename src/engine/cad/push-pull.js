@@ -34,6 +34,9 @@ export default class Pull extends /** @type {typeof Step<PullState>} */ (Step) {
   #offset = vec3.create();
   normal = vec3.create();
 
+  /** @type {number} */
+  newFaceId;
+
   /** @param {BaseParams} args  */
   constructor(...args) {
     super(...args);
@@ -62,6 +65,8 @@ export default class Pull extends /** @type {typeof Step<PullState>} */ (Step) {
     }));
 
     this.#recompute();
+
+    this.newFaceId = this.assertProperty('newFaceId');
   }
 
   static getType() {
@@ -93,6 +98,7 @@ export default class Pull extends /** @type {typeof Step<PullState>} */ (Step) {
       holes: face.holes.map(hole => hole.map(index => indexMap.get(index))),
     });
     newData.faces.push(newFace);
+    this.newFaceId = newData.faces.length;
 
     for (const [index, newIndex] of indexMap) {
       newData.segments.push(index, newIndex);
