@@ -79,9 +79,12 @@ export default (engine) => {
       const bodies = entities.values(Body);
       const selectedInstances = selection.getByType('instance').map(({ instance }) => instance);
 
+      const { enteredInstance } = scene;
+
       ctx.uniform1f(program.uLoc.u_isFaceSelected, 0);
       for (const { currentModel: model, instances } of bodies) {
         if (!model) continue;
+
         ctx.bindBuffer(ctx.ELEMENT_ARRAY_BUFFER, model.buffer.index);
 
         ctx.bindBuffer(ctx.ARRAY_BUFFER, model.buffer.vertex);
@@ -99,8 +102,10 @@ export default (engine) => {
         ctx.uniformMatrix4fv(program.uLoc.u_viewProjection, false, camera.viewProjection);
 
         for (const instance of instances) {
+          if (!scene.isVisible(instance)) continue;
+
           const isSelected = selectedInstances.some(inst => SubInstance.belongsTo(instance, inst)) ? 1 : 0;
-          const isInShadow = !isSelected && !SubInstance.belongsTo(instance, scene.enteredInstance) ? 1 : 0;
+          const isInShadow = !isSelected && !SubInstance.belongsTo(instance, enteredInstance) ? 1 : 0;
 
           ctx.uniformMatrix4fv(program.uLoc.u_trs, false, instance.Placement.trs);
           ctx.uniform1f(program.uLoc.u_isSelected, isSelected);
@@ -120,8 +125,9 @@ export default (engine) => {
       ctx.uniform1f(program.uLoc.u_isInShadow, 0);
 
       ctx.uniform1f(program.uLoc.u_isFaceSelected, 1);
-      for (const { instance: { Placement: { trs }, body: { currentModel: model }}, id } of selectedFaces) {
-        if (!model) continue;
+      for (const { instance, id } of selectedFaces) {
+        const { Placement: { trs }, body: { currentModel: model } } = instance;
+        if (!model || !scene.isVisible(instance)) continue;
 
         ctx.bindBuffer(ctx.ELEMENT_ARRAY_BUFFER, model.buffer.index);
 

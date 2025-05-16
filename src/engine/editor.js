@@ -161,7 +161,7 @@ export default class Editor {
     const pasteShortcut = engine.config.createString('shortcuts.paste', 'Paste', 'key', Input.stringify(['ctrl', 'v']));
     engine.input.registerShortcuts(copyShortcut, pasteShortcut);
 
-    engine.on('currentchange', () => this.reset());
+    engine.on('currentchange', () => this.reset(this.clipboard));
     engine.on('entityremoved', (entity) => {
       if (!(entity instanceof Instance)) return;
 
@@ -196,9 +196,12 @@ export default class Editor {
     });
   }
 
-  reset() {
+  /**
+   * @param {Collection} [skipCollection]
+   */
+  reset(skipCollection) {
     for (const collection of this.#collections) {
-      collection.clear();
+      if (collection !== skipCollection) collection.clear();
     }
   }
 }

@@ -100,6 +100,8 @@ export default class Scene extends Base {
       if (keyCombo === 'delete') {
         const selectedInstances = selection.getByType('instance').map(({ instance }) => instance);
         this.deleteInstances(selectedInstances);
+      } else if (keyCombo === 'esc' && !engine.tools.selected?.active) {
+        this.currentStep?.exitStep();
       }
     });
     engine.on('entityadded', (entity) => {
@@ -221,17 +223,13 @@ export default class Scene extends Base {
 
     if (shouldInstantiateEmptyBody) this.#autoSetCurrentInstance();
 
-    this.enteredInstance = null;
-    this.hoveredInstance = null;
-    this.hoveredFaceId = null;
-    this.hoveredLineId = null;
-    this.hoveredPointId = null;
-    this.hoveredConstraintIndex = null;
-    this.hoveredAxisId = null;
-    this.globallyHovered = null;
-    this.currentStep = null;
-    this.selectedStep = null;
-    this.selectedBody = null;
+    this.setEnteredInstance(null);
+    this.hoverOver(new Uint32Array([0, 0, 0, 0]));
+    this.hoverConstraint(new Uint8Array([0, 0, 0, 0]));
+    this.hoverAxis(null);
+    this.setCurrentStep(null);
+    this.setSelectedStep(null);
+    this.setSelectedBody(null);
 
     this.#engine.editor.reset();
     this.#engine.history.drop();
@@ -435,6 +433,18 @@ export default class Scene extends Base {
    */
   setAxisAligned(normal) {
     this.axisAlignedNormal = vec3.clone(normal);
+  }
+
+  /**
+   * @param {Instance} instance
+   * @returns {boolean}
+   */
+  isVisible(instance) {
+    if (instance === this.enteredInstance || instance.body === this.enteredInstance?.body) return true;
+    if (!instance.State.visibility || !instance.body.State.visibility) return false;
+
+    const parent = SubInstance.getParent(instance)?.instance;
+    return parent ? this.isVisible(parent) : true;
   }
 
   /**

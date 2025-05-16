@@ -1,13 +1,13 @@
 {
   "name": "sketchy",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "",
   "main": "",
   "type": "module",
   "scripts": {
     "dev": "concurrently --kill-others 'tsc -w' 'chokidar \"**/*.js\" \"**/*.ts\" -i \"node_modules\" --silent --initial -c \"eslint .\"' 'http-server . -c-1 -s'",
     "lint": "eslint .",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node --test --experimental-test-coverage --test-coverage-exclude='libs/**/*'"
   },
   "author": "Alexander Ivanov",
   "license": "MIT",
@@ -15,6 +15,7 @@
     "@eslint/compat": "^1.2.5",
     "@eslint/eslintrc": "^3.2.0",
     "@eslint/js": "^9.18.0",
+    "@types/node": "^22.15.3",
     "@typescript-eslint/eslint-plugin": "^8.21.0",
     "@typescript-eslint/parser": "^8.21.0",
     "chokidar-cli": "^3.0.0",

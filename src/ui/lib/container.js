@@ -30,6 +30,15 @@ import UIElement, { $ } from './element.js';
  */
 
 /**
+ * @augments UIElement<"hr">
+ */
+class UISeparator extends UIElement {
+  constructor() {
+    super(document.createElement('hr'));
+  }
+}
+
+/**
  * @template {HTMLTag} E
  * @template {HTMLTag} [C=E]
  * @augments UIElement<E>
@@ -104,6 +113,14 @@ export default class UIContainer extends UIElement {
    */
   addLabel(...params) {
     return this.addChild(new UIContainer.#typeMap.UILabel(...params));
+  }
+
+  /**
+   * @param  {ConstructorParameters<typeof UISeparator>} params
+   * @returns {UISeparator}
+   */
+  addSeparator(...params) {
+    return this.addChild(new UISeparator(...params));
   }
 
   /**

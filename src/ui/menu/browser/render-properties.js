@@ -76,8 +76,9 @@ export const renderInput = ({ type, value, onEdit }, container) => {
 /**
  * @param {import("../../../engine/general/properties").PropertyDefinitions} propertyData
  * @param {import("../../lib").AnyUIContainer} container
+ * @param {Engine["history"]} history
  */
-export default (propertyData, container) => {
+export default (propertyData, container, history) => {
   for (const [category, properties] of Object.entries(propertyData)) {
     const props = container.addGroup(category).addTable(2);
     for (const [name, property] of Object.entries(properties)) {
@@ -91,7 +92,16 @@ export default (propertyData, container) => {
 
       const editor = cell.addContainer();
 
-      renderInput(property, editor);
+      const onEdit = /** @type {(value: property["value"]) => void} */ (property.onEdit);
+      const clonedProperty = Properties.clone(property);
+      clonedProperty.onEdit = /** @type {typeof onEdit} */ ((newValue) => {
+        const action = history.createAction(`Edit property "${category}.${name}"`, null);
+        if (!action) return;
+        action.append(() => onEdit(newValue), () => onEdit(Properties.clone(clonedProperty).value));
+        action.commit();
+      });
+
+      renderInput(clonedProperty, editor);
 
       editor.hide();
       label.$element({

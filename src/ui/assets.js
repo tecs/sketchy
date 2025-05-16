@@ -59,6 +59,10 @@ const loadAsset = (url, onLoad) => {
 
 /** @type {Cursor[]} */
 const cursors = [
+  { name: 'select', fallback: 'default', x: 4, y: 4 },
+  { name: 'add-selection', fallback: 'default', x: 4, y: 4 },
+  { name: 'remove-selection', fallback: 'default', x: 4, y: 4 },
+  { name: 'add-remove-selection', fallback: 'default', x: 4, y: 4 },
   { name: 'bucket', fallback: 'alias', x: 4, y: 29 },
   { name: 'eyedropper', fallback: 'crosshair', x: 7, y: 23 },
   { name: 'pull', fallback: 'row-resize', x: 16, y: 4 },
@@ -76,6 +80,9 @@ const cursors = [
   { name: 'constraint-action-coincident', fallback: 'context-menu', x: 4, y: 4 },
   { name: 'constraint-action-horizontal', fallback: 'context-menu', x: 4, y: 4 },
   { name: 'constraint-action-vertical', fallback: 'context-menu', x: 4, y: 4 },
+  { name: 'constraint-action-angle', fallback: 'context-menu', x: 4, y: 4 },
+  { name: 'constraint-action-parallel', fallback: 'context-menu', x: 4, y: 4 },
+  { name: 'constraint-action-perpendicular', fallback: 'context-menu', x: 4, y: 4 },
   { name: 'action-pull', fallback: 'move', x: 4, y: 4 },
   { name: 'action-translate', fallback: 'move', x: 4, y: 4 },
   { name: 'action-rotate', fallback: 'move', x: 4, y: 4 },
@@ -113,12 +120,16 @@ const icons = [
   'constraint-coincident',
   'constraint-horizontal',
   'constraint-vertical',
+  'constraint-angle',
+  'constraint-parallel',
+  'constraint-perpendicular',
   'file-new',
   'file-open',
   'file-save',
   'undo',
   'redo',
   'settings',
+  'support-geometry',
 ].map(name => {
   const url = `/assets/${name}.svg`;
   const icon = { name, text: '', style: { backgroundImage: `url(${url})` }};

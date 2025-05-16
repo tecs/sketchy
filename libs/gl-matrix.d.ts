@@ -220,7 +220,7 @@ declare var glMatrix: Readonly<{
     vec2: GlmBaseV<vec2, ReadonlyVec2> & {
         fromValues: (x: number, y: number) => vec2;
         angle: (a: ReadonlyVec2, b: ReadonlyVec2) => number;
-        cross: (out: vec2, a: ReadonlyVec2, b: ReadonlyVec2) => vec2;
+        cross: (out: vec3, a: ReadonlyVec2, b: ReadonlyVec2) => vec3;
         set: (out: vec2, x: number, y: number) => vec2;
         rotate: (out: vec2, a: ReadonlyVec2, b: ReadonlyVec2, rad: number) => vec2;
         transformMat2: (out: vec2, a: ReadonlyVec2, m: ReadonlyMat2) => vec2;

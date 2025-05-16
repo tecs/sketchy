@@ -217,6 +217,18 @@ export default class Input {
   }
 
   /**
+   * @param {string} text
+   * @param {StringSetting} [setting]
+   * @returns {string}
+   */
+  tooltip(text, setting) {
+    const combo = setting ? this.shortcuts.find(shortcut => shortcut.setting === setting)?.sequence : undefined;
+    if (!combo) return text;
+
+    return `${text} (${combo.map(shortcut => shortcut.replaceAll(PLUS_TOKEN, '+')).join(', ')})`;
+  }
+
+  /**
    * @param {string} keyCombo
    */
   #triggerShortcuts(keyCombo) {

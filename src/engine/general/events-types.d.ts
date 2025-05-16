@@ -1,6 +1,6 @@
 import { PropertyData } from './properties.js';
 
-type Callback<P extends unknown[]> = (...args: P) => void;
+type Callback<P extends unknown[]> = (...args: P) => void | symbol;
 
 export type Event<T extends string, P extends unknown[] = []> = {
   type: T;
@@ -11,7 +11,7 @@ export type Event<T extends string, P extends unknown[] = []> = {
 };
 
 type PropertyRequestProps<T = PropertyData> = T extends PropertyData
-  ? [property: T, callback: (newValue: T['value']) => void]
+  ? [property: T, callback: (newValue: T['value'], formula: string) => void]
   : never;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

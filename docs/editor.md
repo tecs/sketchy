@@ -1,6 +1,6 @@
 # [User Manual](README.md) > Editor
 
-Next: [Browser](browser.md),
+Next: [Formulas](formulas.md),
 Previous: [Tools](tools.md)
 
 ## Table of contents
@@ -26,9 +26,11 @@ The viewport is the central area of the application and is where the user can vi
 The viewport's camera, and thus what the user sees, can be moved around the scene by [moving up/down/left/right and orbiting](tools.md#orbit) and [moving forward/back and zooming](tools.md#zoom).
 
 ### Scene
-The scene hierarchy can also be navigated through the viewport, while using the [select tool](tools.md#select), by double-clicking on an object, which enters its corresponding instance, allowing for editing of that instance's body. In some cases where the double-clicked geometry directly belongs to a [step](steps.md), that step could be entered for editing instead.
+The scene hierarchy can also be navigated through the viewport, while using the [select tool](tools.md#select), by double-clicking on an object, which enters its corresponding instance, allowing for editing of that instance's body. In some cases where the double-clicked geometry directly belongs to a [step](steps.md), that step could be entered for editing instead. On the other hand, double-clicking outside the entered instance or pressing the `esc` key while no action is being performed exits the entered step.
 
 Geometry not part of the entered instance (if any) will be shown grayed-out.
+
+Certain objects can be marked not "visible", which will exclude them and their descendents from being shown in the viewport. An object and its descendents will be shown nevertheless if it is currently being edited.
 
 ### Hovered plane
 Most actions performed in the viewport take place in 3D space, which makes it impossible to always correctly translate the 2D position of the mouse on the screen to the intended 3D coordinates inside the scene.
@@ -100,6 +102,8 @@ Situated at the bottom of the viewport, the info bar provides extra information 
 ![Property dialog](images/property-dialog.png)
 
 Some actions requiring a value are not always triggered by a user interaction or an interaction that can represent such a value. In these cases a property dialog is presented, prompting for user input to be entered manually using the appropriate [type](#value-types) and [units](#units).
+
+Some properties also support using [formulas](formulas.md) when inputting a value.
 
 ## Value types
 All property values have a type, and are identified by and represented as a case-insensitive formatted text string, which includes one or more values (with or without units), and optionally a prefix, infix and a suffix.

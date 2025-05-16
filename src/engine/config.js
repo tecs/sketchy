@@ -9,6 +9,7 @@
  * @property {T} defaultValue
  * @property {(newValue: T) => void} set
  * @property {() => T} reset
+ * @property {(handler: (oldValue: T, newValue: T) => void) => void} onChange
  */
 
 /** @typedef {BaseSetting<number, "int">} NumberSetting */
@@ -57,6 +58,9 @@ export default class Config {
 
     const override = this.#overrides.find(o => o.id === id)?.value;
 
+    /** @type {Function[]} */
+    const handlers = [];
+
     const setting = /** @type {T} */ ({
       id,
       name,
@@ -70,12 +74,18 @@ export default class Config {
         const oldValue = setting.value;
         setting.value = newValue;
         forceEmit(this.#engine, setting, newValue, oldValue);
+        handlers.forEach(handler => handler(newValue, oldValue));
       },
       reset: () => {
         const oldValue = setting.value;
         setting.value = setting.defaultValue;
         forceEmit(this.#engine, setting, setting.defaultValue, oldValue);
+        handlers.forEach(handler => handler(setting.defaultValue, oldValue));
         return setting.defaultValue;
+      },
+      /** @param {Function} handler */
+      onChange(handler) {
+        handlers.push(handler);
       },
     });
 
@@ -115,6 +125,21 @@ export default class Config {
    */
   createBoolean(id, name, type, value) {
     return this.#create(id, name, type, value);
+  }
+
+  /**
+   * @template {Setting["type"]} T
+   * @param {string} id
+   * @param {T} [type]
+   * @returns {Readonly<IfEquals<T, undefined, Setting, Find<Setting, "type", T>>> | undefined}
+   */
+  get(id, type) {
+    const entry = this.#settings.find(setting => setting.id === id);
+    if (!entry) return;
+
+    if (type && type !== entry.type) return;
+
+    return /** @type {Readonly<IfEquals<T, undefined, Setting, Find<Setting, "type", T>>>} */ (entry);
   }
 
   /**

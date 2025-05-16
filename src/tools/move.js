@@ -42,7 +42,18 @@ export default (engine) => {
    * @property {Sketch} sketch
    */
 
-  /** @typedef {InstanceElement | LineElement | PointElement} Elements */
+  /** @typedef {import("../engine/cad/sketch.js").Constraints} Constraints */
+
+  /**
+   * @typedef ConstraintElement
+   * @property {"constraint"} type
+   * @property {Find<Constraints, "type", "distance" | "width" | "height" | "angle">} constraint
+   * @property {number} id
+   * @property {Instance} instance
+   * @property {Sketch} sketch
+   */
+
+  /** @typedef {InstanceElement | LineElement | PointElement | ConstraintElement} Elements */
 
   /**
    * @typedef MoveData
@@ -103,6 +114,9 @@ export default (engine) => {
             element.line.data[1 + element.offset] += diff[1];
             element.sketch.update(lockedIndices);
             break;
+          case 'constraint':
+            element.constraint.labelOffset[0] += diff[0];
+            element.constraint.labelOffset[1] += diff[1];
         }
       }
 
@@ -111,7 +125,14 @@ export default (engine) => {
     },
     start() {
       released = false;
-      const { currentStep, hoveredInstance, enteredInstance, hoveredPointId, hoveredLineId } = scene;
+      const {
+        currentStep,
+        enteredInstance,
+        hoveredInstance,
+        hoveredPointId,
+        hoveredLineId,
+        hoveredConstraintIndex,
+      } = scene;
 
       const sketch = currentStep ?? enteredInstance?.body.step ?? null;
       const movementSelection = /** @type {Elements[]} */ ([]);
@@ -119,6 +140,7 @@ export default (engine) => {
       const selectedInstances = selection.getByType('instance').map(({ instance }) => instance);
       const candidatePoints = selection.getByType('point');
       const candidateLines = selection.getByType('line');
+      const candidateConstraints = selection.getByType('constraint');
 
       if (!selectedInstances.length && hoveredInstance === enteredInstance && hoveredInstance) {
         if (!candidatePoints.length && hoveredPointId !== null) {
@@ -152,21 +174,34 @@ export default (engine) => {
           movementSelection.push({ ...candidate, sketch, line: line[0], offset: line[1] });
           pointIndices.push(candidate.id);
         }
+
+        if (candidateConstraints.length === 0 && enteredInstance && hoveredConstraintIndex !== null) {
+          candidateConstraints.push({ type: 'constraint', id: hoveredConstraintIndex, instance: enteredInstance });
+        }
+
+        if (movementSelection.length === 0) {
+          for (const candidate of candidateConstraints) {
+            const constraint = sketch.getConstraint(candidate.id);
+            if (!constraint) continue;
+
+            switch (constraint.type) {
+              case 'distance':
+              case 'width':
+              case 'height':
+              case 'angle':
+                mat4.multiply(transformation, candidate.instance.Placement.inverseTrs, sketch.toSketch);
+                movementSelection.push({ ...candidate, sketch, constraint });
+            }
+          }
+        }
       } else {
         if (!selectedInstances.length && hoveredInstance) {
           selectedInstances.push(hoveredInstance);
         }
 
-        for (let i = 0; i < selectedInstances.length; ++i) {
-          let parent = SubInstance.getParent(selectedInstances[i]);
-          while (parent && parent.instance !== enteredInstance) {
-            selectedInstances[i] = parent.instance;
-            parent = SubInstance.getParent(selectedInstances[i]);
-          }
-
-          if (SubInstance.belongsTo(selectedInstances[i], enteredInstance)) {
-            movementSelection.push({ type: 'instance', instance: selectedInstances[i] });
-          }
+        for (const selectedInstance of selectedInstances) {
+          const instance = SubInstance.asDirectChildOf(selectedInstance, enteredInstance);
+          if (instance) movementSelection.push({ type: 'instance', instance });
         }
       }
 
@@ -226,6 +261,9 @@ export default (engine) => {
                 element.line.data[1 + element.offset] += diff[1];
                 element.sketch.update(lockedIndices);
                 break;
+              case 'constraint':
+                element.constraint.labelOffset[0] += diff[0];
+                element.constraint.labelOffset[1] += diff[1];
             }
           }
           emit('scenechange');
@@ -251,6 +289,9 @@ export default (engine) => {
                 element.line.data[1 + element.offset] -= diff[1];
                 element.sketch.update(lockedIndices);
                 break;
+              case 'constraint':
+                element.constraint.labelOffset[0] -= diff[0];
+                element.constraint.labelOffset[1] -= diff[1];
             }
           }
           emit('scenechange');
@@ -291,6 +332,9 @@ export default (engine) => {
             element.line.data[1 + element.offset] += diff[1];
             element.sketch.update(lockedIndices);
             break;
+          case 'constraint':
+            element.constraint.labelOffset[0] += diff[0];
+            element.constraint.labelOffset[1] += diff[1];
         }
       }
 

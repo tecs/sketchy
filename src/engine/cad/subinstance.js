@@ -29,6 +29,7 @@ const { mat4, vec3 } = glMatrix;
  * @typedef SubInstanceState
  * @property {string} bodyId
  * @property {PlainMat4} placement
+ * @property {boolean} visibility
  */
 
 // cached structures
@@ -49,6 +50,9 @@ export default class SubInstance extends /** @type {typeof Step<SubInstanceState
     if (!args[0].placement) {
       args[0] = { ...args[0], placement: [...defaultTrs] };
     }
+    if (!args[0].visibility) {
+      args[0].visibility = true;
+    }
     super(.../** @type {BaseParams} */ (args));
 
     this.Properties.extend(properties => Properties.merge(properties, this.placement.Properties.map(prop => {
@@ -61,7 +65,15 @@ export default class SubInstance extends /** @type {typeof Step<SubInstanceState
       };
 
       return newProp;
-    })));
+    }), {
+      Appearance: {
+        Visibility: {
+          value: this.data.visibility,
+          type: 'boolean',
+          onEdit: (visibility) => this.toggleVisibility(visibility),
+        },
+      },
+    }));
 
     this.#recompute();
 
@@ -139,6 +151,20 @@ export default class SubInstance extends /** @type {typeof Step<SubInstanceState
   }
 
   /**
+   * @param {Instance?} child
+   * @param {Instance?} parent
+   * @returns {Instance?}
+   */
+  static asDirectChildOf(child, parent) {
+    while (child) {
+      const childParent = this.getParent(child)?.instance ?? null;
+      if (childParent === parent) return child;
+      child = childParent;
+    }
+    return null;
+  }
+
+  /**
    * @param {Engine} engine
    */
   static register(engine) {
@@ -206,6 +232,10 @@ export default class SubInstance extends /** @type {typeof Step<SubInstanceState
       this.getParent(instance)?.subInstance.rotate(angle, axis);
       this.#recalculateGlobalTrs(instance);
     });
+
+    engine.on('instancevisibility', (instance, visibility) => {
+      this.getParent(instance)?.subInstance.toggleVisibility(visibility);
+    });
   }
 
   #recompute() {
@@ -255,6 +285,7 @@ export default class SubInstance extends /** @type {typeof Step<SubInstanceState
     };
 
     const childInstance = /** @type {ChildInstance} */ (partialChildInstance);
+    childInstance.State.visibility = this.data.visibility;
 
     parentInstance._subInstanceChildren.push(childInstance);
 
@@ -320,5 +351,21 @@ export default class SubInstance extends /** @type {typeof Step<SubInstanceState
   export() {
     this.data.placement = this.placement.State.export().trs;
     return undefined;
+  }
+
+  /**
+   * @param {boolean} [forceState]
+   */
+  toggleVisibility(forceState) {
+    forceState ??= !this.data.visibility;
+    if (forceState === this.data.visibility) return;
+
+    this.data.visibility = forceState;
+
+    for (const child of this.instances) {
+      child.State.visibility = forceState;
+    }
+
+    this.engine.emit('scenechange');
   }
 }

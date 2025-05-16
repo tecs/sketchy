@@ -44,7 +44,7 @@ export default (engine) => {
     if (!tool) return;
 
     if (key === 'Escape') {
-      tool.abort();
+      engine.input.setKey(key, true);
       return;
     }
 
@@ -72,6 +72,10 @@ export default (engine) => {
         break;
       }
     }
+  });
+
+  measurementsInput.addEventListener('keyup', ({ key }) => {
+    if (key === 'Escape') engine.input.setKey(key, false);
   });
 
   return menu;

@@ -1,7 +1,7 @@
 # [User Manual](README.md) > Browser
 
 Next: [Steps](steps.md),
-Previous: [Editor](editor.md)
+Previous: [Formulas](formulas.md)
 
 ## Table of contents
 - [Bodies](#bodies)
@@ -12,7 +12,7 @@ Previous: [Editor](editor.md)
 ## Bodies
 ![Bodies browser](images/bodies-browser.png)
 
-Lists all of the bodies in the scene, emphasizing the body of the [entered instance](editor.md#scene) if any.
+Lists all of the bodies in the scene, emphasizing the body of the [entered instance](editor.md#scene), if any. All bodies which are not [visible](editor.md#scene) are grayed-out.
 
 Clicking on an entry from the list highlights it and opens a [details browser](#details) for that body.
 
@@ -21,7 +21,7 @@ Double-clicking on it instead, creates a new instance to the scene and lets the 
 ## Scene
 ![Scene browser](images/scene-browser.png)
 
-Lists the instance hierarchy of scene, emphasizing the [entered instance](editor.md#scene) if any.
+Lists the instance hierarchy of scene, emphasizing the [entered instance](editor.md#scene) if any. All instances which are not [visible](editor.md#scene) are grayed-out.
 
 All selected instances are shown highlighted in the scene browser, and conversely, clicking on an entry from the list selects its corresponding instance in the viewport and opens a [details browser](#details) for it.
 
@@ -42,5 +42,7 @@ Double-clicking on an entry instead, enters its corresponding step for editing.
 Exposes various information about the selected entity, its properties and components.
 
 Non-grayed-out property values can be edited by clicking on them and then manually inputting a new value with the appropriate [type](editor.md#value-types) and [units](editor.md#units).
+
+Some properties may support using [formulas](formulas.md) to dynamically derive their values. Values currently derived from a formula are followed by a <sup>*`(fn)`*</sup> superscript.
 
 ![Editing a property inside the details browser](images/details-browser-edit-property.png)

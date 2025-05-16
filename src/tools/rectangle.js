@@ -80,8 +80,8 @@ export default (engine) => {
 
       historyAction.data.length = [d1, d2];
       historyAction.append((data) => {
-        data.sketch.distance(data.length[0], data.lineOriginHorizontal);
-        data.sketch.distance(data.length[1], data.lineOriginVertical);
+        data.sketch.distance(data.length[0], data.lineOriginHorizontal, String(d1));
+        data.sketch.distance(data.length[1], data.lineOriginVertical, String(d2));
       }, () => {});
 
       this.end();

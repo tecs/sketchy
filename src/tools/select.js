@@ -1,6 +1,8 @@
 import Sketch from '../engine/cad/sketch.js';
 import SubInstance from '../engine/cad/subinstance.js';
 
+/** @typedef {import("../engine/editor.js").Element} Element */
+
 /** @type {(engine: Engine) => BaseTool} */
 export default (engine) => {
   const { editor: { selection, temp }, scene, input } = engine;
@@ -13,9 +15,41 @@ export default (engine) => {
   const toggleOrSet = (elements, shouldToggle = false) => {
     if (shouldToggle) selection.toggle(elements);
     else selection.set(elements);
+    setCursor();
   };
 
-  /** @type {import("../engine/editor.js").Element[]} */
+  /**
+   * @returns {Element | undefined}
+   */
+  const getHovered = () => {
+    const {
+      enteredInstance: instance,
+      hoveredPointId: pointId,
+      hoveredLineId: lineId,
+      hoveredFaceId: faceId,
+      hoveredConstraintIndex: constraintId,
+      hoveredAxisId: axisId,
+      hoveredInstance,
+      currentStep,
+    } = scene;
+
+    const hoveredSelf = instance === hoveredInstance;
+
+    if (currentStep instanceof Sketch && instance) {
+      if (hoveredSelf && lineId !== null) return { type: 'line', id: lineId, instance };
+      if (hoveredSelf && pointId !== null) return { type: 'point', id: pointId, instance };
+      if (constraintId !== null) return { type: 'constraint', id: constraintId, instance };
+      if (axisId !== null) return { type: 'axis', id: axisId, instance };
+      return;
+    }
+    if (instance && hoveredSelf && faceId !== null) return { type: 'face', id: faceId, instance };
+    if (hoveredSelf) return;
+
+    const hovered = SubInstance.asDirectChildOf(hoveredInstance, instance);
+    if (hovered) return { type: 'instance', id: hovered.Id.int, instance: hovered };
+  };
+
+  /** @type {Element[]} */
   let oldSelection = [];
 
   /** @type {BaseTool} */
@@ -24,6 +58,7 @@ export default (engine) => {
     name: 'Select',
     shortcut: 'space',
     icon: 'pointer-simplified',
+    cursor: 'select',
     active: false,
     start() {
       if (!input.leftButton) return;
@@ -51,57 +86,39 @@ export default (engine) => {
         return;
       }
 
-      const {
-        enteredInstance,
-        hoveredInstance,
-        hoveredPointId,
-        hoveredLineId,
-        hoveredFaceId,
-        hoveredConstraintIndex,
-        hoveredAxisId,
-        currentStep,
-      } = scene;
+      const { enteredInstance, currentStep } = scene;
       const toggle = input.ctrl;
 
-      const hoveredSelf = hoveredInstance === enteredInstance;
-      if (!currentStep && enteredInstance && hoveredSelf && hoveredFaceId !== null) {
-        toggleOrSet({ type: 'face', id: hoveredFaceId, instance: enteredInstance }, toggle);
-        return;
-      } else if (currentStep && enteredInstance) {
-        if (hoveredSelf && hoveredLineId !== null) {
-          toggleOrSet({ type: 'line', id: hoveredLineId, instance: enteredInstance }, toggle);
-        } else if (hoveredSelf && hoveredPointId !== null) {
-          toggleOrSet({ type: 'point', id: hoveredPointId, instance: enteredInstance }, toggle);
-        } else if (hoveredConstraintIndex !== null && currentStep instanceof Sketch) {
-          toggleOrSet({ type: 'constraint', id: hoveredConstraintIndex, instance: enteredInstance }, toggle);
-        } else if (hoveredAxisId !== null) {
-          toggleOrSet({ type: 'axis', id: hoveredAxisId, instance: enteredInstance }, toggle);
-        } else if (!toggle) selection.clear();
-        return;
+      const hoveredElement = getHovered();
+      switch (hoveredElement?.type) {
+        case 'instance':
+          // ignore double-clicking on instances while holding ctrl
+          if (count > 1 && !toggle) break;
+        case 'face':
+        case 'line':
+        case 'point':
+        case 'constraint':
+        case 'axis':
+          return toggleOrSet(hoveredElement, toggle);
       }
 
-      let clicked = hoveredInstance;
-      let parent = clicked ? SubInstance.getParent(clicked) : undefined;
-      while (clicked && clicked !== enteredInstance && (parent?.instance ?? null) !== enteredInstance) {
-        clicked = parent?.instance ?? null;
-        parent = clicked ? SubInstance.getParent(clicked) : undefined;
+      // ctrl-clicked on nothing
+      if (toggle) return;
+
+      // clicked on nothing
+      if (count === 1) return selection.clear();
+
+      // double-clicked outside active step
+      if (currentStep) return currentStep.exitStep();
+
+      // double-clicked on a child instance
+      if (hoveredElement && selection.getElement(hoveredElement)) {
+        return scene.setEnteredInstance(hoveredElement.instance);
       }
 
-      const selectedInstances = selection.getByType('instance').map(({ instance }) => instance);
-
-      if (count === 1) {
-        const clickedOwn = SubInstance.belongsTo(clicked, enteredInstance);
-
-        if (clicked === enteredInstance && !toggle) selection.clear();
-        else if (clicked === enteredInstance) return;
-        else if (clickedOwn) toggleOrSet(clicked ? { type: 'instance', id: clicked.Id.int, instance: clicked } : [], toggle);
-        else if (!toggle) selection.clear();
-        return;
-      }
-
-      if (clicked && selectedInstances.includes(clicked)) scene.setEnteredInstance(clicked);
-      else if (clicked !== enteredInstance) {
-        scene.setEnteredInstance(enteredInstance ? SubInstance.getParent(enteredInstance)?.instance ?? null : null);
+      // double-clicked outside entered instance
+      if (!hoveredElement && enteredInstance) {
+        return scene.setEnteredInstance(SubInstance.getParent(enteredInstance)?.instance ?? null);
       }
     },
     abort() {
@@ -122,6 +139,25 @@ export default (engine) => {
       }
     },
   };
+
+  let cursorListener = false;
+
+  const setCursor = () => {
+    if (!cursorListener) return;
+    if (!input.ctrl) return engine.emit('cursorchange', select.cursor);
+
+    const hovered = getHovered();
+    if (lasso || !hovered) return engine.emit('cursorchange', 'add-remove-selection');
+    if (selection.getElement(hovered)) return engine.emit('cursorchange', 'remove-selection');
+    engine.emit('cursorchange', 'add-selection');
+  };
+
+  engine.on('toolchange', tool => void(cursorListener = tool === select));
+  engine.on('contextactionchange', action => void(cursorListener = engine.tools.selected === select && action === null));
+
+  engine.on('keydown', setCursor);
+  engine.on('keyup', setCursor);
+  engine.on('mousemove', setCursor);
 
   return select;
 };

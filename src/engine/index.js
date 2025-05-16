@@ -17,6 +17,8 @@ import PushPull from './cad/push-pull.js';
 import RawData from './cad/rawdata.js';
 import SubInstance from './cad/subinstance.js';
 
+import makeSolver from './cad/solver/index.js';
+
 /** @typedef {import("./3d/bounding-box-types").BoundingBoxEvent} BoundingBoxEv */
 /** @typedef {import("./3d/camera-types").CameraEvent} CameraEv */
 /** @typedef {import("./cad/types").CadEvent} CadEv */
@@ -63,6 +65,9 @@ export default class Engine extends Base {
   /** @type {Readonly<Tools>} */
   tools;
 
+  /** @type {Readonly<import("./cad/solver/solver.js").default>} */
+  solver;
+
   /**
    * @param {HTMLCanvasElement} canvas
    */
@@ -79,6 +84,7 @@ export default class Engine extends Base {
     this.renderer = new Renderer(this);
     this.scene = new Scene(this);
     this.tools = new Tools(this);
+    this.solver = makeSolver();
 
     Body.registerStep(Sketch, this);
     Body.registerStep(PushPull, this);

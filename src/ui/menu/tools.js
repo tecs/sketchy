@@ -12,17 +12,19 @@ export default (engine) => {
 
   /** @type {Record<string, UIButton>} */
   const toolMap = {};
-  for (const tool of engine.tools.list()) {
+  for (const { tool, shortcut } of engine.tools.getConfig()) {
     const icon = getIcon(tool.icon);
-    toolMap[tool.type] = menu.addButton(icon.text, () => engine.tools.setTool(tool), tool.name, icon.style);
+    const tooltip = engine.input.tooltip(tool.name, shortcut);
+    toolMap[tool.type] = menu.addButton(icon.text, () => engine.tools.setTool(tool), tooltip, icon.style);
+    shortcut.onChange(() => toolMap[tool.type].$element({ title: engine.input.tooltip(tool.name, shortcut) }));
   }
   if (engine.tools.selected) menu.select(toolMap[engine.tools.selected.type]);
   engine.on('toolchange', tool => {
     if (tool) menu.select(toolMap[tool.type]);
   });
 
-  engine.on('toolenabled', tool => toolMap[tool.type].show());
-  engine.on('tooldisabled', tool => toolMap[tool.type].hide());
+  engine.on('toolenabled', tool => void(toolMap[tool.type].show()));
+  engine.on('tooldisabled', tool => void(toolMap[tool.type].hide()));
 
   const contextMenu = menu.addMenu();
   contextMenu.hide();
@@ -41,14 +43,16 @@ export default (engine) => {
     contextMenu.show();
     contextMenu.clearChildren();
     for (const action of actions) {
+      if (!action) {
+        contextMenu.addSeparator();
+        continue;
+      }
       const icon = getIcon(action.icon);
-      contextActions.set(
-        action,
-        contextMenu.addButton(icon.text, action.call, action.name, {
-          ...icon.style,
-          ...action.style,
-        }),
-      );
+      const tooltip = engine.input.tooltip(action.name, action.key);
+      const button = contextMenu.addButton(icon.text, action.call, tooltip, { ...icon.style, ...action.style });
+      action.key?.onChange(() => button.$element({ title: engine.input.tooltip(action.name, action.key) }));
+      contextActions.set(action, button);
+      if (action.active) contextMenu.activate(button);
     }
   });
 
@@ -62,6 +66,20 @@ export default (engine) => {
     if (!button) return;
 
     contextMenu.select(button);
+  });
+
+  engine.on('contextactionactivate', action => {
+    const button = contextActions.get(action);
+    if (!button) return;
+
+    contextMenu.activate(button);
+  });
+
+  engine.on('contextactiondeactivate', action => {
+    const button = contextActions.get(action);
+    if (!button) return;
+
+    contextMenu.deactivate(button);
   });
 
   return menu;

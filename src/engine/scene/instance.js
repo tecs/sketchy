@@ -13,6 +13,7 @@ const { mat4 } = glMatrix;
  * @property {string} id
  * @property {string} name
  * @property {import("../entities.js").Key} bodyId
+ * @property {boolean} visibility
  * @property {PlainMat4} trs
  */
 
@@ -24,6 +25,7 @@ export default class Instance extends implement({
     name: '',
     bodyId: '',
     trs: defaultTrs,
+    visibility: true,
   })),
   Properties,
 }) {
@@ -89,6 +91,13 @@ export default class Instance extends implement({
 
             return newProp;
           }),
+          Appearance: {
+            Visibility: {
+              value: this.State.visibility,
+              type: 'boolean',
+              onEdit: (visibility) => this.toggleVisibility(visibility),
+            },
+          },
         }),
       ],
     });
@@ -98,6 +107,7 @@ export default class Instance extends implement({
       name: state?.name ?? '',
       bodyId: body.Id.str,
       trs: state?.trs ?? this.Placement.State.export().trs,
+      visibility: state?.visibility ?? true,
     }, !!state?.trs);
 
     this.body = body;
@@ -144,6 +154,19 @@ export default class Instance extends implement({
   rotate(angle, axis) {
     this.Placement.rotate(angle, axis);
     this.engine.emit('instancerotated', this, angle, axis);
+    this.engine.emit('instanceedited', this);
+    this.engine.emit('scenechange');
+  }
+
+  /**
+   * @param {boolean} [forceState]
+   */
+  toggleVisibility(forceState) {
+    forceState ??= !this.State.visibility;
+    if (this.State.visibility === forceState) return;
+
+    this.State.visibility = forceState;
+    this.engine.emit('instancevisibility', this, this.State.visibility);
     this.engine.emit('instanceedited', this);
     this.engine.emit('scenechange');
   }

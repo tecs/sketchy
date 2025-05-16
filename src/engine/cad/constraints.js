@@ -3,27 +3,46 @@ const { glMatrix: { equals }, vec2 } = glMatrix;
 /**
  * @template {string} T
  * @template {number} I
- * @template {import("../general/state.js").Value} [D=null]
  * @typedef Constraint
  * @property {T} type
  * @property {Tuple<number, I>} indices
- * @property {D} data
+ * @property {null} data
  */
 
-/** @typedef {Constraint<"distance", 2, number>} DistanceConstraint */
-/** @typedef {Constraint<"width", 2, number>} WidthConstraint */
-/** @typedef {Constraint<"height", 2, number>} HeightConstraint */
+/**
+ * @template {string} T
+ * @template {number} I
+ * @typedef MovableConstraint
+ * @property {T} type
+ * @property {Tuple<number, I>} indices
+ * @property {number} data
+ * @property {string} formula
+ * @property {PlainVec2} labelOffset
+ */
+
+/** @typedef {MovableConstraint<"distance", 2>} DistanceConstraint */
+/** @typedef {MovableConstraint<"width", 2>} WidthConstraint */
+/** @typedef {MovableConstraint<"height", 2>} HeightConstraint */
 /** @typedef {Constraint<"coincident", 2>} CoincidentConstraint */
 /** @typedef {Constraint<"horizontal", 2>} HorizontalConstraint */
 /** @typedef {Constraint<"vertical", 2>} VerticalConstraint */
-/** @typedef {Constraint<"equal", 4, null>} EqualConstraint */
+/** @typedef {Constraint<"equal", 4>} EqualConstraint */
+/** @typedef {MovableConstraint<"angle", 4>} AngleConstraint */
+/** @typedef {Constraint<"parallel", 4>} ParallelConstraint */
+/** @typedef {Constraint<"perpendicular", 4>} PerpendicularConstraint */
 
 /** @typedef {DistanceConstraint|WidthConstraint|HeightConstraint|EqualConstraint} DistanceConstraints */
-/** @typedef {HorizontalConstraint|VerticalConstraint} OrientationConstraints */
+/** @typedef {HorizontalConstraint|VerticalConstraint} AxisConstraints */
+/** @typedef {AxisConstraints|AngleConstraint|ParallelConstraint|PerpendicularConstraint} OrientationConstraints */
 /** @typedef {DistanceConstraints|CoincidentConstraint|OrientationConstraints} Constraints */
 
 /** @typedef {{ [K in Constraints["type"]]: Find<Constraints, "type", K>["data"] }} OriginalCurrentData */
-/** @typedef {{ equal: [number, number ]}} CustomCurrentData */
+/**
+ * @typedef CustomCurrentData
+ * @property {[number, number]} equal
+ * @property {[number, number]} parallel
+ * @property {[number, number]} perpendicular
+ */
 
 /**
  * @template {keyof OriginalCurrentData} K
@@ -63,7 +82,7 @@ const tempVec2 = vec2.create();
  * @template {{ [K in Constraints["type"]]: any }} T
  * @type {{ [K in Constraints["type"]]: ConstraintHandler<Find<Constraints, "type", K>, T[K]> }}
  */
-export default {
+const constraints = {
   distance: {
     check({ elements: [p1, p2], value }) {
       const current = vec2.distance(p1.vec2, p2.vec2);
@@ -162,4 +181,77 @@ export default {
       }
     },
   },
+  angle: {
+    check({ elements: [p1, p2, p3, p4], value }) {
+      vec2.subtract(tempVec2, p2.vec2, p1.vec2);
+      const angle1 = Math.atan2(tempVec2[1], tempVec2[0]);
+
+      vec2.subtract(tempVec2, p4.vec2, p3.vec2);
+      const angle2 = Math.atan2(tempVec2[1], tempVec2[0]);
+
+      let angle = angle2 - angle1;
+      if (angle < 0) angle += Math.PI * 2;
+
+      return [angle, equals(value, angle)];
+    },
+    apply({ elements: [p1, p2, p3, p4], incrementScale, value }, angle) {
+      const diff = (angle - value) * incrementScale;
+
+      if (!p1.locked && !p2.locked) {
+        vec2.add(tempVec2, p1.vec2, p2.vec2);
+        vec2.scale(tempVec2, tempVec2, 0.5);
+        vec2.rotate(p1.vec2, p1.vec2, tempVec2, diff);
+        vec2.rotate(p2.vec2, p2.vec2, tempVec2, diff);
+      }
+      else if (!p1.locked) vec2.rotate(p1.vec2, p1.vec2, p2.vec2, diff);
+      else if (!p2.locked) vec2.rotate(p2.vec2, p2.vec2, p1.vec2, diff);
+
+      if (!p3.locked && !p4.locked) {
+        vec2.add(tempVec2, p3.vec2, p4.vec2);
+        vec2.scale(tempVec2, tempVec2, 0.5);
+        vec2.rotate(p3.vec2, p3.vec2, tempVec2, -diff);
+        vec2.rotate(p4.vec2, p4.vec2, tempVec2, -diff);
+      }
+      else if (!p3.locked) vec2.rotate(p3.vec2, p3.vec2, p4.vec2, -diff);
+      else if (!p4.locked) vec2.rotate(p4.vec2, p4.vec2, p3.vec2, -diff);
+    },
+  },
+  parallel: {
+    check({ elements: [p1, p2, p3, p4] }) {
+      vec2.subtract(tempVec2, p2.vec2, p1.vec2);
+      const angle1 = Math.atan2(tempVec2[1], tempVec2[0]);
+
+      vec2.subtract(tempVec2, p4.vec2, p3.vec2);
+      const angle2 = Math.atan2(tempVec2[1], tempVec2[0]);
+
+      let angle = angle2 - angle1;
+      if (angle < 0) angle += Math.PI * 2;
+      const value = angle < Math.PI * 0.5 || angle > Math.PI * 1.5 ? 0 : Math.PI;
+
+      return [[value, angle], equals(value, angle)];
+    },
+    apply({ elements: [p1, p2, p3, p4], incrementScale }, [value, angle]) {
+      constraints.angle.apply({ elements: [p1, p2, p3, p4], incrementScale, value }, angle);
+    },
+  },
+  perpendicular: {
+    check({ elements: [p1, p2, p3, p4] }) {
+      vec2.subtract(tempVec2, p2.vec2, p1.vec2);
+      const angle1 = Math.atan2(tempVec2[1], tempVec2[0]);
+
+      vec2.subtract(tempVec2, p4.vec2, p3.vec2);
+      const angle2 = Math.atan2(tempVec2[1], tempVec2[0]);
+
+      let angle = angle2 - angle1;
+      if (angle < 0) angle += Math.PI * 2;
+      const value = angle < Math.PI ? Math.PI * 0.5 : Math.PI * 1.5;
+
+      return [[value, angle], equals(value, angle)];
+    },
+    apply({ elements: [p1, p2, p3, p4], incrementScale }, [value, angle]) {
+      constraints.angle.apply({ elements: [p1, p2, p3, p4], incrementScale, value }, angle);
+    },
+  },
 };
+
+export default constraints;

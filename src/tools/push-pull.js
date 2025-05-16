@@ -7,8 +7,11 @@ const { vec3 } = glMatrix;
 /**
  * @typedef PushPullAction
  * @property {PushPull?} step
+ * @property {PushPull["data"]?} originalData
  * @property {ReadonlyVec3} origin
  * @property {vec3} target
+ * @property {vec3} normalMask
+ * @property {boolean} reverse
  */
 
 // cached structures
@@ -45,7 +48,8 @@ export default (engine) => {
     setValue(distance) {
       if (!historyAction?.data.step) return;
       const { step } = historyAction.data;
-      step.data.reverse = distance < 0;
+      historyAction.data.reverse = distance < 0;
+      step.data.reverse = historyAction.data.reverse;
       step.data.distance = Math.abs(distance);
       step.recompute();
 
@@ -65,11 +69,19 @@ export default (engine) => {
       if (!enteredInstance || faceId === null) return;
 
       const { body } = enteredInstance;
+      const step = body.step instanceof PushPull && body.step.newFaceId === faceId ? body.step : null;
+      const origin = vec3.clone(scene.hovered);
+      const target = vec3.clone(scene.hovered);
+
+      if (step) vec3.scaleAndAdd(origin, origin, step.normal, step.data.distance * (step.data.reverse ? 1 : -1));
 
       historyAction = history.createAction(`Pull face #${faceId} in "${body.name}"`, {
-        step: null,
-        origin: vec3.clone(scene.hovered),
-        target: vec3.clone(scene.hovered),
+        step,
+        originalData: step ? { ...step.data } : null,
+        origin,
+        target,
+        normalMask: vec3.create(),
+        reverse: step?.data.reverse ?? false,
       }, () => {
         historyAction = undefined;
         selection.set(originalSelection);
@@ -87,11 +99,30 @@ export default (engine) => {
 
       historyAction.append(
         (data) => {
-          const distance = vec3.distance(data.origin, data.target);
-          data.step = body.createStep(PushPull, { distance, faceId, reverse: false });
+          if (!data.step) {
+            const distance = vec3.distance(data.origin, data.target);
+            data.step = body.createStep(PushPull, { distance, faceId, reverse: data.reverse });
+          }
+
+          const { normal } = data.step;
+          vec3.set(data.normalMask, Math.abs(normal[0]), Math.abs(normal[1]), Math.abs(normal[2]));
+
+          if (data.originalData) {
+            vec3.subtract(tempVec3, target, origin);
+            vec3.multiply(tempVec3, tempVec3, data.normalMask);
+            data.step.data.distance = vec3.length(tempVec3);
+            data.step.data.reverse = data.reverse;
+            data.step.recompute();
+          }
         },
         (data) => {
-          if (data.step) {
+          if (!data.step) return;
+
+          if (data.originalData) {
+            data.step.data.distance = data.originalData.distance;
+            data.step.data.reverse = data.originalData.reverse;
+            data.step.recompute();
+          } else {
             body.removeStep(data.step);
             data.step = null;
           }
@@ -101,24 +132,25 @@ export default (engine) => {
     update() {
       if (!historyAction) return;
 
-      const { data: { target, origin, step } } = historyAction;
+      const { data: { target, origin, normalMask, step } } = historyAction;
       if (!step) return;
 
       vec3.copy(target, scene.hovered);
       vec3.subtract(tempVec3, target, origin);
-      vec3.multiply(tempVec3, tempVec3, step.normal);
-      step.data.reverse = vec3.dot(tempVec3, step.normal) < 0;
+      vec3.multiply(tempVec3, tempVec3, normalMask);
+      historyAction.data.reverse = vec3.dot(tempVec3, step.normal) < 0;
+      step.data.reverse = historyAction.data.reverse;
       step.data.distance = vec3.length(tempVec3);
       step.recompute();
     },
     end() {
       const { value } = this;
-      const tooShort = !released && (!value || value < 0.1);
+      const originalDistance = historyAction?.data.originalData?.distance ?? 0;
+      const tooShort = !released && (!value || Math.abs(value - originalDistance) < 0.1);
       released = true;
       if (tooShort) return;
 
       historyAction?.commit();
-
     },
     abort() {
       if (tools.selected?.type === 'orbit') return;

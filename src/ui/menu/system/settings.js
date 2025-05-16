@@ -228,6 +228,7 @@ export default (engine, container) => {
     });
 
     const buttons = settingsWindowContents.addContainer({ className: 'settingsButtons' });
+    buttons.addButton('close', () => settingsWindow.remove(), { className: 'button' });
     buttons.addButton('save', () => {
       for (const { input, originalValue, setting } of items) {
         if ((setting.type === 'toggle' ? String(input.checked) : input.value) === originalValue) continue;
@@ -246,6 +247,5 @@ export default (engine, container) => {
       }
       settingsWindow.remove();
     }, { className: 'button' });
-    buttons.addButton('close', () => settingsWindow.remove(), { className: 'button' });
   }, 'Settings').$element({ style: icon.style });
 };
