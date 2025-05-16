@@ -77,9 +77,9 @@ export default class Pull extends /** @type {typeof Step<PullState>} */ (Step) {
     const { faceId, reverse } = this.data;
     const newData = this.model.export();
 
-    if (faceId > newData.faces.length) throw new Error(`Face #${faceId} does not exist on body`);
-
     const face = newData.faces[faceId - 1];
+    if (!face) throw new Error(`Face #${faceId} does not exist on body`);
+
 
     this.normal.set(face.normal);
     vec3.scale(this.#offset, this.normal, reverse ? -this.data.distance : this.data.distance);

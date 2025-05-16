@@ -6,10 +6,13 @@ const { vec3 } = glMatrix;
 
 /**
  * @typedef Face
+ * @property {number} id
  * @property {vec3} normal
  * @property {vec3} color
  * @property {number[]} loop
  * @property {number[][]} holes
+ * @property {number[]} adjacentFaces
+ * @property {boolean} connected
  */
 
 /**
@@ -24,6 +27,7 @@ const { vec3 } = glMatrix;
  * @typedef ModelData
  * @property {number[]} vertices
  * @property {Face[]} faces
+ * @property {number[][]} volumes
  * @property {number[]} segments
  * @property {number[]} supportSegments
  */
@@ -124,17 +128,26 @@ export default class Model extends Base.implement({ BoundingBox }) {
     if (data.segments.length % 2 !== 0) throw new Error('Segment incomplete');
     if (data.segments.some(i => i < 0 || i > nVertices - 1)) throw new Error('Segment out of range');
 
+    this.lastFaceId = 0;
+    this.lastLineId = 0;
+    this.lastPointId = 0;
+
     const vertices = data.vertices.slice();
     const segments = data.segments.slice();
     const supportSegments = data.supportSegments.slice();
+    /** @type {Face[]} */
     const faces = data.faces.map(face => ({
+      id: ++this.lastFaceId,
       normal: vec3.fromValues(...face.normal),
       color: vec3.fromValues(...face.color),
       loop: face.loop.slice(),
       holes: face.holes.map(hole => hole.slice()),
+      adjacentFaces: [],
+      connected: true,
     }));
 
-    this.data = { vertices, faces, segments, supportSegments };
+    this.data = { vertices, faces, segments, supportSegments, volumes: [] };
+    const { volumes } = this.data;
 
     const vertex  = /** @type {number[]} */ ([]);
     const lineVertex = /** @type {number[]} */ ([]);
@@ -149,20 +162,18 @@ export default class Model extends Base.implement({ BoundingBox }) {
 
     const indexMap = /** @type {string[]} */ ([]);
 
-    this.lastFaceId = 0;
-    this.lastLineId = 0;
-    this.lastPointId = 0;
+    /** @type {Map<string, number[]>} */
+    const segmentFaces = new Map();
 
-    for (const { loop, color, normal, holes } of faces) {
+    for (const face of faces) {
+      const { loop, color, normal, holes } = face;
       if (loop.length) {
-        this.lastFaceId++;
-
         const flatVertices = flattenVertices(vertices, normal);
         const inputVertexIndices = triangulateFace(flatVertices, loop, holes);
 
         for (let i = 0; i < inputVertexIndices.length; ++i) {
           const vertexOffset = inputVertexIndices[i] * 3;
-          const indexKey = `${vertexOffset}_${this.lastFaceId}`;
+          const indexKey = `${vertexOffset}_${face.id}`;
           if (!indexMap.includes(indexKey)) {
             indexMap.push(indexKey);
             vertex.push(
@@ -172,11 +183,62 @@ export default class Model extends Base.implement({ BoundingBox }) {
             );
             normals.push(...normal);
             colors.push(...color);
-            faceIds.push(this.lastFaceId);
+            faceIds.push(face.id);
           }
           index.push(indexMap.indexOf(indexKey));
         }
+
+        const loops = [loop, ...holes];
+        for (const segmentLoop of loops) {
+          for (let j = 0; j < segmentLoop.length; ++j) {
+            const i1 = segmentLoop[j];
+            const i2 = j > 0 ? segmentLoop[j - 1] : segmentLoop[segmentLoop.length - 1];
+            const key = i1 < i2 ? `${i1}_${i2}` : `${i2}_${i1}`;
+            const segment2 = segmentFaces.get(key);
+            if (segment2) segment2.push(face.id);
+            else segmentFaces.set(key, [face.id]);
+          }
+        }
       }
+    }
+
+    const adjacentFaces = Array.from(segmentFaces.values(), a => new Set(a));
+
+    while (true) {
+      let pruned = false;
+      for (const face of faces) {
+        if (!face.connected) continue;
+
+        const adjacencies = adjacentFaces.filter(adjacent => adjacent.has(face.id));
+        if (adjacencies.some(adjacent => adjacent.size === 1)) {
+          face.connected = false;
+          pruned = true;
+          adjacencies.forEach(adjacent => adjacent.delete(face.id));
+        }
+      }
+
+      if (!pruned) break;
+    }
+
+    for (const face of faces) {
+      if (!face.connected) continue;
+
+      const adjacencies = adjacentFaces.filter(adjacent => adjacent.has(face.id));
+      for (const [id1, id2] of adjacencies.values()) {
+        const id = id1 === face.id ? id2 : id1;
+        if (!face.adjacentFaces.includes(id)) face.adjacentFaces.push(id);
+      }
+
+      if (volumes.find(v => v.includes(face.id))) continue;
+      const volume = new Set([face.id, ...face.adjacentFaces]);
+
+      for (const id of volume) {
+        for (const segment of adjacentFaces) {
+          if (!segment.has(id)) continue;
+          for (const otherId of segment) volume.add(otherId);
+        }
+      }
+      volumes.push([...volume]);
     }
 
     for (let i = 1; i < segments.length; i += 2) {
