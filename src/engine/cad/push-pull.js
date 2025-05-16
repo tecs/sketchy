@@ -80,6 +80,7 @@ export default class Pull extends /** @type {typeof Step<PullState>} */ (Step) {
     const face = newData.faces[faceId - 1];
     if (!face) throw new Error(`Face #${faceId} does not exist on body`);
 
+    const isVolume = this.model.data.volumes.some(v => v.includes(faceId));
 
     this.normal.set(face.normal);
     vec3.scale(this.#offset, this.normal, reverse ? -this.data.distance : this.data.distance);
@@ -91,14 +92,29 @@ export default class Pull extends /** @type {typeof Step<PullState>} */ (Step) {
         .map((index, i) => [index, i + nVertices]),
     );
 
-    const newFace = /** @type {PlainFace} */ ({
+    const faceLoop = face.loop;
+    const faceHoles = face.holes;
+
+    const newFace = isVolume ? face : /** @type {PlainFace} */ ({
       normal: /** @type {PlainVec3} */ (face.normal.slice()),
       color: /** @type {PlainVec3} */ (face.color.slice()),
-      loop: face.loop.map(index => indexMap.get(index)),
-      holes: face.holes.map(hole => hole.map(index => indexMap.get(index))),
+      loop: [],
+      holes: [],
     });
-    newData.faces.push(newFace);
-    this.newFaceId = newData.faces.length;
+
+    if (isVolume) {
+      this.newFaceId = faceId;
+    } else {
+      newData.faces.push(newFace);
+      this.newFaceId = newData.faces.length;
+      const reversedFace = reverse ? newFace : face;
+      reversedFace.normal[0] = -face.normal[0];
+      reversedFace.normal[1] = -face.normal[1];
+      reversedFace.normal[2] = -face.normal[2];
+    }
+
+    newFace.loop = /** @type {number[]} */ (faceLoop.map(index => indexMap.get(index)));
+    newFace.holes = /** @type {number[][]} */ (faceHoles.map(hole => hole.map(index => indexMap.get(index))));
 
     for (const [index, newIndex] of indexMap) {
       newData.segments.push(index, newIndex);
@@ -113,8 +129,8 @@ export default class Pull extends /** @type {typeof Step<PullState>} */ (Step) {
 
       findNormal(
         tempVec3,
-        /** @type {PlainVec3} */ (newData.vertices.slice(face.loop[prevIndex] * 3, face.loop[prevIndex] * 3 + 3)),
-        /** @type {PlainVec3} */ (newData.vertices.slice(face.loop[i] * 3, face.loop[i] * 3 + 3)),
+        /** @type {PlainVec3} */ (newData.vertices.slice(faceLoop[prevIndex] * 3, faceLoop[prevIndex] * 3 + 3)),
+        /** @type {PlainVec3} */ (newData.vertices.slice(faceLoop[i] * 3, faceLoop[i] * 3 + 3)),
         /** @type {PlainVec3} */ (newData.vertices.slice(newFace.loop[i] * 3, newFace.loop[i] * 3 + 3)),
       );
 
@@ -122,7 +138,7 @@ export default class Pull extends /** @type {typeof Step<PullState>} */ (Step) {
         normal: /** @type {PlainVec3} */ ([...tempVec3]),
         color: /** @type {PlainVec3} */ (face.color.slice()),
         loop: [
-          face.loop[i], face.loop[prevIndex],
+          faceLoop[i], faceLoop[prevIndex],
           newFace.loop[prevIndex], newFace.loop[i],
         ],
         holes: [],
@@ -131,7 +147,7 @@ export default class Pull extends /** @type {typeof Step<PullState>} */ (Step) {
     }
 
     for (let i = 0; i < newFace.holes.length; ++i) {
-      const hole = face.holes[i];
+      const hole = faceHoles[i];
       const newHole = newFace.holes[i];
       for (let j = 0; j < newHole.length; ++j) {
         const prevIndex = j === 0 ? newHole.length - 1 : j - 1;
